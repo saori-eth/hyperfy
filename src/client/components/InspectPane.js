@@ -401,7 +401,7 @@ function AppPaneMain({ world, app, blueprint, canEdit }) {
         <div
           className='amain-image'
           css={css`
-            background-image: ${blueprint.image ? `url(${world.network.resolveURL(blueprint.image.url)})` : 'none'};
+            background-image: ${blueprint.image ? `url(${world.resolveURL(blueprint.image.url)})` : 'none'};
           `}
         />
       )}
@@ -410,7 +410,7 @@ function AppPaneMain({ world, app, blueprint, canEdit }) {
         <div className='amain-author'>
           <span>by </span>
           {blueprint.url && (
-            <a href={world.network.resolveURL(blueprint.url)} target='_blank'>
+            <a href={world.resolveURL(blueprint.url)} target='_blank'>
               {blueprint.author || 'Unknown'}
             </a>
           )}

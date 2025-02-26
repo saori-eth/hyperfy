@@ -65,12 +65,12 @@ export class ClientLoader extends System {
   }
 
   getFile(url) {
-    url = this.world.network.resolveURL(url)
+    url = this.world.resolveURL(url)
     return this.files.get(url)
   }
 
   loadFile = async url => {
-    url = this.world.network.resolveURL(url)
+    url = this.world.resolveURL(url)
     if (this.files.has(url)) {
       return this.files.get(url)
     }

@@ -79,25 +79,6 @@ export class ClientNetwork extends System {
     return (performance.now() + this.serverTimeOffset) / 1000 // seconds
   }
 
-  resolveURL(url) {
-    if (!url) return url
-    url = url.trim()
-    if (url.startsWith('asset://')) {
-      if (!this.assetsUrl) console.error('resolveURL: no assetsUrl defined')
-      return url.replace('asset:/', this.assetsUrl)
-    }
-    if (url.match(/^https?:\/\//i)) {
-      return url
-    }
-    if (url.startsWith('//')) {
-      return `https:${url}`
-    }
-    if (url.startsWith('/')) {
-      return url
-    }
-    return `https://${url}`
-  }
-
   onPacket = e => {
     const [method, data] = readPacket(e.data)
     this.enqueue(method, data)
@@ -108,8 +89,8 @@ export class ClientNetwork extends System {
     this.id = data.id
     this.serverTimeOffset = data.serverTime - performance.now()
     this.apiUrl = data.apiUrl
-    this.assetsUrl = data.assetsUrl
     this.maxUploadSize = data.maxUploadSize
+    this.world.assetsUrl = data.assetsUrl
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)

@@ -1,3 +1,4 @@
+import 'ses'
 import '../core/lockdown'
 import * as THREE from 'three'
 import { useEffect, useMemo, useRef, useState } from 'react'

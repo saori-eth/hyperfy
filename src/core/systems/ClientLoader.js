@@ -65,12 +65,12 @@ export class ClientLoader extends System {
   }
 
   getFile(url) {
-    url = this.resolveURL(url)
+    url = this.world.network.resolveURL(url)
     return this.files.get(url)
   }
 
   loadFile = async url => {
-    url = this.resolveURL(url)
+    url = this.world.network.resolveURL(url)
     if (this.files.has(url)) {
       return this.files.get(url)
     }
@@ -291,12 +291,5 @@ export class ClientLoader extends System {
       })
     }
     this.promises.set(key, promise)
-  }
-
-  resolveURL(url) {
-    if (url.startsWith('asset://')) {
-      return url.replace('asset:/', process.env.PUBLIC_ASSETS_URL)
-    }
-    return url
   }
 }

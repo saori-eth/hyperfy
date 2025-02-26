@@ -16,7 +16,6 @@ function App() {
     const viewport = viewportRef.current
     const ui = uiRef.current
     const wsUrl = process.env.PUBLIC_WS_URL
-    const apiUrl = process.env.PUBLIC_API_URL
     const baseEnvironment = {
       model: '/base-environment.glb',
       bg: '/day2-2k.jpg',
@@ -28,7 +27,7 @@ function App() {
       fogFar: null,
       fogColor: null,
     }
-    world.init({ viewport, ui, wsUrl, apiUrl, loadPhysX, baseEnvironment })
+    world.init({ viewport, ui, wsUrl, loadPhysX, baseEnvironment })
   }, [])
   useEffect(() => {
     const ui = uiRef.current

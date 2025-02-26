@@ -1,4 +1,5 @@
 import '../core/lockdown'
+import * as THREE from 'three'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { createRoot } from 'react-dom/client'
 import { css } from '@firebolt-dev/css'
@@ -16,7 +17,18 @@ function App() {
     const ui = uiRef.current
     const wsUrl = process.env.PUBLIC_WS_URL
     const apiUrl = process.env.PUBLIC_API_URL
-    world.init({ viewport, ui, wsUrl, apiUrl, loadPhysX })
+    const baseEnvironment = {
+      model: '/base-environment.glb',
+      bg: '/day2-2k.jpg',
+      hdr: '/day2.hdr',
+      sunDirection: new THREE.Vector3(-1, -2, -2).normalize(),
+      sunIntensity: 1,
+      sunColor: 0xffffff,
+      fogNear: null,
+      fogFar: null,
+      fogColor: null,
+    }
+    world.init({ viewport, ui, wsUrl, apiUrl, loadPhysX, baseEnvironment })
   }, [])
   useEffect(() => {
     const ui = uiRef.current

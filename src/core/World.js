@@ -190,4 +190,10 @@ export class World extends EventEmitter {
       this.hot.delete(item)
     }
   }
+
+  destroy() {
+    for (const system of this.systems) {
+      system.destroy()
+    }
+  }
 }

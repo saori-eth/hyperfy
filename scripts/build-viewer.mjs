@@ -29,18 +29,18 @@ const viewerBuildDir = path.join(rootDir, 'build/viewer')
     minify: false,
     sourcemap: 'inline',
     metafile: true,
-    jsx: 'automatic',
-    jsxImportSource: '@firebolt-dev/jsx',
-    define: {
-      // 'process.env.NODE_ENV': '"development"',
-    },
-    loader: {
-      '.js': 'jsx',
-    },
-    alias: {
-      react: 'react', // always use our own local react (jsx)
-    },
-    // external: ['three', 'lodash-es'],
+    // jsx: 'automatic',
+    // jsxImportSource: '@firebolt-dev/jsx',
+    // define: {
+    //   // 'process.env.NODE_ENV': '"development"',
+    // },
+    // loader: {
+    //   '.js': 'jsx',
+    // },
+    external: ['three'],
+    // alias: {
+    //   react: 'react', // always use our own local react (jsx)
+    // },
     plugins: [],
   })
   if (dev) {

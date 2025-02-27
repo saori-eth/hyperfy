@@ -50,6 +50,7 @@ export class PlayerLocal extends Entity {
     if (this.world.loader.preloader) {
       await this.world.loader.preloader
     }
+
     this.mass = 1
     this.gravity = 20
     this.effectiveGravity = this.gravity * this.mass
@@ -146,8 +147,12 @@ export class PlayerLocal extends Entity {
     this.world.setHot(this, true)
   }
 
+  getAvatarUrl() {
+    return this.data.sessionAvatar || this.data.avatar || 'asset://avatar.vrm'
+  }
+
   applyAvatar() {
-    const avatarUrl = this.data.sessionAvatar || this.data.avatar || 'asset://avatar.vrm'
+    const avatarUrl = this.getAvatarUrl()
     if (this.avatarUrl === avatarUrl) return
     this.world.loader
       .load('avatar', avatarUrl)

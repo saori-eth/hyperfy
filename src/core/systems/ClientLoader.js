@@ -10,6 +10,7 @@ import { glbToNodes } from '../extras/glbToNodes'
 import { createEmoteFactory } from '../extras/createEmoteFactory'
 import { TextureLoader } from 'three'
 import { formatBytes } from '../extras/formatBytes'
+import { emoteUrls } from '../extras/playerEmotes'
 
 // THREE.Cache.enabled = true
 
@@ -30,6 +31,7 @@ export class ClientLoader extends System {
     this.texLoader = new TextureLoader()
     this.gltfLoader = new GLTFLoader()
     this.gltfLoader.register(parser => new VRMLoaderPlugin(parser))
+    this.preloadItems = []
   }
 
   start() {
@@ -52,8 +54,12 @@ export class ClientLoader extends System {
     return this.results.get(key)
   }
 
-  preload(items) {
-    const promises = items.map(item => this.load(item.type, item.url))
+  preload(type, url) {
+    this.preloadItems.push({ type, url })
+  }
+
+  execPreload() {
+    const promises = this.preloadItems.map(item => this.load(item.type, item.url))
     this.preloader = Promise.allSettled(promises).then(() => {
       this.preloader = null
       this.world.emit('ready', true)

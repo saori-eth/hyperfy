@@ -860,7 +860,7 @@ export class PlayerLocal extends Entity {
     }
     if (this.avatar) {
       const matrix = this.avatar.getBoneTransform('head')
-      this.aura.position.setFromMatrixPosition(matrix)
+      if (matrix) this.aura.position.setFromMatrixPosition(matrix)
     }
   }
 

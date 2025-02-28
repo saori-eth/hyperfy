@@ -745,15 +745,6 @@ export class PlayerLocal extends Entity {
       this.base.quaternion.slerp(q1, alpha)
     }
 
-    // if we're anchored, force into that pose
-    if (anchor) {
-      this.base.position.setFromMatrixPosition(anchor)
-      this.base.quaternion.setFromRotationMatrix(anchor)
-      const pose = this.capsule.getGlobalPose()
-      this.base.position.toPxTransform(pose)
-      this.capsuleHandle.snap(pose)
-    }
-
     // make camera follow our position horizontally
     this.cam.position.copy(this.base.position)
     if (isXR) {
@@ -855,6 +846,15 @@ export class PlayerLocal extends Entity {
   }
 
   lateUpdate(delta) {
+    const anchor = this.getAnchorMatrix()
+    // if we're anchored, force into that pose
+    if (anchor) {
+      this.base.position.setFromMatrixPosition(anchor)
+      this.base.quaternion.setFromRotationMatrix(anchor)
+      const pose = this.capsule.getGlobalPose()
+      this.base.position.toPxTransform(pose)
+      this.capsuleHandle.snap(pose)
+    }
     if (this.world.xr.session) {
       // in vr snap camera
       this.control.camera.position.copy(this.cam.position)

@@ -195,6 +195,9 @@ export class World extends EventEmitter {
   resolveURL(url) {
     if (!url) return url
     url = url.trim()
+    if (url.startsWith('blob')) {
+      return url
+    }
     if (url.startsWith('asset://')) {
       if (!this.assetsUrl) console.error('resolveURL: no assetsUrl defined')
       return url.replace('asset:/', this.assetsUrl)

@@ -665,16 +665,18 @@ function createScreen(controls, control) {
 }
 
 function createCamera(controls, control) {
-  const position = new THREE.Vector3()
-  const quaternion = new THREE.Quaternion()
-  const rotation = new THREE.Euler(0, 0, 0, 'YXZ')
+  const world = controls.world
+  const position = new THREE.Vector3().copy(world.rig.position)
+  const quaternion = new THREE.Quaternion().copy(world.rig.quaternion)
+  const rotation = new THREE.Euler(0, 0, 0, 'YXZ').copy(world.rig.rotation)
   bindRotations(quaternion, rotation)
+  const zoom = world.camera.position.z
   return {
     $camera: true,
     position,
     quaternion,
     rotation,
-    zoom: 0,
+    zoom,
     write: false,
   }
 }

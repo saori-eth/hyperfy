@@ -522,6 +522,7 @@ export class ClientControls extends System {
   }
 
   onScroll = e => {
+    if (e.isCoreUI) return
     e.preventDefault()
     let delta = e.shiftKey ? e.deltaX : e.deltaY
     if (!this.isMac) delta = -delta

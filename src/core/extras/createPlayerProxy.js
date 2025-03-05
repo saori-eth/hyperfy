@@ -1,5 +1,8 @@
 import { getRef } from '../nodes/Node'
+import { clamp } from '../utils'
 import * as THREE from './three'
+
+const HEALTH_MAX = 100
 
 export function createPlayerProxy(player) {
   const world = player.world
@@ -18,6 +21,9 @@ export function createPlayerProxy(player) {
     },
     get name() {
       return player.data.name
+    },
+    get health() {
+      return player.data.health
     },
     get position() {
       return position.copy(player.base.position)
@@ -54,6 +60,24 @@ export function createPlayerProxy(player) {
       } else {
         // if we're the server we need to notify the player
         world.network.sendTo(player.data.owner, 'playerSessionAvatar', { avatar })
+      }
+    },
+    damage(amount) {
+      const health = clamp(player.data.health - amount, 0, HEALTH_MAX)
+      // do nothing if it hasn't changed
+      if (player.data.health === health) return
+      // if local player, update locally (not synced)
+      if (player.data.owner === world.network.id) {
+        player.modify({ health })
+      }
+      // if client player, update locally (not synced)
+      else if (world.network.isClient) {
+        player.modify({ health })
+      }
+      // if we're the server, update and notify all clients
+      else {
+        player.modify({ health })
+        world.network.send('entityModified', { id: player.data.id, health })
       }
     },
   }

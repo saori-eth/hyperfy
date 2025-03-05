@@ -94,7 +94,7 @@ export class PlayerLocal extends Entity {
     this.base.position.fromArray(this.data.position)
     this.base.quaternion.fromArray(this.data.quaternion)
 
-    // this.nametag = createNode({ name: 'nametag', label: this.data.name, active: false })
+    // this.nametag = createNode({ name: 'nametag', label: this.data.name, health: this.data.health, active: false })
     // this.base.add(this.nametag)
 
     this.aura = createNode('group')
@@ -939,6 +939,10 @@ export class PlayerLocal extends Entity {
     if (data.hasOwnProperty('name')) {
       this.data.name = data.name
       changed = true
+    }
+    if (data.hasOwnProperty('health')) {
+      this.data.health = data.health
+      // changed = true
     }
     if (data.hasOwnProperty('avatar')) {
       this.data.avatar = data.avatar

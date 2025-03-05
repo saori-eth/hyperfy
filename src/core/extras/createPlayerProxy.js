@@ -1,5 +1,5 @@
 import { getRef } from '../nodes/Node'
-import { clamp } from '../utils'
+import { clamp, uuid } from '../utils'
 import * as THREE from './three'
 
 const HEALTH_MAX = 100
@@ -9,14 +9,15 @@ export function createPlayerProxy(player) {
   const position = new THREE.Vector3()
   const rotation = new THREE.Euler()
   const quaternion = new THREE.Quaternion()
+  let activeEffectConfig = null
   return {
     get networkId() {
       return player.data.owner
     },
-    get entityId() {
+    get id() {
       return player.data.id
     },
-    get id() {
+    get userId() {
       return player.data.userId
     },
     get name() {
@@ -64,21 +65,62 @@ export function createPlayerProxy(player) {
     },
     damage(amount) {
       const health = clamp(player.data.health - amount, 0, HEALTH_MAX)
-      // do nothing if it hasn't changed
       if (player.data.health === health) return
-      // if local player, update locally (not synced)
-      if (player.data.owner === world.network.id) {
-        player.modify({ health })
-      }
-      // if client player, update locally (not synced)
-      else if (world.network.isClient) {
-        player.modify({ health })
-      }
-      // if we're the server, update and notify all clients
-      else {
-        player.modify({ health })
+      player.modify({ health })
+      if (world.network.isServer) {
         world.network.send('entityModified', { id: player.data.id, health })
       }
+    },
+    heal(amount) {
+      const health = clamp(player.data.health + amount, 0, HEALTH_MAX)
+      if (player.data.health === health) return
+      player.modify({ health })
+      if (world.network.isServer) {
+        world.network.send('entityModified', { id: player.data.id, health })
+      }
+    },
+    hasEffect() {
+      return !!player.data.effect
+    },
+    applyEffect(opts) {
+      if (!opts) return
+      const effect = {}
+      // effect.id = uuid()
+      if (opts.anchor) effect.anchorId = opts.anchor.anchorId
+      if (opts.emote) effect.emote = opts.emote
+      if (opts.snare) effect.snare = opts.snare
+      if (opts.freeze) effect.freeze = opts.freeze
+      if (opts.turn) effect.turn = opts.turn
+      if (opts.duration) effect.duration = opts.duration
+      if (opts.cancellable) {
+        effect.cancellable = opts.cancellable
+        delete effect.freeze // overrides
+      }
+      const config = {
+        effect,
+        onEnd: () => {
+          if (activeEffectConfig !== config) return
+          activeEffectConfig = null
+          player.setEffect(null)
+          opts.onEnd?.()
+        },
+      }
+      activeEffectConfig = config
+      player.setEffect(config.effect, config.onEnd)
+      if (world.network.isServer) {
+        world.network.send('entityModified', { id: player.data.id, ef: config.effect })
+      }
+      return {
+        get active() {
+          return activeEffectConfig === config
+        },
+        cancel: () => {
+          config.onEnd()
+        },
+      }
+    },
+    cancelEffect() {
+      activeEffectConfig?.onEnd()
     },
   }
 }

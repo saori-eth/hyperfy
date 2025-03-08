@@ -123,9 +123,18 @@ export class ClientBuilder extends System {
     if (!this.enabled) {
       return
     }
-    // inspect
+    // inspect in pointer-lock
     if (!this.selected && this.control.keyR.pressed) {
       const entity = this.getEntityAtReticle()
+      if (entity) {
+        this.select(null)
+        this.control.pointer.unlock()
+        this.world.emit('inspect', entity)
+      }
+    }
+    // inspect out of pointer-lock
+    if (!this.selected && !this.control.pointer.locked && this.control.mouseRight.pressed) {
+      const entity = this.getEntityAtPointer()
       if (entity) {
         this.select(null)
         this.control.pointer.unlock()
@@ -410,6 +419,16 @@ export class ClientBuilder extends System {
 
   getEntityAtReticle() {
     const hits = this.world.stage.raycastReticle()
+    let entity
+    for (const hit of hits) {
+      entity = hit.getEntity?.()
+      if (entity) break
+    }
+    return entity
+  }
+
+  getEntityAtPointer() {
+    const hits = this.world.stage.raycastPointer(this.control.pointer.position)
     let entity
     for (const hit of hits) {
       entity = hit.getEntity?.()

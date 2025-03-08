@@ -373,6 +373,7 @@ export class ClientBuilder extends System {
     this.enabled = enabled
     if (!this.enabled) this.select(null)
     this.updateActions()
+    this.world.emit('build-mode', enabled)
   }
 
   select(app) {

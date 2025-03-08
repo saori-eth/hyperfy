@@ -39,6 +39,8 @@ export class ClientBuilder extends System {
     this.target.rotation.reorder('YXZ')
     this.lastMoveSendTime = 0
 
+    this.undos = []
+
     this.dropTarget = null
     this.file = null
   }
@@ -177,6 +179,11 @@ export class ClientBuilder extends System {
     if (!this.justPointerLocked && this.control.pointer.locked && this.control.mouseLeft.pressed && !this.selected) {
       const entity = this.getEntityAtReticle()
       if (entity?.isApp && !entity.data.pinned) {
+        this.addUndo({
+          name: 'move-entity',
+          entityId: entity.data.id,
+          position: entity.data.position.slice(),
+        })
         this.select(entity)
       }
     }
@@ -234,8 +241,16 @@ export class ClientBuilder extends System {
       const entity = this.selected || this.getEntityAtReticle()
       if (entity?.isApp && !entity.data.pinned) {
         this.select(null)
+        this.addUndo({
+          name: 'add-entity',
+          data: cloneDeep(entity.data),
+        })
         entity?.destroy(true)
       }
+    }
+    // undo
+    if (this.control.keyZ.pressed && (this.control.metaLeft.down || this.control.controlLeft.down)) {
+      this.undo()
     }
     // TODO: move up/down
     // this.selected.position.y -= this.control.pointer.delta.y * delta * 0.5
@@ -301,6 +316,34 @@ export class ClientBuilder extends System {
 
     if (this.justPointerLocked) {
       this.justPointerLocked = false
+    }
+  }
+
+  addUndo(action) {
+    this.undos.push(action)
+    if (this.undos.length > 50) {
+      this.undos.shift()
+    }
+  }
+
+  undo() {
+    const undo = this.undos.pop()
+    if (!undo) return
+    if (this.selected) this.select(null)
+    if (undo.name === 'add-entity') {
+      this.world.entities.add(undo.data, true)
+      return
+    }
+    if (undo.name === 'move-entity') {
+      const entity = this.world.entities.get(undo.entityId)
+      if (!entity) return
+      entity.data.position = undo.position
+      this.world.network.send('entityModified', {
+        id: undo.entityId,
+        position: entity.data.position,
+      })
+      entity.build()
+      return
     }
   }
 

@@ -38,6 +38,7 @@ export class App extends Entity {
     this.playerProxies = new Map()
     this.hitResultsPool = []
     this.hitResults = []
+    this.timers = new Set()
     this.build()
   }
 
@@ -110,7 +111,7 @@ export class App extends Entity {
       this.abortController = new AbortController()
       this.script = script
       try {
-        this.script.exec(this.getWorldProxy(), this.getAppProxy(), this.fetch, blueprint.props)
+        this.script.exec(this.getWorldProxy(), this.getAppProxy(), this.fetch, blueprint.props, this.setTimeout)
       } catch (err) {
         console.error('script crashed')
         console.error(err)
@@ -167,6 +168,11 @@ export class App extends Entity {
     // abort fetch's etc
     this.abortController?.abort()
     this.abortController = null
+    // clear timers
+    for (const timerId of this.timers) {
+      clearTimeout(timerId)
+    }
+    this.timers.clear()
     // clear fields
     this.onFields?.([])
   }
@@ -355,6 +361,15 @@ export class App extends Entity {
       console.error(err)
       // this.crash()
     }
+  }
+
+  setTimeout = (fn, ms) => {
+    const timerId = setTimeout(() => {
+      this.timers.delete(timerId)
+      fn()
+    }, ms)
+    this.timers.add(timerId)
+    return timerId
   }
 
   getNodes() {

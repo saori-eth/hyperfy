@@ -31,17 +31,7 @@ export class Scripts extends System {
       URL: {
         createObjectURL: blob => URL.createObjectURL(blob),
       },
-      Math: {
-        random: () => Math.random(),
-        floor: n => Math.floor(n),
-        PI: Math.PI,
-        sin: n => Math.sin(n),
-        cos: n => Math.cos(n),
-        min: n => Math.min(n),
-        max: n => Math.max(n),
-        round: n => Math.round(n),
-        abs: n => Math.abs(n),
-      },
+      Math,
       eval: undefined,
       harden: undefined,
       lockdown: undefined,

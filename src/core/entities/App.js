@@ -38,7 +38,7 @@ export class App extends Entity {
     this.playerProxies = new Map()
     this.hitResultsPool = []
     this.hitResults = []
-    this.timers = new Set()
+    this.deadHook = { dead: false }
     this.build()
   }
 
@@ -168,11 +168,9 @@ export class App extends Entity {
     // abort fetch's etc
     this.abortController?.abort()
     this.abortController = null
-    // clear timers
-    for (const timerId of this.timers) {
-      clearTimeout(timerId)
-    }
-    this.timers.clear()
+    // mark dead and re-create hook (timers, async etc)
+    this.deadHook.dead = true
+    this.deadHook = { dead: false }
     // clear fields
     this.onFields?.([])
   }
@@ -364,12 +362,16 @@ export class App extends Entity {
   }
 
   setTimeout = (fn, ms) => {
+    const hook = this.getDeadHook()
     const timerId = setTimeout(() => {
-      this.timers.delete(timerId)
+      if (hook.dead) return
       fn()
     }, ms)
-    this.timers.add(timerId)
     return timerId
+  }
+
+  getDeadHook = () => {
+    return this.deadHook
   }
 
   getNodes() {

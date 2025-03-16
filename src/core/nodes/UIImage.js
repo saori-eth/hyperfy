@@ -45,12 +45,16 @@ export class UIImage extends Node {
       const drawParams = this.calculateDrawParameters(this.img.width, this.img.height, width, height)
       imageRoundRect(
         ctx,
+        left,
+        top,
+        width,
+        height,
+        this._borderRadius * this.ui._res,
+        this.img,
         left + drawParams.x,
         top + drawParams.y,
         drawParams.width,
-        drawParams.height,
-        this._borderRadius * this.ui._res,
-        this.img
+        drawParams.height
       )
     }
     this.box = { left, top, width, height }

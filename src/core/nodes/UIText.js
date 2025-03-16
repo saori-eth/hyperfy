@@ -1,5 +1,5 @@
 import Yoga from 'yoga-layout'
-import { isNumber, isString } from 'lodash-es'
+import { isBoolean, isNumber, isString } from 'lodash-es'
 
 import { Node } from './Node'
 import { Display, isDisplay } from '../extras/yoga'
@@ -9,6 +9,11 @@ const textAligns = ['left', 'center', 'right']
 
 const defaults = {
   display: 'flex',
+  absolute: false,
+  top: null,
+  right: null,
+  bottom: null,
+  left: null,
   backgroundColor: null,
   borderRadius: 0,
   margin: 0,
@@ -37,6 +42,11 @@ export class UIText extends Node {
     this.name = 'uitext'
 
     this.display = data.display
+    this.absolute = data.absolute
+    this.top = data.top
+    this.right = data.right
+    this.bottom = data.bottom
+    this.left = data.left
     this.backgroundColor = data.backgroundColor
     this.borderRadius = data.borderRadius
     this.margin = data.margin
@@ -98,6 +108,11 @@ export class UIText extends Node {
     this.yogaNode = Yoga.Node.create()
     this.yogaNode.setMeasureFunc(this.measureTextFunc())
     this.yogaNode.setDisplay(Display[this._display])
+    this.yogaNode.setPositionType(this._absolute ? Yoga.POSITION_TYPE_ABSOLUTE : Yoga.POSITION_TYPE_RELATIVE)
+    this.yogaNode.setPosition(Yoga.EDGE_TOP, isNumber(this._top) ? this._top * this.ui._res : undefined)
+    this.yogaNode.setPosition(Yoga.EDGE_RIGHT, isNumber(this._right) ? this._right * this.ui._res : undefined)
+    this.yogaNode.setPosition(Yoga.EDGE_BOTTOM, isNumber(this._bottom) ? this._bottom * this.ui._res : undefined)
+    this.yogaNode.setPosition(Yoga.EDGE_LEFT, isNumber(this._left) ? this._left * this.ui._res : undefined)
     this.yogaNode.setMargin(Yoga.EDGE_ALL, this._margin * this.ui._res)
     this.yogaNode.setPadding(Yoga.EDGE_ALL, this._padding * this.ui._res)
     this.parent.yogaNode.insertChild(this.yogaNode, this.parent.yogaNode.getChildCount())
@@ -120,6 +135,11 @@ export class UIText extends Node {
   copy(source, recursive) {
     super.copy(source, recursive)
     this._display = source._display
+    this._absolute = source._absolute
+    this._top = source._top
+    this._right = source._right
+    this._bottom = source._bottom
+    this._left = source._left
     this._backgroundColor = source._backgroundColor
     this._borderRadius = source._borderRadius
     this._margin = source._margin
@@ -186,13 +206,87 @@ export class UIText extends Node {
     this.ui?.redraw()
   }
 
+  get absolute() {
+    return this._absolute
+  }
+
+  set absolute(value = defaults.absolute) {
+    if (!isBoolean(value)) {
+      throw new Error(`[uitext] absolute not a boolean`)
+    }
+    if (this._absolute === value) return
+    this._absolute = value
+    this.yogaNode?.setPositionType(this._absolute ? Yoga.POSITION_TYPE_ABSOLUTE.ABSOLUTE : Yoga.POSITION_TYPE_RELATIVE)
+    this.ui?.redraw()
+  }
+
+  get top() {
+    return this._top
+  }
+
+  set top(value = defaults.top) {
+    const isNum = isNumber(value)
+    if (value !== null && !isNum) {
+      throw new Error(`[uitext] top must be a number or null`)
+    }
+    if (this._top === value) return
+    this._top = value
+    this.yogaNode?.setPosition(Yoga.EDGE_TOP, isNum ? this._top * this.ui._res : undefined)
+    this.ui?.redraw()
+  }
+
+  get right() {
+    return this._right
+  }
+
+  set right(value = defaults.right) {
+    const isNum = isNumber(value)
+    if (value !== null && !isNum) {
+      throw new Error(`[uitext] right must be a number or null`)
+    }
+    if (this._right === value) return
+    this._right = value
+    this.yogaNode?.setPosition(Yoga.EDGE_RIGHT, isNum ? this._right * this.ui._res : undefined)
+    this.ui?.redraw()
+  }
+
+  get bottom() {
+    return this._bottom
+  }
+
+  set bottom(value = defaults.bottom) {
+    const isNum = isNumber(value)
+    if (value !== null && !isNum) {
+      throw new Error(`[uitext] bottom must be a number or null`)
+    }
+    if (this._bottom === value) return
+    this._bottom = value
+    this.yogaNode?.setPosition(Yoga.EDGE_BOTTOM, isNum ? this._bottom * this.ui._res : undefined)
+    this.ui?.redraw()
+  }
+
+  get left() {
+    return this._left
+  }
+
+  set left(value = defaults.left) {
+    const isNum = isNumber(value)
+    if (value !== null && !isNum) {
+      throw new Error(`[uitext] left must be a number or null`)
+    }
+    if (this._left === value) return
+    this._left = value
+    this.yogaNode?.setPosition(Yoga.EDGE_LEFT, isNum ? this._left * this.ui._res : undefined)
+    this.ui?.redraw()
+  }
+
   get backgroundColor() {
     return this._backgroundColor
   }
 
   set backgroundColor(value = defaults.backgroundColor) {
     if (value !== null && !isString(value)) {
-      throw new Error(`[uiview] backgroundColor not a string`)
+      throw new Error(`[uitext] backgroundColor not a string`)
     }
     if (this._backgroundColor === value) return
     this._backgroundColor = value
@@ -205,7 +299,7 @@ export class UIText extends Node {
 
   set borderRadius(value = defaults.borderRadius) {
     if (!isNumber(value)) {
-      throw new Error(`[uiview] borderRadius not a number`)
+      throw new Error(`[uitext] borderRadius not a number`)
     }
     if (this._borderRadius === value) return
     this._borderRadius = value
@@ -218,7 +312,7 @@ export class UIText extends Node {
 
   set margin(value = defaults.margin) {
     if (!isNumber(value)) {
-      throw new Error(`[uiview] margin not a number`)
+      throw new Error(`[uitext] margin not a number`)
     }
     if (this._margin === value) return
     this._margin = value
@@ -232,7 +326,7 @@ export class UIText extends Node {
 
   set padding(value = defaults.padding) {
     if (!isNumber(value)) {
-      throw new Error(`[uiview] padding not a number`)
+      throw new Error(`[uitext] padding not a number`)
     }
     if (this._padding === value) rturn
     this._padding = value
@@ -349,6 +443,36 @@ export class UIText extends Node {
         },
         set display(value) {
           self.display = value
+        },
+        get absolute() {
+          return self.absolute
+        },
+        set absolute(value) {
+          self.absolute = value
+        },
+        get top() {
+          return self.top
+        },
+        set top(value) {
+          self.top = value
+        },
+        get right() {
+          return self.right
+        },
+        set right(value) {
+          self.right = value
+        },
+        get bottom() {
+          return self.bottom
+        },
+        set bottom(value) {
+          self.bottom = value
+        },
+        get left() {
+          return self.left
+        },
+        set left(value) {
+          self.left = value
         },
         get backgroundColor() {
           return self.backgroundColor

@@ -242,7 +242,7 @@ export class ClientControls extends System {
     // - 0 is lowest priority generally for player controls
     // - apps use higher priority
     // - global systems use highest priority over everything
-    const idx = this.controls.findIndex(c => c.options.priority < options.priority)
+    const idx = this.controls.findIndex(c => c.options.priority <= options.priority)
     if (idx === -1) {
       this.controls.push(control)
     } else {

@@ -169,21 +169,15 @@ export class UIImage extends Node {
   }
 
   loadImage(src) {
-    return new Promise(async (resolve, reject) => {
-      const img = new Image()
-      img.crossOrigin = 'anonymous'
-      img.onload = () => {
-        if (!this.ui) return
-        this.img = img
-        this.yogaNode?.markDirty()
-        this.ui?.redraw()
-        resolve(img)
-      }
-      img.onerror = error => {
-        console.error('uiimage: failed to load:', error)
-        reject(error)
-      }
-      img.src = this.ctx?.world.resolveURL(src)
+    if (!this.ctx?.world) return console.error('[uiimage] no ctx.world')
+    const url = this.ctx?.world.resolveURL(src)
+    return new Promise(async resolve => {
+      const img = await this.ctx.world.loader.load('image', url)
+      if (!this.ui) return
+      this.img = img
+      this.yogaNode?.markDirty()
+      this.ui?.redraw()
+      resolve(img)
     })
   }
 

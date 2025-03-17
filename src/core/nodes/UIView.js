@@ -134,7 +134,7 @@ export class UIView extends Node {
     this.yogaNode.setAlignItems(AlignItems[this._alignItems])
     this.yogaNode.setAlignContent(AlignContent[this._alignContent])
     this.yogaNode.setFlexWrap(FlexWrap[this._flexWrap])
-    this.yogaNode.setGap(Yoga.GUTTER_ALL, this._gap)
+    this.yogaNode.setGap(Yoga.GUTTER_ALL, this._gap * this.ui._res)
     this.yogaNode.setFlexBasis(this._flexBasis)
     this.yogaNode.setFlexGrow(this._flexGrow)
     this.yogaNode.setFlexShrink(this._flexShrink)
@@ -459,7 +459,7 @@ export class UIView extends Node {
     }
     if (this._gap === value) return
     this._gap = value
-    this.yogaNode?.setGap(Yoga.GUTTER_ALL, this._gap)
+    this.yogaNode?.setGap(Yoga.GUTTER_ALL, this._gap * this.ui._res)
     this.ui?.redraw()
   }
 

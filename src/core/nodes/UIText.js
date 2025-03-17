@@ -1,5 +1,5 @@
 import Yoga from 'yoga-layout'
-import { isBoolean, isNumber, isString } from 'lodash-es'
+import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 
 import { Node } from './Node'
 import { Display, isDisplay } from '../extras/yoga'
@@ -25,6 +25,9 @@ const defaults = {
   textAlign: 'left',
   fontFamily: 'Rubik',
   fontWeight: 'normal',
+  flexBasis: 'auto',
+  flexGrow: 0,
+  flexShrink: 1,
 }
 
 let offscreenContext
@@ -58,6 +61,9 @@ export class UIText extends Node {
     this.textAlign = data.textAlign
     this.fontFamily = data.fontFamily
     this.fontWeight = data.fontWeight
+    this.flexBasis = data.flexBasis
+    this.flexGrow = data.flexGrow
+    this.flexShrink = data.flexShrink
   }
 
   draw(ctx, offsetLeft, offsetTop) {
@@ -131,6 +137,9 @@ export class UIText extends Node {
     } else {
       this.yogaNode.setPadding(Yoga.EDGE_ALL, this._padding * this.ui._res)
     }
+    this.yogaNode.setFlexBasis(this._flexBasis)
+    this.yogaNode.setFlexGrow(this._flexGrow)
+    this.yogaNode.setFlexShrink(this._flexShrink)
     this.parent.yogaNode.insertChild(this.yogaNode, this.parent.yogaNode.getChildCount())
   }
 
@@ -167,6 +176,9 @@ export class UIText extends Node {
     this._textAlign = source._textAlign
     this._fontFamily = source._fontFamily
     this._fontWeight = source._fontWeight
+    this._flexBasis = source._flexBasis
+    this._flexGrow = source._flexGrow
+    this._flexShrink = source._flexShrink
     return this
   }
 
@@ -466,6 +478,48 @@ export class UIText extends Node {
     this.ui?.redraw()
   }
 
+  get flexBasis() {
+    return this._flexBasis
+  }
+
+  set flexBasis(value = defaults.flexBasis) {
+    if (!isNumber(value) && !isString(value)) {
+      throw new Error(`[uitext] flexBasis invalid`)
+    }
+    if (this._flexBasis === value) return
+    this._flexBasis = value
+    this.yogaNode?.setFlexBasis(this._flexBasis)
+    this.ui?.redraw()
+  }
+
+  get flexGrow() {
+    return this._flexGrow
+  }
+
+  set flexGrow(value = defaults.flexGrow) {
+    if (!isNumber(value)) {
+      throw new Error(`[uitext] flexGrow not a number`)
+    }
+    if (this._flexGrow === value) return
+    this._flexGrow = value
+    this.yogaNode?.setFlexGrow(this._flexGrow)
+    this.ui?.redraw()
+  }
+
+  get flexShrink() {
+    return this._flexShrink
+  }
+
+  set flexShrink(value = defaults.flexShrink) {
+    if (!isNumber(value)) {
+      throw new Error(`[uitext] flexShrink not a number`)
+    }
+    if (this._flexShrink === value) return
+    this._flexShrink = value
+    this.yogaNode?.setFlexShrink(this._flexShrink)
+    this.ui?.redraw()
+  }
+
   getProxy() {
     var self = this
     if (!this.proxy) {
@@ -572,6 +626,24 @@ export class UIText extends Node {
         set fontWeight(value) {
           self.fontWeight = value
         },
+        get flexBasis() {
+          return self.flexBasis
+        },
+        set flexBasis(value) {
+          self.flexBasis = value
+        },
+        get flexGrow() {
+          return self.flexGrow
+        },
+        set flexGrow(value) {
+          self.flexGrow = value
+        },
+        get flexShrink() {
+          return self.flexShrink
+        },
+        set flexShrink(value) {
+          self.flexShrink = value
+        },
       }
       proxy = Object.defineProperties(proxy, Object.getOwnPropertyDescriptors(super.getProxy())) // inherit Node properties
       this.proxy = proxy
@@ -602,4 +674,14 @@ function wrapText(ctx, text, maxWidth) {
 
 function isTextAlign(value) {
   return textAligns.includes(value)
+}
+
+function isEdge(value) {
+  if (isNumber(value)) {
+    return true
+  }
+  if (isArray(value)) {
+    return value.length === 4 && every(value, n => isNumber(n))
+  }
+  return false
 }

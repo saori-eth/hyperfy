@@ -113,8 +113,24 @@ export class UIText extends Node {
     this.yogaNode.setPosition(Yoga.EDGE_RIGHT, isNumber(this._right) ? this._right * this.ui._res : undefined)
     this.yogaNode.setPosition(Yoga.EDGE_BOTTOM, isNumber(this._bottom) ? this._bottom * this.ui._res : undefined)
     this.yogaNode.setPosition(Yoga.EDGE_LEFT, isNumber(this._left) ? this._left * this.ui._res : undefined)
-    this.yogaNode.setMargin(Yoga.EDGE_ALL, this._margin * this.ui._res)
-    this.yogaNode.setPadding(Yoga.EDGE_ALL, this._padding * this.ui._res)
+    if (isArray(this._margin)) {
+      const [top, right, bottom, left] = this._margin
+      this.yogaNode.setMargin(Yoga.EDGE_TOP, top * this.ui._res)
+      this.yogaNode.setMargin(Yoga.EDGE_RIGHT, right * this.ui._res)
+      this.yogaNode.setMargin(Yoga.EDGE_BOTTOM, bottom * this.ui._res)
+      this.yogaNode.setMargin(Yoga.EDGE_LEFT, left * this.ui._res)
+    } else {
+      this.yogaNode.setMargin(Yoga.EDGE_ALL, this._margin * this.ui._res)
+    }
+    if (isArray(this._padding)) {
+      const [top, right, bottom, left] = this._padding
+      this.yogaNode.setPadding(Yoga.EDGE_TOP, top * this.ui._res)
+      this.yogaNode.setPadding(Yoga.EDGE_RIGHT, right * this.ui._res)
+      this.yogaNode.setPadding(Yoga.EDGE_BOTTOM, bottom * this.ui._res)
+      this.yogaNode.setPadding(Yoga.EDGE_LEFT, left * this.ui._res)
+    } else {
+      this.yogaNode.setPadding(Yoga.EDGE_ALL, this._padding * this.ui._res)
+    }
     this.parent.yogaNode.insertChild(this.yogaNode, this.parent.yogaNode.getChildCount())
   }
 
@@ -311,12 +327,20 @@ export class UIText extends Node {
   }
 
   set margin(value = defaults.margin) {
-    if (!isNumber(value)) {
-      throw new Error(`[uitext] margin not a number`)
+    if (!isEdge(value)) {
+      throw new Error(`[uitext] margin not a number or array of numbers`)
     }
     if (this._margin === value) return
     this._margin = value
-    this.yogaNode?.setMargin(Yoga.EDGE_ALL, this._margin * this.ui._res)
+    if (isArray(this._margin)) {
+      const [top, right, bottom, left] = this._margin
+      this.yogaNode?.setMargin(Yoga.EDGE_TOP, top * this.ui._res)
+      this.yogaNode?.setMargin(Yoga.EDGE_RIGHT, right * this.ui._res)
+      this.yogaNode?.setMargin(Yoga.EDGE_BOTTOM, bottom * this.ui._res)
+      this.yogaNode?.setMargin(Yoga.EDGE_LEFT, left * this.ui._res)
+    } else {
+      this.yogaNode?.setMargin(Yoga.EDGE_ALL, this._margin * this.ui._res)
+    }
     this.ui?.redraw()
   }
 
@@ -325,12 +349,20 @@ export class UIText extends Node {
   }
 
   set padding(value = defaults.padding) {
-    if (!isNumber(value)) {
-      throw new Error(`[uitext] padding not a number`)
+    if (!isEdge(value)) {
+      throw new Error(`[uitext] padding not a number or array of numbers`)
     }
     if (this._padding === value) rturn
     this._padding = value
-    this.yogaNode?.setPadding(Yoga.EDGE_ALL, this._padding * this.ui._res)
+    if (isArray(this._padding)) {
+      const [top, right, bottom, left] = this._padding
+      this.yogaNode?.setPadding(Yoga.EDGE_TOP, top * this.ui._res)
+      this.yogaNode?.setPadding(Yoga.EDGE_RIGHT, right * this.ui._res)
+      this.yogaNode?.setPadding(Yoga.EDGE_BOTTOM, bottom * this.ui._res)
+      this.yogaNode?.setPadding(Yoga.EDGE_LEFT, left * this.ui._res)
+    } else {
+      this.yogaNode?.setPadding(Yoga.EDGE_ALL, this._padding * this.ui._res)
+    }
     this.ui?.redraw()
   }
 

@@ -1,5 +1,5 @@
 import Yoga from 'yoga-layout'
-import { isBoolean, isNumber, isString } from 'lodash-es'
+import { every, isArray, isBoolean, isNumber, isString } from 'lodash-es'
 import { Node } from './Node'
 import { Display, isDisplay } from '../extras/yoga'
 import { fillRoundRect, imageRoundRect } from '../extras/roundRect'
@@ -19,6 +19,7 @@ const defaults = {
   objectFit: 'contain',
   backgroundColor: null,
   borderRadius: 0,
+  margin: 0,
 }
 
 export class UIImage extends Node {
@@ -38,6 +39,7 @@ export class UIImage extends Node {
     this.objectFit = data.objectFit
     this.backgroundColor = data.backgroundColor
     this.borderRadius = data.borderRadius
+    this.margin = data.margin
 
     this.img = null
   }
@@ -81,6 +83,15 @@ export class UIImage extends Node {
     this.yogaNode.setPosition(Yoga.EDGE_RIGHT, isNumber(this._right) ? this._right * this.ui._res : undefined)
     this.yogaNode.setPosition(Yoga.EDGE_BOTTOM, isNumber(this._bottom) ? this._bottom * this.ui._res : undefined)
     this.yogaNode.setPosition(Yoga.EDGE_LEFT, isNumber(this._left) ? this._left * this.ui._res : undefined)
+    if (isArray(this._margin)) {
+      const [top, right, bottom, left] = this._margin
+      this.yogaNode.setMargin(Yoga.EDGE_TOP, top * this.ui._res)
+      this.yogaNode.setMargin(Yoga.EDGE_RIGHT, right * this.ui._res)
+      this.yogaNode.setMargin(Yoga.EDGE_BOTTOM, bottom * this.ui._res)
+      this.yogaNode.setMargin(Yoga.EDGE_LEFT, left * this.ui._res)
+    } else {
+      this.yogaNode.setMargin(Yoga.EDGE_ALL, this._margin * this.ui._res)
+    }
     // measure function
     this.yogaNode.setMeasureFunc((width, widthMode, height, heightMode) => {
       // no image? zero size
@@ -165,6 +176,7 @@ export class UIImage extends Node {
     this._left = source._left
     this._objectFit = source._objectFit
     this._backgroundColor = source._backgroundColor
+    this._margin = source._margin
     return this
   }
 
@@ -413,6 +425,28 @@ export class UIImage extends Node {
     this.ui?.redraw()
   }
 
+  get margin() {
+    return this._margin
+  }
+
+  set margin(value = defaults.margin) {
+    if (!isEdge(value)) {
+      throw new Error(`[uiimage] margin not a number or array of numbers`)
+    }
+    if (this._margin === value) return
+    this._margin = value
+    if (isArray(this._margin)) {
+      const [top, right, bottom, left] = this._margin
+      this.yogaNode?.setMargin(Yoga.EDGE_TOP, top * this.ui._res)
+      this.yogaNode?.setMargin(Yoga.EDGE_RIGHT, right * this.ui._res)
+      this.yogaNode?.setMargin(Yoga.EDGE_BOTTOM, bottom * this.ui._res)
+      this.yogaNode?.setMargin(Yoga.EDGE_LEFT, left * this.ui._res)
+    } else {
+      this.yogaNode?.setMargin(Yoga.EDGE_ALL, this._margin * this.ui._res)
+    }
+    this.ui?.redraw()
+  }
+
   getProxy() {
     if (!this.proxy) {
       const self = this
@@ -489,6 +523,12 @@ export class UIImage extends Node {
         set borderRadius(value) {
           self.borderRadius = value
         },
+        get margin() {
+          return self.margin
+        },
+        set margin(value) {
+          self.margin = value
+        },
       }
       proxy = Object.defineProperties(proxy, Object.getOwnPropertyDescriptors(super.getProxy())) // inherit Node properties
       this.proxy = proxy
@@ -499,4 +539,14 @@ export class UIImage extends Node {
 
 function isObjectFit(value) {
   return objectFits.includes(value)
+}
+
+function isEdge(value) {
+  if (isNumber(value)) {
+    return true
+  }
+  if (isArray(value)) {
+    return value.length === 4 && every(value, n => isNumber(n))
+  }
+  return false
 }

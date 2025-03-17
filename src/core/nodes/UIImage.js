@@ -180,17 +180,16 @@ export class UIImage extends Node {
     return this
   }
 
-  loadImage(src) {
-    if (!this.ctx?.world) return console.error('[uiimage] no ctx.world')
-    const url = this.ctx?.world.resolveURL(src)
-    return new Promise(async resolve => {
-      const img = await this.ctx.world.loader.load('image', url)
-      if (!this.ui) return
-      this.img = img
-      this.yogaNode?.markDirty()
-      this.ui?.redraw()
-      resolve(img)
-    })
+  async loadImage(src) {
+    if (!this.ctx?.world) return
+    const url = this.ctx.world.resolveURL(src)
+    this.img = this.ctx.world.loader.get('image', url)
+    if (!this.img) {
+      this.img = await this.ctx.world.loader.load('image', url)
+    }
+    if (!this.ui) return
+    this.yogaNode?.markDirty()
+    this.ui?.redraw()
   }
 
   calculateDrawParameters(imgWidth, imgHeight, containerWidth, containerHeight) {

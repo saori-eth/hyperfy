@@ -488,6 +488,7 @@ export class ClientControls extends System {
   }
 
   onTouchStart = e => {
+    if (e.isCoreUI) return
     e.preventDefault()
     for (let i = 0; i < e.changedTouches.length; i++) {
       const touch = e.changedTouches[i]
@@ -506,6 +507,7 @@ export class ClientControls extends System {
   }
 
   onTouchMove = e => {
+    if (e.isCoreUI) return
     for (let i = 0; i < e.changedTouches.length; i++) {
       const touch = e.changedTouches[i]
       const info = this.touches.get(touch.identifier)
@@ -521,6 +523,7 @@ export class ClientControls extends System {
   }
 
   onTouchEnd = e => {
+    if (e.isCoreUI) return
     for (let i = 0; i < e.changedTouches.length; i++) {
       const touch = e.changedTouches[i]
       const info = this.touches.get(touch.identifier)

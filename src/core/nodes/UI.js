@@ -416,7 +416,7 @@ export class UI extends Node {
       uniforms,
       vertexShader: `
         uniform vec4 uOrientation;
-        uniform int uBillboard; // 0: none, 1: full, 2: y-axis
+        uniform int uBillboard; // 0: none, 1: full, 2: y
 
         vec3 applyQuaternion(vec3 pos, vec4 quat) {
           vec3 qv = vec3(quat.x, quat.y, quat.z);

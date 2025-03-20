@@ -301,6 +301,7 @@ export class Node {
     if (!stats) {
       stats = {
         geometries: new Set(),
+        materials: new Set(),
         triangles: 0,
         textureBytes: 0,
       }

@@ -297,6 +297,10 @@ export class Node {
     return vec3
   }
 
+  getWorldMatrix(mat = _m1) {
+    return mat.copy(this.matrixWorld)
+  }
+
   getStats(recursive, stats) {
     if (!stats) {
       stats = {
@@ -415,6 +419,9 @@ export class Node {
           return self.children.map(child => {
             return child.getProxy()
           })
+        },
+        getWorldMatrix(mat) {
+          return self.getWorldMatrix(mat)
         },
         add(pNode) {
           const node = getRef(pNode)

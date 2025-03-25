@@ -332,7 +332,7 @@ function Messages({ world, active, touch }) {
       spacerRef.current.style.height = contentRef.current.offsetHeight + 'px'
     }
     setTimeout(() => {
-      contentRef.current.scroll({
+      contentRef.current?.scroll({
         top: 9999999,
         behavior: didInit ? 'instant' : 'smooth',
       })
@@ -344,7 +344,7 @@ function Messages({ world, active, touch }) {
     // const spacer = spacerRef.current
     // spacer.style.height = content.offsetHeight + 'px'
     const observer = new ResizeObserver(() => {
-      contentRef.current.scroll({
+      contentRef.current?.scroll({
         top: 9999999,
         behavior: 'instant',
       })

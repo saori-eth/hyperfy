@@ -115,6 +115,9 @@ export function MenuSection({ label }) {
         font-size: 0.75rem;
         font-weight: 500;
         opacity: 0.3;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
       `}
     >
       <span>{label}</span>
@@ -134,6 +137,9 @@ export function MenuItemBtn({ label, hint, nav, onClick }) {
         padding: 0 0.875rem;
         .menuitembtn-label {
           flex: 1;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
         }
         &:hover {
           cursor: pointer;
@@ -166,10 +172,16 @@ export function MenuItemText({ label, hint, placeholder, value, onChange }) {
         padding: 0 0.875rem;
         cursor: text;
         .menuitemtext-label {
+          width: 9.4rem;
+          flex-shrink: 0;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+        }
+        .menuitemtext-field {
           flex: 1;
         }
         input {
-          width: 11rem;
           text-align: right;
           cursor: inherit;
           &::selection {
@@ -185,23 +197,25 @@ export function MenuItemText({ label, hint, placeholder, value, onChange }) {
       onPointerLeave={() => setHint(null)}
     >
       <div className='menuitemtext-label'>{label}</div>
-      <input
-        type='text'
-        value={localValue || ''}
-        placeholder={placeholder}
-        onFocus={e => e.target.select()}
-        onChange={e => setLocalValue(e.target.value)}
-        onKeyDown={e => {
-          if (e.code === 'Enter') {
-            e.preventDefault()
+      <div className='menuitemtext-field'>
+        <input
+          type='text'
+          value={localValue || ''}
+          placeholder={placeholder}
+          onFocus={e => e.target.select()}
+          onChange={e => setLocalValue(e.target.value)}
+          onKeyDown={e => {
+            if (e.code === 'Enter') {
+              e.preventDefault()
+              onChange(localValue)
+              e.target.blur()
+            }
+          }}
+          onBlur={e => {
             onChange(localValue)
-            e.target.blur()
-          }
-        }}
-        onBlur={e => {
-          onChange(localValue)
-        }}
-      />
+          }}
+        />
+      </div>
     </label>
   )
 }
@@ -236,10 +250,14 @@ export function MenuItemTextarea({ label, hint, placeholder, value, onChange }) 
         cursor: text;
         .menuitemtext-label {
           padding-top: 0.6rem;
-          flex: 1;
+          width: 9.4rem;
+          flex-shrink: 0;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
         }
         .menuitemtext-field {
-          width: 11rem;
+          flex: 1;
           padding: 0.6rem 0 0.6rem 0;
         }
         textarea {
@@ -324,10 +342,16 @@ export function MenuItemNumber({ label, hint, dp = 0, min = -Infinity, max = Inf
         padding: 0 0.875rem;
         cursor: text;
         .menuitemnumber-label {
+          width: 9.4rem;
+          flex-shrink: 0;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+        }
+        .menuitemnumber-field {
           flex: 1;
         }
         input {
-          width: 100%;
           height: 1rem;
           text-align: right;
           overflow: hidden;
@@ -346,36 +370,38 @@ export function MenuItemNumber({ label, hint, dp = 0, min = -Infinity, max = Inf
       onPointerLeave={() => setHint(null)}
     >
       <div className='menuitemnumber-label'>{label}</div>
-      <input
-        type='text'
-        value={local}
-        onChange={e => setLocal(e.target.value)}
-        onKeyDown={e => {
-          if (e.code === 'Enter') {
-            e.target.blur()
-          }
-          if (e.code === 'ArrowUp') {
-            setTo(value + step)
-          }
-          if (e.code === 'ArrowDown') {
-            setTo(value - step)
-          }
-        }}
-        onFocus={e => {
-          setFocused(true)
-          e.target.select()
-        }}
-        onBlur={e => {
-          setFocused(false)
-          // if blank, set back to original
-          if (local === '') {
-            setLocal(value.toFixed(dp))
-            return
-          }
-          // otherwise run through pipeline
-          setTo(local)
-        }}
-      />
+      <div className='menuitemnumber-field'>
+        <input
+          type='text'
+          value={local}
+          onChange={e => setLocal(e.target.value)}
+          onKeyDown={e => {
+            if (e.code === 'Enter') {
+              e.target.blur()
+            }
+            if (e.code === 'ArrowUp') {
+              setTo(value + step)
+            }
+            if (e.code === 'ArrowDown') {
+              setTo(value - step)
+            }
+          }}
+          onFocus={e => {
+            setFocused(true)
+            e.target.select()
+          }}
+          onBlur={e => {
+            setFocused(false)
+            // if blank, set back to original
+            if (local === '') {
+              setLocal(value.toFixed(dp))
+              return
+            }
+            // otherwise run through pipeline
+            setTo(local)
+          }}
+        />
+      </div>
     </label>
   )
 }
@@ -454,6 +480,10 @@ export function MenuItemRange({ label, hint, min = 0, max = 1, step = 0.05, inst
         padding: 0 0.875rem;
         .menuitemrange-label {
           flex: 1;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          padding-right: 1rem;
         }
         .menuitemrange-text {
           font-size: 0.7rem;
@@ -461,8 +491,9 @@ export function MenuItemRange({ label, hint, min = 0, max = 1, step = 0.05, inst
           opacity: 0;
         }
         .menuitemrange-track {
+          width: 7rem;
+          flex-shrink: 0;
           height: 0.5rem;
-          width: 6.25rem;
           border-radius: 0.1rem;
           display: flex;
           align-items: stretch;
@@ -496,6 +527,7 @@ export function MenuItemRange({ label, hint, min = 0, max = 1, step = 0.05, inst
 }
 
 export function MenuItemSwitch({ label, hint, options, value, onChange }) {
+  options = options || []
   const setHint = useContext(MenuContext)
   const idx = options.findIndex(o => o.value === value)
   const selected = options[idx]
@@ -519,6 +551,10 @@ export function MenuItemSwitch({ label, hint, options, value, onChange }) {
         padding: 0 0.875rem;
         .menuitemswitch-label {
           flex: 1;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          padding-right: 1rem;
         }
         .menuitemswitch-btn {
           width: 2.125rem;
@@ -550,7 +586,7 @@ export function MenuItemSwitch({ label, hint, options, value, onChange }) {
       <div className='menuitemswitch-btn left' onClick={prev}>
         <ChevronLeftIcon size='1.5rem' />
       </div>
-      <div className='menuitemswitch-text'>{selected.label}</div>
+      <div className='menuitemswitch-text'>{selected?.label || '???'}</div>
       <div className='menuitemswitch-btn right' onClick={next}>
         <ChevronRightIcon size='1.5rem' />
       </div>
@@ -578,7 +614,8 @@ export function MenuItemFileBtn({ label, hint, accept, onChange }) {
         padding: 0 0.875rem;
         overflow: hidden;
         .menuitemfilebtn-label {
-          flex: 1;
+          width: 9.4rem;
+          flex-shrink: 0;
         }
         input {
           position: absolute;
@@ -706,6 +743,10 @@ export function MenuItemFile({ world, label, hint, kind: kindName, value, onChan
         }
         .menuitemfile-label {
           flex: 1;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          padding-right: 1rem;
         }
         .menuitemfile-placeholder {
           color: rgba(255, 255, 255, 0.3);
@@ -780,6 +821,13 @@ export function MenuItemToggle({ label, hint, trueLabel = 'Yes', falseLabel = 'N
         padding: 0 0.875rem;
         .menuitemtoggle-label {
           flex: 1;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          overflow: hidden;
+          padding-right: 1rem;
+        }
+        .menuitemtoggle-text {
+          // ...
         }
         &:hover {
           cursor: pointer;

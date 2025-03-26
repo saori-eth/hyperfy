@@ -348,25 +348,8 @@ export class ServerNetwork extends System {
       }
       if (cmd === 'spawn') {
         const player = socket.player
-        if (!this.isBuilder(socket.player)) return
-        const action = arg1
-        if (action === 'set') {
-          this.spawn = { position: player.data.position.slice(), quaternion: player.data.quaternion.slice() }
-        } else if (action === 'clear') {
-          this.spawn = { position: [0, 0, 0], quaternion: [0, 0, 0, 1] }
-        } else {
-          return
-        }
-        const data = JSON.stringify(this.spawn)
-        await this.db('config')
-          .insert({
-            key: 'spawn',
-            value: data,
-          })
-          .onConflict('key')
-          .merge({
-            value: data,
-          })
+        const op = arg1
+        this.onSpawnModified(socket, op)
       }
       if (cmd === 'chat') {
         const code = arg1

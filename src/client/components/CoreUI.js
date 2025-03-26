@@ -279,7 +279,7 @@ function Side({ world, menu }) {
       {menu?.type === 'main' && <MenuMain world={world} />}
       {menu?.type === 'app' && <MenuApp key={menu.app.data.id} world={world} app={menu.app} blur={menu.blur} />}
       <div className='side2-mid'>{!menu && !touch && actions && <Actions world={world} />}</div>
-      <Messages world={world} active={chat} touch={touch} />
+      <Messages world={world} active={chat || menu} touch={touch} />
       <label className={cls('side2-chatbox', { active: chat })}>
         <input
           ref={inputRef}

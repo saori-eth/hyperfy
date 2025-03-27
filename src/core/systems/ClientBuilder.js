@@ -702,6 +702,9 @@ export class ClientBuilder extends System {
           player.modify({ avatar: prevUrl })
           return
         }
+        if (player.data.avatar !== url) {
+          return // player equipped a new vrm while this one was uploading >.>
+        }
         // update for everyone
         this.world.network.send('entityModified', {
           id: player.data.id,

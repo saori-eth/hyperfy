@@ -58,7 +58,7 @@ export class ServerNetwork extends System {
     // hydrate config
     let config = await this.db('config').where('key', 'config').first()
     try {
-      config = JSON.parse(config.value)
+      config = JSON.parse(config?.value || '{}')
     } catch (err) {
       console.error(err)
       config = {}

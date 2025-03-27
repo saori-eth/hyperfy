@@ -73,7 +73,7 @@ export class ClientBuilder extends System {
   }
 
   canBuild() {
-    return this.world.config.public || hasRole(this.world.entities.player?.data.roles, 'admin')
+    return this.world.settings.public || hasRole(this.world.entities.player?.data.roles, 'admin')
   }
 
   updateActions() {

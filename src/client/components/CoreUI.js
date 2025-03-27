@@ -26,6 +26,7 @@ export function CoreUI({ world }) {
       css={css`
         position: absolute;
         inset: 0;
+        overflow: hidden;
       `}
     >
       {width > 0 && <Content world={world} width={width} height={height} />}

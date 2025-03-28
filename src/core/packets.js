@@ -15,6 +15,7 @@ const names = [
   'entityRemoved',
   'playerTeleport',
   'playerPush',
+  'playerSessionAvatar',
   'settingsModified',
   'spawnModified',
   'kick',

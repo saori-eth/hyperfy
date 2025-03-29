@@ -143,7 +143,7 @@ app.configure([
     type: 'file',
     key: 'selectedImage',
     label: 'Upload Image',
-    kind: 'image' // Specify the kind as 'image' to restrict file types
+    kind: 'texture' // Specify the kind as 'image' to restrict file types
   }
 ]);
 

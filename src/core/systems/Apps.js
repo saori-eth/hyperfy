@@ -267,11 +267,6 @@ export class Apps extends System {
         }
         world.events.emit(name, data)
       },
-      get(entity, id) {
-        const node = entity.root.get(id)
-        if (!node) return null
-        return node.getProxy()
-      },
       create(entity, name, data) {
         const node = entity.createNode(name, data)
         return node.getProxy()

@@ -246,12 +246,7 @@ export class ClientBuilder extends System {
       this.select(null)
     }
     // duplicate
-    if (
-      !this.justPointerLocked &&
-      this.control.pointer.locked &&
-      this.control.keyR.pressed &&
-      !(this.control.metaLeft.down || this.control.controlLeft.down)
-    ) {
+    if (!this.justPointerLocked && this.control.pointer.locked && this.control.keyR.pressed) {
       const entity = this.selected || this.getEntityAtReticle()
       if (entity?.isApp) {
         let blueprintId = entity.data.blueprint

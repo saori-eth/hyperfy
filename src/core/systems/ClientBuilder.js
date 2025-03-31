@@ -301,6 +301,13 @@ export class ClientBuilder extends System {
       const app = this.selected
       app.root.position.copy(this.gizmoTarget.position)
       app.root.quaternion.copy(this.gizmoTarget.quaternion)
+      // snap rotation to degrees
+      if (!this.control.controlLeft.down) {
+        const newY = this.gizmoTarget.rotation.y
+        const degrees = newY / DEG2RAD
+        const snappedDegrees = Math.round(degrees / SNAP_DEGREES) * SNAP_DEGREES
+        app.root.rotation.y = snappedDegrees * DEG2RAD
+      }
     }
     // grab updates
     if (this.selected && this.mode === 'grab') {

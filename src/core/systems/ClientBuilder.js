@@ -460,7 +460,7 @@ export class ClientBuilder extends System {
       if (!this.gizmo) {
         this.gizmo = new TransformControls(this.world.camera, this.viewport)
         this.gizmo.setSize(0.7)
-        this.gizmo.space = 'world'
+        this.gizmo.space = this.localSpace ? 'local' : 'world'
         this.gizmo._gizmo.helper.translate.scale.setScalar(0)
         this.gizmo._gizmo.helper.rotate.scale.setScalar(0)
         this.gizmo._gizmo.helper.scale.scale.setScalar(0)
@@ -535,7 +535,7 @@ export class ClientBuilder extends System {
         if (!this.gizmo) {
           this.gizmo = new TransformControls(this.world.camera, this.viewport)
           this.gizmo.setSize(0.7)
-          this.gizmo.space = 'local'
+          this.gizmo.space = this.localSpace ? 'local' : 'world'
           this.gizmo._gizmo.helper.translate.scale.setScalar(0)
           this.gizmo._gizmo.helper.rotate.scale.setScalar(0)
           this.gizmo._gizmo.helper.scale.scale.setScalar(0)

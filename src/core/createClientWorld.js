@@ -13,9 +13,11 @@ import { ClientStats } from './systems/ClientStats'
 import { ClientBuilder } from './systems/ClientBuilder'
 import { ClientActions } from './systems/ClientActions'
 import { ClientTarget } from './systems/ClientTarget'
+import { ClientUI } from './systems/ClientUI'
 import { LODs } from './systems/LODs'
 import { Nametags } from './systems/Nametags'
 import { Snaps } from './systems/Snaps'
+import { Wind } from './systems/Wind'
 import { XR } from './systems/XR'
 
 export function createClientWorld() {
@@ -33,9 +35,11 @@ export function createClientWorld() {
   world.register('builder', ClientBuilder)
   world.register('actions', ClientActions)
   world.register('target', ClientTarget)
+  world.register('ui', ClientUI)
   world.register('lods', LODs)
   world.register('nametags', Nametags)
   world.register('snaps', Snaps)
+  world.register('wind', Wind)
   world.register('xr', XR)
   return world
 }

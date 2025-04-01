@@ -1,6 +1,8 @@
+import moment from 'moment'
 import { emoteUrls } from '../extras/playerEmotes'
 import { readPacket, writePacket } from '../packets'
 import { storage } from '../storage'
+import { uuid } from '../utils'
 import { hashFile } from '../utils-client'
 import { System } from './System'
 
@@ -93,6 +95,15 @@ export class ClientNetwork extends System {
     this.maxUploadSize = data.maxUploadSize
     this.world.assetsUrl = data.assetsUrl
 
+    // preload environment model and avatar
+    if (data.settings.model) {
+      this.world.loader.preload('model', data.settings.model.url)
+    } else {
+      this.world.loader.preload('model', this.world.environment.base.model)
+    }
+    if (data.settings.avatar) {
+      this.world.loader.preload('avatar', data.settings.avatar.url)
+    }
     // preload some blueprints
     for (const item of data.blueprints) {
       if (item.preload) {
@@ -116,12 +127,13 @@ export class ClientNetwork extends System {
     // preload local player avatar
     for (const item of data.entities) {
       if (item.type === 'player' && item.owner === this.id) {
-        const url = item.sessionAvatar || item.avatar || 'asset://avatar.vrm'
+        const url = item.sessionAvatar || item.avatar
         this.world.loader.preload('avatar', url)
       }
     }
     this.world.loader.execPreload()
 
+    this.world.settings.deserialize(data.settings)
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)
@@ -176,11 +188,22 @@ export class ClientNetwork extends System {
     this.world.entities.player?.setSessionAvatar(data.avatar)
   }
 
+  onPong = time => {
+    this.world.stats?.onPong(time)
+  }
+
   onKick = code => {
     this.world.emit('kick', code)
   }
 
   onClose = code => {
+    this.world.chat.add({
+      id: uuid(),
+      from: null,
+      fromId: null,
+      body: `You have been disconnected.`,
+      createdAt: moment().toISOString(),
+    })
     this.world.emit('disconnect', code || true)
     console.log('disconnect', code)
   }

@@ -15,7 +15,12 @@ const names = [
   'entityRemoved',
   'playerTeleport',
   'playerPush',
+  'playerSessionAvatar',
+  'settingsModified',
+  'spawnModified',
   'kick',
+  'ping',
+  'pong',
 ]
 
 const byName = {}

@@ -304,7 +304,11 @@ export class ClientBuilder extends System {
       }
     }
     // undo
-    if (this.control.keyZ.pressed && (this.control.metaLeft.down || this.control.controlLeft.down)) {
+    if (
+      this.control.keyZ.pressed &&
+      !this.control.shiftLeft.down &&
+      (this.control.metaLeft.down || this.control.controlLeft.down)
+    ) {
       this.undo()
     }
     // translate updates
@@ -412,9 +416,11 @@ export class ClientBuilder extends System {
       const entity = this.world.entities.get(undo.entityId)
       if (!entity) return
       entity.data.position = undo.position
+      entity.data.quaternion = undo.quaternion
       this.world.network.send('entityModified', {
         id: undo.entityId,
         position: entity.data.position,
+        quaternion: entity.data.quaternion,
       })
       entity.build()
       return
@@ -499,6 +505,12 @@ export class ClientBuilder extends System {
     }
     // select new (if any)
     if (app) {
+      this.addUndo({
+        name: 'move-entity',
+        entityId: app.data.id,
+        position: app.data.position.slice(),
+        quaternion: app.data.quaternion.slice(),
+      })
       if (app.data.mover !== this.world.network.id) {
         app.data.mover = this.world.network.id
         app.build()

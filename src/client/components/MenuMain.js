@@ -11,6 +11,7 @@ import {
   MenuItemToggle,
 } from './Menu'
 import { usePermissions } from './usePermissions'
+import { useFullscreen } from './useFullscreen'
 
 export function MenuMain({ world }) {
   const [pages, setPages] = useState(() => ['index'])
@@ -59,6 +60,7 @@ function MenuMainIndex({ world, pop, push }) {
 
 function MenuMainUI({ world, pop, push }) {
   const player = world.entities.player
+  const [canFullscreen, isFullscreen, toggleFullscreen] = useFullscreen()
   const [ui, setUI] = useState(world.prefs.ui)
   const [actions, setActions] = useState(world.prefs.actions)
   const [stats, setStats] = useState(world.prefs.stats)
@@ -77,6 +79,12 @@ function MenuMainUI({ world, pop, push }) {
   return (
     <Menu title='Menu'>
       <MenuItemBack hint='Go back to the main menu' onClick={pop} />
+      <MenuItemToggle
+        label='Fullscreen'
+        hint='Toggle fullscreen. Not supported in some browsers'
+        value={isFullscreen}
+        onChange={value => toggleFullscreen(value)}
+      />
       <MenuItemRange
         label='UI Scale'
         hint='Change the scale of the user interface'

@@ -20,6 +20,7 @@ export class Chat extends System {
 
   add(msg, broadcast) {
     const isCmd = msg.body.startsWith('/')
+    const isAdminCmd = isCmd && msg.body.startsWith('/admin ')
     if (!isCmd) {
       this.msgs = [...this.msgs, msg]
       if (this.msgs.length > CHAT_MAX_MESSAGES) {
@@ -36,8 +37,10 @@ export class Chat extends System {
     if (broadcast) {
       this.world.network.send('chatAdded', msg)
     }
-    const readOnly = Object.freeze({ ...msg })
-    this.world.events.emit('chat', readOnly)
+    if (!isAdminCmd) {
+      const readOnly = Object.freeze({ ...msg })
+      this.world.events.emit('chat', readOnly)
+    }
   }
 
   clear(broadcast) {

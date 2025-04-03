@@ -166,13 +166,10 @@ function Side({ world, menu }) {
       return setChat(false)
     }
     setMsg('')
-    // check for client commands
+    // check for commands
     if (msg.startsWith('/')) {
-      const [cmd, arg1, arg2] = msg.slice(1).split(' ')
-      if (cmd === 'stats') {
-        world.prefs.setStats(!world.prefs.stats)
-        return
-      }
+      world.chat.command(msg)
+      return
     }
     // otherwise post it
     const player = world.entities.player

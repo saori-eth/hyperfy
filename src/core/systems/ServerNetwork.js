@@ -296,73 +296,74 @@ export class ServerNetwork extends System {
   }
 
   onChatAdded = async (socket, msg) => {
+    this.world.chat.add(msg, false)
+    this.send('chatAdded', msg, socket.id)
+  }
+
+  onCommand = async (socket, args) => {
     // TODO: check for spoofed messages, permissions/roles etc
     // handle slash commands
-    const isCmd = msg.body.startsWith('/')
-    const isAdminCmd = isCmd && msg.body.startsWith('/admin ')
-    if (isCmd) {
-      const [cmd, arg1, arg2] = msg.body.slice(1).split(' ')
-      // become admin command
-      if (cmd === 'admin') {
-        const code = arg1
-        if (process.env.ADMIN_CODE && process.env.ADMIN_CODE === code) {
-          const player = socket.player
-          const id = player.data.id
-          const userId = player.data.userId
-          const roles = player.data.roles
-          const granting = !hasRole(roles, 'admin')
-          if (granting) {
-            addRole(roles, 'admin')
-          } else {
-            removeRole(roles, 'admin')
-          }
-          player.modify({ roles })
-          this.send('entityModified', { id, roles })
-          socket.send('chatAdded', {
-            id: uuid(),
-            from: null,
-            fromId: null,
-            body: granting ? 'Admin granted!' : 'Admin revoked!',
-            createdAt: moment().toISOString(),
-          })
-          await this.db('users')
-            .where('id', userId)
-            .update({ roles: serializeRoles(roles) })
+    const player = socket.player
+    const playerId = player.data.id
+    const [cmd, arg1, arg2] = args
+    // become admin command
+    if (cmd === 'admin') {
+      const code = arg1
+      if (process.env.ADMIN_CODE && process.env.ADMIN_CODE === code) {
+        const id = player.data.id
+        const userId = player.data.userId
+        const roles = player.data.roles
+        const granting = !hasRole(roles, 'admin')
+        if (granting) {
+          addRole(roles, 'admin')
+        } else {
+          removeRole(roles, 'admin')
         }
-      }
-      if (cmd === 'name') {
-        const name = arg1
-        if (name) {
-          const player = socket.player
-          const id = player.data.id
-          const userId = player.data.userId
-          player.data.name = name
-          player.modify({ name })
-          this.send('entityModified', { id, name })
-          socket.send('chatAdded', {
-            id: uuid(),
-            from: null,
-            fromId: null,
-            body: `Name set to ${name}!`,
-            createdAt: moment().toISOString(),
-          })
-          await this.db('users').where('id', userId).update({ name })
-        }
-      }
-      if (cmd === 'spawn') {
-        const op = arg1
-        this.onSpawnModified(socket, op)
-      }
-      if (cmd === 'chat') {
-        const op = arg1
-        if (op === 'clear' && this.isBuilder(socket.player)) {
-          this.world.chat.clear(true)
-        }
+        player.modify({ roles })
+        this.send('entityModified', { id, roles })
+        socket.send('chatAdded', {
+          id: uuid(),
+          from: null,
+          fromId: null,
+          body: granting ? 'Admin granted!' : 'Admin revoked!',
+          createdAt: moment().toISOString(),
+        })
+        await this.db('users')
+          .where('id', userId)
+          .update({ roles: serializeRoles(roles) })
       }
     }
-    this.world.chat.add(msg, false)
-    if (!isCmd) {
-      this.send('chatAdded', msg, socket.id)
+    if (cmd === 'name') {
+      const name = arg1
+      if (name) {
+        const id = player.data.id
+        const userId = player.data.userId
+        player.data.name = name
+        player.modify({ name })
+        this.send('entityModified', { id, name })
+        socket.send('chatAdded', {
+          id: uuid(),
+          from: null,
+          fromId: null,
+          body: `Name set to ${name}!`,
+          createdAt: moment().toISOString(),
+        })
+        await this.db('users').where('id', userId).update({ name })
+      }
+    }
+    if (cmd === 'spawn') {
+      const op = arg1
+      this.onSpawnModified(socket, op)
+    }
+    if (cmd === 'chat') {
+      const op = arg1
+      if (op === 'clear' && this.isBuilder(socket.player)) {
+        this.world.chat.clear(true)
+      }
+    }
+    // emit event for all except admin
+    if (cmd !== 'admin') {
+      this.world.events.emit('command', { playerId, args })
     }
   }
 

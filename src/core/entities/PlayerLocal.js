@@ -19,7 +19,7 @@ const POINTER_LOOK_SPEED = 0.1
 const PAN_LOOK_SPEED = 0.4
 const ZOOM_SPEED = 2
 const MIN_ZOOM = 2
-const MAX_ZOOM = 100 // 16
+const MAX_ZOOM = 8
 const STICK_MAX_DISTANCE = 50
 const DEFAULT_CAM_HEIGHT = 1.2
 

@@ -131,7 +131,8 @@ export class UI extends Node {
       this.mesh.matrixWorldAutoUpdate = false
       if (this._billboard !== 'none') {
         v1.setFromMatrixPosition(this.matrixWorld)
-        this.mesh.matrixWorld.compose(v1, iQuaternion, iScale)
+        v2.setFromMatrixScale(this.matrixWorld)
+        this.mesh.matrixWorld.compose(v1, iQuaternion, v2)
       } else {
         this.mesh.matrixWorld.copy(this.matrixWorld)
       }
@@ -292,7 +293,8 @@ export class UI extends Node {
     if (didMove) {
       if (this._billboard !== 'none') {
         v1.setFromMatrixPosition(this.matrixWorld)
-        this.mesh.matrixWorld.compose(v1, iQuaternion, iScale)
+        v2.setFromMatrixScale(this.matrixWorld)
+        this.mesh.matrixWorld.compose(v1, iQuaternion, v2)
       } else {
         this.mesh.matrixWorld.copy(this.matrixWorld)
         this.ctx.world.stage.octree.move(this.sItem)
@@ -426,8 +428,8 @@ export class UI extends Node {
 
         void main() {
           if (uBillboard == 1) { 
-             // full billboard
-             csm_Position = applyQuaternion(position, uOrientation);
+            // full billboard
+            csm_Position = applyQuaternion(position, uOrientation);
           } 
           else if (uBillboard == 2) { 
             // y-axis billboard

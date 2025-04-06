@@ -85,8 +85,8 @@ for (const key in process.env) {
   }
 }
 const envsCode = `
-  if (!globalThis.process) globalThis.process = {}
-  globalThis.process.env = ${JSON.stringify(publicEnvs)}
+  if (!globalThis.env) globalThis.env = {}
+  globalThis.env = ${JSON.stringify(publicEnvs)}
 `
 fastify.get('/env.js', async (req, reply) => {
   reply.type('application/javascript').send(envsCode)

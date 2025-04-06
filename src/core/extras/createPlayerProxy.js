@@ -4,7 +4,7 @@ import * as THREE from './three'
 
 const HEALTH_MAX = 100
 
-export function createPlayerProxy(player) {
+export function createPlayerProxy(entity, player) {
   const world = player.world
   const position = new THREE.Vector3()
   const rotation = new THREE.Euler()

@@ -391,7 +391,7 @@ export class App extends Entity {
     if (!proxy || proxy.destroyed) {
       const player = this.world.entities.getPlayer(playerId)
       if (!player) return null
-      proxy = createPlayerProxy(player)
+      proxy = createPlayerProxy(this, player)
       this.playerProxies.set(playerId, proxy)
     }
     return proxy

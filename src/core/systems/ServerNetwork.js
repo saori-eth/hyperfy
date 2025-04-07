@@ -4,7 +4,7 @@ import { Socket } from '../Socket'
 import { addRole, hasRole, removeRole, serializeRoles, uuid } from '../utils'
 import { System } from './System'
 import { createJWT, readJWT } from '../utils-server'
-import { cloneDeep } from 'lodash-es'
+import { cloneDeep, isNumber } from 'lodash-es'
 import * as THREE from '../extras/three'
 
 const SAVE_INTERVAL = parseInt(process.env.SAVE_INTERVAL || '60') // seconds
@@ -216,6 +216,15 @@ export class ServerNetwork extends System {
 
   async onConnection(ws, authToken) {
     try {
+      // check player limit
+      const playerLimit = this.world.settings.playerLimit
+      if (isNumber(playerLimit) && playerLimit > 0 && this.sockets.size >= playerLimit) {
+        const packet = writePacket('kick', 'player_limit')
+        ws.send(packet)
+        ws.disconnect()
+        return
+      }
+
       // get or create user
       let user
       if (authToken) {

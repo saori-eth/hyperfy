@@ -4,6 +4,7 @@ import {
   MenuItemBack,
   MenuItemBtn,
   MenuItemFile,
+  MenuItemNumber,
   MenuItemRange,
   MenuItemSwitch,
   MenuItemText,
@@ -246,6 +247,7 @@ function MenuMainWorld({ world, pop, push }) {
   const [desc, setDesc] = useState(world.settings.desc)
   const [model, setModel] = useState(world.settings.model)
   const [avatar, setAvatar] = useState(world.settings.avatar)
+  const [playerLimit, setPlayerLimit] = useState(world.settings.playerLimit)
   const [publicc, setPublic] = useState(world.settings.public)
   useEffect(() => {
     const onChange = changes => {
@@ -253,6 +255,7 @@ function MenuMainWorld({ world, pop, push }) {
       if (changes.desc) setDesc(changes.desc.value)
       if (changes.model) setModel(changes.model.value)
       if (changes.avatar) setAvatar(changes.avatar.value)
+      if (changes.playerLimit) setPlayerLimit(changes.playerLimit.value)
       if (changes.public) setPublic(changes.public.value)
     }
     world.settings.on('change', onChange)
@@ -291,6 +294,12 @@ function MenuMainWorld({ world, pop, push }) {
         value={avatar}
         onChange={value => world.settings.set('avatar', value, true)}
         world={world}
+      />
+      <MenuItemNumber
+        label='Player Limit'
+        hint='Set a maximum number of players that can be in the world at one time. Zero means unlimited.'
+        value={playerLimit}
+        onChange={value => world.settings.set('playerLimit', value, true)}
       />
       {isAdmin && (
         <MenuItemToggle

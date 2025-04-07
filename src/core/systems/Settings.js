@@ -9,6 +9,7 @@ export class Settings extends System {
     this.model = null
     this.avatar = null
     this.public = null
+    this.playerLimit = null
 
     this.changes = null
   }
@@ -19,12 +20,14 @@ export class Settings extends System {
     this.model = data.model
     this.avatar = data.avatar
     this.public = data.public
+    this.playerLimit = data.playerLimit
     this.emit('change', {
       title: { value: this.title },
       desc: { value: this.desc },
       model: { value: this.model },
       avatar: { value: this.avatar },
       public: { value: this.public },
+      playerLimit: { value: this.playerLimit },
     })
   }
 
@@ -35,6 +38,7 @@ export class Settings extends System {
       model: this.model,
       avatar: this.avatar,
       public: this.public,
+      playerLimit: this.playerLimit,
     }
   }
 

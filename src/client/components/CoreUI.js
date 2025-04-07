@@ -484,6 +484,7 @@ function LoadingOverlay() {
 
 const kickMessages = {
   duplicate_user: 'Player already active on another device or window.',
+  player_limit: 'Player limit reached.',
   unknown: 'You were kicked.',
 }
 function KickedOverlay({ code }) {

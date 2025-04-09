@@ -799,8 +799,6 @@ export class PlayerLocal extends Entity {
     let emote
     if (this.data.effect?.emote) {
       emote = this.data.effect.emote
-    } else if (this.speaking) {
-      emote = Emotes.TALK
     } else if (this.flying) {
       emote = Emotes.FLOAT
     } else if (this.airJumping) {
@@ -811,6 +809,8 @@ export class PlayerLocal extends Entity {
       emote = this.fallDistance > 1.6 ? Emotes.FALL : Emotes.FLOAT
     } else if (this.moving) {
       emote = this.running ? Emotes.RUN : Emotes.WALK
+    } else if (this.speaking) {
+      emote = Emotes.TALK
     }
     if (!emote) emote = Emotes.IDLE
     let emoteChanged

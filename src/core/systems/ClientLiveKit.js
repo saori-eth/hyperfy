@@ -22,7 +22,7 @@ export class ClientLiveKit extends System {
   async deserialize(opts) {
     if (!opts) return
     // console.log(opts)
-    this.room = new Room({ webAudioMix: true })
+    this.room = new Room({ webAudioMix: { audioContext: this.world.audio.ctx } })
     this.room.on(RoomEvent.TrackMuted, this.onTrackMuted)
     this.room.on(RoomEvent.TrackUnmuted, this.onTrackUnmuted)
     this.room.on(RoomEvent.LocalTrackPublished, this.onLocalTrackPublished)
@@ -107,8 +107,8 @@ class PlayerVoice {
     this.world = world
     this.player = player
     this.track = track
+    this.track.setAudioContext(world.audio.ctx)
     this.spatial = true // todo: switch to global
-    this.gain = world.audio.groupGains.voice
     this.panner = world.audio.ctx.createPanner()
     this.panner.panningModel = 'HRTF'
     this.panner.panningModel = 'HRTF'
@@ -119,8 +119,8 @@ class PlayerVoice {
     this.panner.coneInnerAngle = 360
     this.panner.coneOuterAngle = 360
     this.panner.coneOuterGain = 0
+    this.gain = world.audio.groupGains.voice
     this.panner.connect(this.gain)
-    this.track.setAudioContext(world.audio.ctx)
     this.track.attach()
     this.track.setWebAudioPlugins([this.spatial ? this.panner : this.gain])
   }

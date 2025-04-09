@@ -148,6 +148,13 @@ export class PlayerRemote extends Entity {
     this.onEffectEnd = onEnd
   }
 
+  setSpeaking(speaking) {
+    if (this.speaking === speaking) return
+    this.speaking = speaking
+    const name = this.data.name
+    this.nametag.label = speaking ? `» ${name} «` : name
+  }
+
   modify(data) {
     let avatarChanged
     if (data.hasOwnProperty('t')) {

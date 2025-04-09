@@ -1,4 +1,4 @@
-import { Participant, Room, RoomEvent, Track } from 'livekit-client'
+import { Participant, ParticipantEvent, Room, RoomEvent, Track } from 'livekit-client'
 import * as THREE from '../extras/three'
 
 import { System } from './System'
@@ -29,6 +29,9 @@ export class ClientLiveKit extends System {
     this.room.on(RoomEvent.LocalTrackUnpublished, this.onLocalTrackUnpublished)
     this.room.on(RoomEvent.TrackSubscribed, this.onTrackSubscribed)
     this.room.on(RoomEvent.TrackUnsubscribed, this.onTrackUnsubscribed)
+    this.room.localParticipant.on(ParticipantEvent.IsSpeakingChanged, speaking => {
+      this.world.entities.player.setSpeaking(speaking)
+    })
     this.world.audio.requireGesture(async () => {
       await this.room.connect(opts.wsUrl, opts.token)
       this.status.connected = true
@@ -86,7 +89,7 @@ export class ClientLiveKit extends System {
       const playerId = participant.identity
       const player = this.world.entities.getPlayer(playerId)
       if (!player) return console.error('onTrackSubscribed failed: no player')
-      const voice = new PlayerVoice(this.world, player, track)
+      const voice = new PlayerVoice(this.world, player, track, participant)
       this.playerVoices.set(playerId, voice)
     }
   }
@@ -103,10 +106,11 @@ export class ClientLiveKit extends System {
 }
 
 class PlayerVoice {
-  constructor(world, player, track) {
+  constructor(world, player, track, participant) {
     this.world = world
     this.player = player
     this.track = track
+    this.participant = participant
     this.track.setAudioContext(world.audio.ctx)
     this.spatial = true // todo: switch to global
     this.panner = world.audio.ctx.createPanner()
@@ -123,6 +127,9 @@ class PlayerVoice {
     this.panner.connect(this.gain)
     this.track.attach()
     this.track.setWebAudioPlugins([this.spatial ? this.panner : this.gain])
+    this.participant.on(ParticipantEvent.IsSpeakingChanged, speaking => {
+      this.player.setSpeaking(speaking)
+    })
   }
 
   lateUpdate(delta) {
@@ -146,6 +153,7 @@ class PlayerVoice {
   }
 
   destroy() {
+    this.player.setSpeaking(false)
     this.track.detach()
   }
 }

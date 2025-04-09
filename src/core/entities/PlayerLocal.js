@@ -90,6 +90,8 @@ export class PlayerLocal extends Entity {
       prevTransform: new THREE.Matrix4(),
     }
 
+    this.speaking = false
+
     this.lastSendAt = 0
 
     this.base = createNode('group')
@@ -797,6 +799,8 @@ export class PlayerLocal extends Entity {
     let emote
     if (this.data.effect?.emote) {
       emote = this.data.effect.emote
+    } else if (this.speaking) {
+      emote = Emotes.TALK
     } else if (this.flying) {
       emote = Emotes.FLOAT
     } else if (this.airJumping) {
@@ -923,6 +927,11 @@ export class PlayerLocal extends Entity {
       id: this.data.id,
       ef: effect,
     })
+  }
+
+  setSpeaking(speaking) {
+    if (this.speaking === speaking) return
+    this.speaking = speaking
   }
 
   push(force) {

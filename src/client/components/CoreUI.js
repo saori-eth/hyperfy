@@ -1,6 +1,6 @@
 import { css } from '@firebolt-dev/css'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { LoaderIcon, WifiOffIcon } from 'lucide-react'
+import { LoaderIcon } from 'lucide-react'
 import moment from 'moment'
 
 import { CodeEditor } from './CodeEditor'
@@ -16,7 +16,7 @@ import { ControlPriorities } from '../../core/extras/ControlPriorities'
 import { AppsPane } from './AppsPane'
 import { MenuMain } from './MenuMain'
 import { MenuApp } from './MenuApp'
-import { KeyboardIcon, MenuIcon, VRIcon } from './Icons'
+import { KeyboardIcon, MenuIcon, MicIcon, MicOffIcon, VRIcon } from './Icons'
 
 export function CoreUI({ world }) {
   const [ref, width, height] = useElemSize()
@@ -125,14 +125,20 @@ function Side({ world, menu }) {
   const inputRef = useRef()
   const [msg, setMsg] = useState('')
   const [chat, setChat] = useState(false)
+  const [livekit, setLiveKit] = useState(() => world.livekit.status)
   const [actions, setActions] = useState(() => world.prefs.actions)
   useEffect(() => {
-    const onChange = changes => {
+    const onPrefsChange = changes => {
       if (changes.actions) setActions(changes.actions.value)
     }
-    world.prefs.on('change', onChange)
+    const onLiveKitStatus = status => {
+      setLiveKit({ ...status })
+    }
+    world.livekit.on('status', onLiveKitStatus)
+    world.prefs.on('change', onPrefsChange)
     return () => {
-      world.prefs.off('change', onChange)
+      world.prefs.off('change', onPrefsChange)
+      world.livekit.off('status', onLiveKitStatus)
     }
   }, [])
   useEffect(() => {
@@ -247,33 +253,6 @@ function Side({ world, menu }) {
         }
       `}
     >
-      <div className='side2-btns'>
-        {touch && (
-          <div className='side2-btn' onClick={() => world.ui.toggleMain()}>
-            <MenuIcon size='1.7rem' />
-          </div>
-        )}
-        {touch && (
-          <div
-            className='side2-btn'
-            onClick={() => {
-              if (!chat) setChat(true)
-            }}
-          >
-            <KeyboardIcon size='1.7rem' />
-          </div>
-        )}
-        {world.xr.supportsVR && (
-          <div
-            className='side2-btn'
-            onClick={() => {
-              world.xr.enter()
-            }}
-          >
-            <VRIcon size='1.7rem' />
-          </div>
-        )}
-      </div>
       {menu?.type === 'main' && <MenuMain world={world} />}
       {menu?.type === 'app' && <MenuApp key={menu.app.data.id} world={world} app={menu.app} blur={menu.blur} />}
       <div className='side2-mid'>{!menu && !touch && actions && <Actions world={world} />}</div>
@@ -299,6 +278,43 @@ function Side({ world, menu }) {
           onBlur={() => setChat(false)}
         />
       </label>
+      <div className='side2-btns'>
+        {touch && (
+          <div className='side2-btn' onClick={() => world.ui.toggleMain()}>
+            <MenuIcon size='1.5rem' />
+          </div>
+        )}
+        {touch && (
+          <div
+            className='side2-btn'
+            onClick={() => {
+              if (!chat) setChat(true)
+            }}
+          >
+            <KeyboardIcon size='1.5rem' />
+          </div>
+        )}
+        {livekit.connected && (
+          <div
+            className='side2-btn'
+            onClick={() => {
+              world.livekit.toggleMic()
+            }}
+          >
+            {livekit.mic ? <MicIcon size='1.5rem' /> : <MicOffIcon size='1.5rem' />}
+          </div>
+        )}
+        {world.xr.supportsVR && (
+          <div
+            className='side2-btn'
+            onClick={() => {
+              world.xr.enter()
+            }}
+          >
+            <VRIcon size='1.5rem' />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

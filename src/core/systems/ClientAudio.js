@@ -41,10 +41,14 @@ export class ClientAudio extends System {
       while (this.gestureQueue.length) {
         this.gestureQueue.shift()()
       }
-      document.body.removeEventListener('click', onGesture)
+      // document.body.removeEventListener('click', onGesture)
+      document.body.removeEventListener('touchend', onGesture)
+      document.body.removeEventListener('mouseup', onGesture)
       this.gestured = true
     }
-    document.body.addEventListener('click', onGesture)
+    // document.body.addEventListener('click', onGesture)
+    document.body.addEventListener('touchend', onGesture)
+    document.body.addEventListener('mouseup', onGesture)
   }
 
   async init() {

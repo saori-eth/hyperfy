@@ -137,6 +137,7 @@ export class ClientNetwork extends System {
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)
+    this.world.livekit.deserialize(data.livekit)
     storage.set('authToken', data.authToken)
   }
 

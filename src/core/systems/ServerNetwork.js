@@ -262,6 +262,9 @@ export class ServerNetwork extends System {
         user.roles.push('~admin')
       }
 
+      // livekit options
+      const livekit = await this.world.livekit.getPlayerOpts(user.id)
+
       // create socket
       const socket = new Socket({ id: user.id, ws, network: this })
 
@@ -293,6 +296,7 @@ export class ServerNetwork extends System {
         chat: this.world.chat.serialize(),
         blueprints: this.world.blueprints.serialize(),
         entities: this.world.entities.serialize(),
+        livekit,
         authToken,
       })
 

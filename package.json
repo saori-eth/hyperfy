@@ -49,6 +49,8 @@
     "fs-extra": "^11.2.0",
     "jsonwebtoken": "^9.0.2",
     "knex": "^3.1.0",
+    "livekit-client": "^2.9.9",
+    "livekit-server-sdk": "^2.11.0",
     "lodash-es": "^4.17.21",
     "lucide-react": "^0.469.0",
     "moment": "^2.30.1",

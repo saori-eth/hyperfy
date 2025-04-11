@@ -306,6 +306,16 @@ export class PlayerLocal extends Entity {
     const freeze = this.data.effect?.freeze
     const anchor = this.getAnchorMatrix()
     const snare = this.data.effect?.snare || 0
+
+    if (anchor && !this.capsuleDisabled) {
+      this.capsule.setActorFlag(PHYSX.PxActorFlagEnum.eDISABLE_SIMULATION, true)
+      this.capsuleDisabled = true
+    }
+    if (!anchor && this.capsuleDisabled) {
+      this.capsule.setActorFlag(PHYSX.PxActorFlagEnum.eDISABLE_SIMULATION, false)
+      this.capsuleDisabled = false
+    }
+
     if (anchor) {
       /**
        *

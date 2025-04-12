@@ -19,13 +19,14 @@ const defaults = {
   visible: true,
   color: 'black',
   lit: false,
-  doubleside: true,
-  castShadow: true,
+  doubleside: false,
+  castShadow: false,
   receiveShadow: false,
+
+  aspect: 16 / 9,
 
   width: null,
   height: 1,
-  ratio: 16 / 9,
 
   geometry: null,
   cover: true,
@@ -58,9 +59,10 @@ export class Video extends Node {
     this.castShadow = data.castShadow
     this.receiveShadow = data.receiveShadow
 
+    this.aspect = data.aspect
+
     this.width = data.width
     this.height = data.height
-    this.ratio = data.ratio
 
     this.geometry = data.geometry
     this.cover = data.cover
@@ -76,8 +78,6 @@ export class Video extends Node {
     this.coneOuterAngle = data.coneOuterAngle
     this.coneOuterGain = data.coneOuterGain
 
-    // this.color = data.color
-
     this.n = 0
   }
 
@@ -89,7 +89,7 @@ export class Video extends Node {
 
     // video sources are grouped by keys of similar configuration
     // and when linked can be instanced thousands of times all using the same video element and texture
-    let key = `${this._loop}_${this._width}_${this._height}_${this._ratio}_${this._geometry?.uuid}_${this.cover}_`
+    let key = `${this._loop}_${this._width}_${this._height}_${this._aspect}_${this._geometry?.uuid}_${this._cover}_`
     if (this._linked === true) {
       key += 'default'
     } else if (this._linked === false) {
@@ -134,14 +134,14 @@ export class Video extends Node {
       if (!this._geometry) {
         let width = this._width
         let height = this._height
-        let ratio = this._ratio
+        let preAspect = this._aspect
         if (width === null && height === null) {
           height = 0
           width = 0
         } else if (width !== null && height === null) {
-          height = width / ratio
+          height = width / preAspect
         } else if (height !== null && width === null) {
-          width = height * ratio
+          width = height * preAspect
         }
         geometry = new THREE.PlaneGeometry(width, height)
         geometry._oWidth = width
@@ -200,30 +200,38 @@ export class Video extends Node {
       if (this._geometry && this._cover) {
         // based on the video dimensions, textures are scaled and repeated to emulate `background-size: cover` from css.
         // the end result is a video that is scaled up until it "covers" the entire UV square (0,0 to 1,1), centered.
-        let srcRatio = this.instance.width / this.instance.height
-        let destRatio = 1 / 1
-        let yScale = 1
-        let xScale = destRatio / srcRatio
-        if (xScale > yScale) {
-          xScale = 1
-          yScale = srcRatio / destRatio
+        let vidAspect = this.instance.width / this.instance.height
+        let geoAspect = this._aspect
+        let aspect = geoAspect / vidAspect
+        let texture = this.instance.texture
+        texture.center.set(0.5, 0.5)
+        texture.wrapS = THREE.ClampToEdgeWrapping
+        texture.wrapT = THREE.ClampToEdgeWrapping
+        if (aspect > 1) {
+          // geometry is wider than the video.
+          // fill horizontally => repeat.x = 1
+          // crop top/bottom => repeat.y < 1
+          texture.repeat.set(1, 1 / aspect)
+        } else {
+          // geometry is taller than the video.
+          // fill vertically => repeat.y = 1
+          // crop left/right => repeat.x < 1
+          texture.repeat.set(aspect, 1)
         }
-        this.instance.texture.repeat.set(xScale, yScale)
-        this.instance.texture.offset.set((1 - xScale) / 2, (1 - yScale) / 2)
       }
 
       // plane
       if (!this._geometry) {
+        let vidAspect = this.instance.width / this.instance.height
         let width = this._width
         let height = this._height
-        let ratio = this.instance.width / this.instance.height
         if (width === null && height === null) {
           height = 0
           width = 0
         } else if (width !== null && height === null) {
-          height = width / ratio
+          height = width / vidAspect
         } else if (height !== null && width === null) {
-          width = height * ratio
+          width = height * vidAspect
         }
         // new geometry if changed
         if (geometry._oWidth !== width || geometry._oHeight !== height) {
@@ -232,16 +240,23 @@ export class Video extends Node {
         }
         // if the video aspect is different to the plane aspect we need to ensure the texture is scaled correctly.
         // this effect is identical to the `background-size: cover` css property.
-        let srcRatio = this.instance.width / this.instance.height
-        let destRatio = width / height
-        let yScale = 1
-        let xScale = destRatio / srcRatio
-        if (xScale > yScale) {
-          xScale = 1
-          yScale = srcRatio / destRatio
+        let geoAspect = width / height
+        let aspect = geoAspect / vidAspect
+        let texture = this.instance.texture
+        texture.center.set(0.5, 0.5)
+        texture.wrapS = THREE.ClampToEdgeWrapping
+        texture.wrapT = THREE.ClampToEdgeWrapping
+        if (aspect > 1) {
+          // geometry is wider than the video.
+          // fill horizontally => repeat.x = 1
+          // crop top/bottom => repeat.y < 1
+          texture.repeat.set(1, 1 / aspect)
+        } else {
+          // geometry is taller than the video.
+          // fill vertically => repeat.y = 1
+          // crop left/right => repeat.x < 1
+          texture.repeat.set(aspect, 1)
         }
-        this.instance.texture.repeat.set(xScale, yScale)
-        this.instance.texture.offset.set((1 - xScale) / 2, (1 - yScale) / 2)
       }
 
       material.color.set('white')
@@ -331,9 +346,10 @@ export class Video extends Node {
     this._castShadow = source._castShadow
     this._receiveShadow = source._receiveShadow
 
+    this._aspect = source._aspect
+
     this._width = source._width
     this._height = source._height
-    this._ratio = source._ratio
 
     this._geometry = source._geometry
     this._cover = source._cover
@@ -485,6 +501,20 @@ export class Video extends Node {
     }
   }
 
+  get aspect() {
+    return this._aspect
+  }
+
+  set aspect(value = defaults.aspect) {
+    if (!isNumber(value)) {
+      throw new Error('[video] aspect not a number')
+    }
+    if (this._aspect === value) return
+    this._aspect = value
+    this.needsRebuild = true
+    this.setDirty()
+  }
+
   get width() {
     return this._width
   }
@@ -509,20 +539,6 @@ export class Video extends Node {
     }
     if (this._height === value) return
     this._height = value
-    this.needsRebuild = true
-    this.setDirty()
-  }
-
-  get ratio() {
-    return this._ratio
-  }
-
-  set ratio(value = defaults.ratio) {
-    if (!isNumber(value)) {
-      throw new Error('[video] ratio not a number')
-    }
-    if (this._ratio === value) return
-    this._ratio = value
     this.needsRebuild = true
     this.setDirty()
   }
@@ -779,6 +795,12 @@ export class Video extends Node {
         set receiveShadow(value) {
           self.receiveShadow = value
         },
+        get aspect() {
+          return self.aspect
+        },
+        set aspect(value) {
+          self.aspect = value
+        },
         get width() {
           return self.width
         },
@@ -790,12 +812,6 @@ export class Video extends Node {
         },
         set height(value) {
           self.height = value
-        },
-        get ratio() {
-          return self.ratio
-        },
-        set ratio(value) {
-          self.ratio = value
         },
         get geometry() {
           return self.geometry

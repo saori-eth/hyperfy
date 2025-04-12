@@ -46,6 +46,18 @@ Whether the mesh should cast a shadow. Defaults to `false`.
 
 Whether the video should receive shadows. Defaults to `false`.
 
+### `.aspect`: Number
+
+The aspect ratio. 
+
+When using a video plane (eg not using the `.geometry` property) before the video loads this aspect ratio will be used to calculate any `width` or `height` values that are set to null in order to maintain the correct pre-video aspect ratio of the plane. Once the video is playing the video's actual aspect ratio will take over and re-calculate any missing `width` or `height` values set to null and resize itself to maintain the videos aspect ratio.
+
+When using custom geometry, you should set this to the physical/visual aspect ratio of the geometry you are projecting onto. If your geometry is a curved 16:9 aspect ratio screen, you would set this value to `16 / 9` or `1.777`. If you are making a 360 sphere your aspect ratio should be `2 / 1` as most 360 videos use an aspect ratio of 2:1
+
+This may be slightly confusing but when set up correctly it allows you to swap and play any video with any dimensions and it will display correctly without stretching or distortion.
+
+NOTE: UV's for custom geometry should take up the entire 0,0 -> 1,1 UV texture area, as we use this as basis for internal textures resizing.
+
 ### `.width`: Number|null
 
 The fixed width of the plane when not using a custom geometry. Can be set to `null` to be automatic. When automatic, the width will match the `.ratio` value until the video begins playback and will then resize to match the video dimensions. Defaults to `null`.
@@ -53,10 +65,6 @@ The fixed width of the plane when not using a custom geometry. Can be set to `nu
 ### `.height`: Number|null
 
 The fixed height of the plane when not using a custom geometry. Can be set to `null` to be automatic. When automatic, the height will match the `.ratio` value until the video begins playback and will then resize to match the video dimensions. Defaults to `null`.
-
-### `.ratio`: Number
-
-The ratio of the plane before video begins playback, when not using a custom geometry. This works with the `width` and `height` values to allow automatic resizing based on video dimensions. Defaults to `16 / 9` (1.7777777778).
 
 ### `.geometry`: Geometry
 

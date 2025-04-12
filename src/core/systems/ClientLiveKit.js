@@ -32,7 +32,7 @@ export class ClientLiveKit extends System {
     this.room.localParticipant.on(ParticipantEvent.IsSpeakingChanged, speaking => {
       this.world.entities.player.setSpeaking(speaking)
     })
-    this.world.audio.requireGesture(async () => {
+    this.world.audio.ready(async () => {
       await this.room.connect(opts.wsUrl, opts.token)
       this.status.connected = true
       this.emit('status', this.status)

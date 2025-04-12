@@ -673,6 +673,12 @@ export const fileKinds = {
     exts: ['jpg', 'jpeg', 'png', 'webp'],
     placeholder: 'jpg,png,webp',
   },
+  video: {
+    type: 'video',
+    accept: '.mp4',
+    exts: ['mp4'],
+    placeholder: 'mp4',
+  },
   hdr: {
     type: 'hdr',
     accept: '.hdr',

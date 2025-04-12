@@ -35,20 +35,51 @@ export class ClientAudio extends System {
     this.listener.upZ.value = 0
     this.lastDelta = 0
 
-    this.gestured = false
-    this.gestureQueue = []
-    const onGesture = () => {
-      while (this.gestureQueue.length) {
-        this.gestureQueue.shift()()
-      }
-      // document.body.removeEventListener('click', onGesture)
-      document.body.removeEventListener('touchend', onGesture)
-      document.body.removeEventListener('mouseup', onGesture)
-      this.gestured = true
+    this.unlocked = this.ctx.state !== 'suspended'
+    if (!this.unlocked) {
+      this.setupUnlockListener()
     }
-    // document.body.addEventListener('click', onGesture)
-    document.body.addEventListener('touchend', onGesture)
-    document.body.addEventListener('mouseup', onGesture)
+  }
+
+  ready(fn) {
+    if (this.unlocked) return fn()
+    this.unlock.then(() => fn())
+  }
+
+  setupUnlockListener() {
+    let resolve
+    this.unlock = new Promise(r => (resolve = r))
+    const unlock = () => {
+      this.ctx.resume().then(() => {
+        console.log('audio resumed')
+      })
+      // play and immediately pause a silent video to ensure video playback is allowed
+      const video = document.createElement('video')
+      video.setAttribute('playsinline', '') // Important for iOS
+      video.muted = true
+      video.src = '/tiny.mp4'
+      video
+        .play()
+        .then(() => {
+          video.pause()
+          video.remove()
+          console.log('video unlock successful')
+          this.unlocked = true
+          resolve()
+        })
+        .catch(e => {
+          console.warn('video unlock failed', e)
+        })
+        .finally(() => {
+          document.removeEventListener('click', unlock)
+          document.removeEventListener('touchstart', unlock)
+          document.removeEventListener('keydown', unlock)
+        })
+    }
+    document.addEventListener('click', unlock)
+    document.addEventListener('touchstart', unlock)
+    document.addEventListener('keydown', unlock)
+    console.log('audio suspended, waiting for interact...')
   }
 
   async init() {
@@ -80,11 +111,6 @@ export class ClientAudio extends System {
       this.listener.setOrientation(dir.x, dir.y, dir.z, up.x, up.y, up.z)
     }
     this.lastDelta = delta
-  }
-
-  requireGesture(fn) {
-    if (this.gestured) return fn()
-    this.gestureQueue.push(fn)
   }
 
   onPrefsChange = changes => {

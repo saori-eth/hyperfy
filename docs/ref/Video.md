@@ -56,7 +56,13 @@ When using custom geometry, you should set this to the physical/visual aspect ra
 
 This may be slightly confusing but when set up correctly it allows you to swap and play any video with any dimensions and it will display correctly without stretching or distortion.
 
-NOTE: UV's for custom geometry should take up the entire 0,0 -> 1,1 UV texture area, as we use this as basis for internal textures resizing.
+NOTE: UV's for custom geometry should generally stretch to take up the entire 0,0 -> 1,1 UV texture area, we then use your provided `aspect` value to scale and offset the video.
+
+### `.fit`: Enum("none", "contain", "cover")
+
+The resize strategy for fitting the video onto its surface. `contain` will shrink the video until it is entirely visible. `cover` will expand the video until it covers the entire surface. `none` will apply no logic and preserve existing UVs.
+
+Defaults to `contain`.
 
 ### `.width`: Number|null
 
@@ -69,10 +75,6 @@ The fixed height of the plane when not using a custom geometry. Can be set to `n
 ### `.geometry`: Geometry
 
 The custom geometry to use instead of a plane. Geometry can be extracted from a `Mesh` node's `.geometry` property.
-
-### `.cover`: Boolean
-
-Whether the video projected onto custom geometry should expand to cover the entirety of a full UV texture space. This allows you to project a video with any dimensions onto a geometry while ensuring it covers the entire surface, similar to the css `objectFit = "cover"` behavior. Defaults to `true`.
 
 ### `.volume`: Number
 

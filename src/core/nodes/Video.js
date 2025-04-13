@@ -1,4 +1,5 @@
 import { isBoolean, isNumber, isString } from 'lodash-es'
+import CustomShaderMaterial from '../libs/three-custom-shader-material'
 import * as THREE from '../extras/three'
 
 import { getRef, Node, secureRef } from './Node'
@@ -10,6 +11,7 @@ const q1 = new THREE.Quaternion()
 
 const groups = ['music', 'sfx']
 const distanceModels = ['linear', 'inverse', 'exponential']
+const fits = ['none', 'cover', 'contain']
 
 const defaults = {
   src: null,
@@ -24,12 +26,12 @@ const defaults = {
   receiveShadow: false,
 
   aspect: 16 / 9,
+  fit: 'contain',
 
   width: null,
   height: 1,
 
   geometry: null,
-  cover: true,
 
   volume: 1,
   group: 'music',
@@ -60,12 +62,12 @@ export class Video extends Node {
     this.receiveShadow = data.receiveShadow
 
     this.aspect = data.aspect
+    this.fit = data.fit
 
     this.width = data.width
     this.height = data.height
 
     this.geometry = data.geometry
-    this.cover = data.cover
 
     this.volume = data.volume
     this.group = data.group
@@ -87,9 +89,8 @@ export class Video extends Node {
 
     const n = ++this.n
 
-    // video sources are grouped by keys of similar configuration
-    // and when linked can be instanced thousands of times all using the same video element and texture
-    let key = `${this._loop}_${this._width}_${this._height}_${this._aspect}_${this._geometry?.uuid}_${this._cover}_`
+    // when linked can be instanced thousands of times all using the same video element and texture
+    let key = ''
     if (this._linked === true) {
       key += 'default'
     } else if (this._linked === false) {
@@ -109,20 +110,107 @@ export class Video extends Node {
     if (this._visible) {
       // material
       let material
-      const color = this.instance?.ready ? 'white' : this._color || 'red' // TODO: color prop
-      if (this._lit) {
-        material = new THREE.MeshStandardMaterial({
-          color,
-          rougness: 1,
-          metalness: 0,
-          side: this._doubleside ? THREE.DoubleSide : THREE.FrontSide,
-        })
-      } else {
-        material = new THREE.MeshBasicMaterial({
-          color,
-          side: this._doubleside ? THREE.DoubleSide : THREE.FrontSide,
-        })
+      let vidAspect = this.instance?.width / this.instance?.height || this._aspect
+      const uniforms = {
+        uMap: { value: null },
+        uHasMap: { value: 0 },
+        uVidAspect: { value: vidAspect },
+        uGeoAspect: { value: this._aspect },
+        uFit: { value: this._fit === 'cover' ? 1 : this._fit === 'contain' ? 2 : 0 }, // 0 = none, 1 = cover, 2 = contain
+        uColor: { value: new THREE.Color(this._color) },
       }
+      // const color = this.instance?.ready ? 'white' : this._color
+      material = new CustomShaderMaterial({
+        baseMaterial: this._lit ? THREE.MeshStandardMaterial : THREE.MeshBasicMaterial,
+        ...(this._lit ? { roughness: 1, metalness: 0 } : {}),
+        // color,
+        side: this._doubleside ? THREE.DoubleSide : THREE.FrontSide,
+        uniforms,
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+          }
+        `,
+        fragmentShader: `
+          uniform sampler2D uMap;
+          uniform float uHasMap;
+          uniform float uVidAspect;
+          uniform float uGeoAspect;
+          uniform float uFit; // 0 = none, 1 = cover, 2 = contain
+          uniform vec3 uColor; 
+          
+          varying vec2 vUv;
+
+          vec4 sRGBToLinear(vec4 color) {
+            return vec4(pow(color.rgb, vec3(2.2)), color.a);
+          }
+          
+          vec4 LinearToSRGB(vec4 color) {
+              return vec4(pow(color.rgb, vec3(1.0 / 2.2)), color.a);
+          }
+          
+          void main() {
+            // Calculate aspect ratio relationship between video and geometry
+            float aspect = uGeoAspect / uVidAspect;
+            
+            // Initialize UV coordinates for sampling the texture
+            vec2 scaledUv = vUv;
+            
+            // COVER MODE (uFit = 1.0)
+            if (abs(uFit - 1.0) < 0.01) {
+              // Center the UV coordinates
+              scaledUv = scaledUv - 0.5;
+              
+              if (aspect > 1.0) {
+                // Geometry is wider than video:
+                // - Fill horizontally (maintain x scale)
+                // - Scale vertically to maintain aspect ratio (shrink y)
+                scaledUv.y /= aspect;
+              } else {
+                // Geometry is taller than video:
+                // - Fill vertically (maintain y scale)
+                // - Scale horizontally to maintain aspect ratio (shrink x)
+                scaledUv.x *= aspect;
+              }
+              
+              // Return to 0-1 range
+              scaledUv = scaledUv + 0.5;
+            }
+            // CONTAIN MODE (uFit = 2.0)
+            else if (abs(uFit - 2.0) < 0.01) {
+              // Center the UV coordinates
+              scaledUv = scaledUv - 0.5;
+              
+              if (aspect > 1.0) {
+                // Geometry is wider than video:
+                // - Fill vertically (maintain y scale)
+                // - Scale horizontally to fit entire video (expand x)
+                scaledUv.x *= aspect;
+              } else {
+                // Geometry is taller than video:
+                // - Fill horizontally (maintain x scale)
+                // - Scale vertically to fit entire video (expand y)
+                scaledUv.y /= aspect;
+              }
+              
+              // Return to 0-1 range
+              scaledUv = scaledUv + 0.5;
+            }
+            
+            // Check if UVs are outside the 0-1 range (only needed for contain mode)
+            vec4 col;
+            if (uHasMap < 0.5 || scaledUv.x < 0.0 || scaledUv.x > 1.0 || scaledUv.y < 0.0 || scaledUv.y > 1.0) {
+              // we are outside the texture or there is no video texture yet
+              col = vec4(uColor, 1.0);
+            } else {
+              // Sample the texture with the calculated UVs
+              col = texture2D(uMap, scaledUv);
+            }
+            csm_DiffuseColor = sRGBToLinear(col);
+          }
+        `,
+      })
       this.ctx.world.setupMaterial(material)
 
       let geometry
@@ -196,33 +284,20 @@ export class Video extends Node {
       const geometry = this.mesh.geometry
       const material = this.mesh.material
 
+      let vidAspect
+      let geoAspect
+
       // custom
-      if (this._geometry && this._cover) {
+      if (this._geometry) {
         // based on the video dimensions, textures are scaled and repeated to emulate `background-size: cover` from css.
         // the end result is a video that is scaled up until it "covers" the entire UV square (0,0 to 1,1), centered.
-        let vidAspect = this.instance.width / this.instance.height
-        let geoAspect = this._aspect
-        let aspect = geoAspect / vidAspect
-        let texture = this.instance.texture
-        texture.center.set(0.5, 0.5)
-        texture.wrapS = THREE.ClampToEdgeWrapping
-        texture.wrapT = THREE.ClampToEdgeWrapping
-        if (aspect > 1) {
-          // geometry is wider than the video.
-          // fill horizontally => repeat.x = 1
-          // crop top/bottom => repeat.y < 1
-          texture.repeat.set(1, 1 / aspect)
-        } else {
-          // geometry is taller than the video.
-          // fill vertically => repeat.y = 1
-          // crop left/right => repeat.x < 1
-          texture.repeat.set(aspect, 1)
-        }
+        vidAspect = this.instance.width / this.instance.height
+        geoAspect = this._aspect
       }
 
       // plane
       if (!this._geometry) {
-        let vidAspect = this.instance.width / this.instance.height
+        vidAspect = this.instance.width / this.instance.height
         let width = this._width
         let height = this._height
         if (width === null && height === null) {
@@ -240,27 +315,14 @@ export class Video extends Node {
         }
         // if the video aspect is different to the plane aspect we need to ensure the texture is scaled correctly.
         // this effect is identical to the `background-size: cover` css property.
-        let geoAspect = width / height
-        let aspect = geoAspect / vidAspect
-        let texture = this.instance.texture
-        texture.center.set(0.5, 0.5)
-        texture.wrapS = THREE.ClampToEdgeWrapping
-        texture.wrapT = THREE.ClampToEdgeWrapping
-        if (aspect > 1) {
-          // geometry is wider than the video.
-          // fill horizontally => repeat.x = 1
-          // crop top/bottom => repeat.y < 1
-          texture.repeat.set(1, 1 / aspect)
-        } else {
-          // geometry is taller than the video.
-          // fill vertically => repeat.y = 1
-          // crop left/right => repeat.x < 1
-          texture.repeat.set(aspect, 1)
-        }
+        geoAspect = width / height
       }
 
       material.color.set('white')
-      material.map = this.instance.texture
+      material.uniforms.uVidAspect.value = vidAspect
+      material.uniforms.uGeoAspect.value = geoAspect
+      material.uniforms.uMap.value = this.instance.texture
+      material.uniforms.uHasMap.value = 1
       material.needsUpdate = true
 
       if (this.shouldPlay) {
@@ -347,12 +409,12 @@ export class Video extends Node {
     this._receiveShadow = source._receiveShadow
 
     this._aspect = source._aspect
+    this._fit = source._fit
 
     this._width = source._width
     this._height = source._height
 
     this._geometry = source._geometry
-    this._cover = source._cover
 
     this._volume = source._volume
     this._spatial = source._spatial
@@ -515,6 +577,20 @@ export class Video extends Node {
     this.setDirty()
   }
 
+  get fit() {
+    return this._fit
+  }
+
+  set fit(value = defaults.fit) {
+    if (!isFit(value)) {
+      throw new Error('[video] fit invalid')
+    }
+    if (this._fit === value) return
+    this._fit = value
+    this.needsRebuild = true
+    this.setDirty()
+  }
+
   get width() {
     return this._width
   }
@@ -549,20 +625,6 @@ export class Video extends Node {
 
   set geometry(value = defaults.geometry) {
     this._geometry = getRef(value)
-    this.needsRebuild = true
-    this.setDirty()
-  }
-
-  get cover() {
-    return this._cover
-  }
-
-  set cover(value = defaults.cover) {
-    if (!isBoolean(value)) {
-      throw new Error('[video] cover not boolean')
-    }
-    if (this._cover === value) return
-    this._cover = value
     this.needsRebuild = true
     this.setDirty()
   }
@@ -801,6 +863,12 @@ export class Video extends Node {
         set aspect(value) {
           self.aspect = value
         },
+        get fit() {
+          return self.fit
+        },
+        set fit(value) {
+          self.fit = value
+        },
         get width() {
           return self.width
         },
@@ -818,12 +886,6 @@ export class Video extends Node {
         },
         set geometry(value) {
           self.geometry = value
-        },
-        get cover() {
-          return self.cover
-        },
-        set cover(value) {
-          self.cover = value
         },
         get volume() {
           return self.volume
@@ -917,4 +979,8 @@ function isDistanceModel(value) {
 
 function isGroup(value) {
   return groups.includes(value)
+}
+
+function isFit(value) {
+  return fits.includes(value)
 }

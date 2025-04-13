@@ -379,8 +379,6 @@ function createVideoFactory(world, url) {
       if (dead) return
       elem.muted = false
     })
-    // note: video nodes adjust the texture offset/repeat value
-    // so each "key" should absolutely be using the same geometry/plane sizes etc or will need to
     // set linked=false to have a separate source (and texture)
     const texture = new THREE.VideoTexture(elem)
     texture.colorSpace = THREE.SRGBColorSpace

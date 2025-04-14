@@ -1,4 +1,4 @@
-import { AccessToken } from 'livekit-server-sdk'
+import { AccessToken, TrackSource } from 'livekit-server-sdk'
 
 import { System } from './System'
 import { uuid } from '../utils'
@@ -21,8 +21,10 @@ export class ServerLiveKit extends System {
     const videoGrant = {
       room: this.roomId,
       roomJoin: true,
-      canPublish: true,
       canSubscribe: true,
+      canPublish: true,
+      canPublishSources: [TrackSource.MICROPHONE, TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO],
+      canUpdateOwnMetadata: true,
     }
     at.addGrant(videoGrant)
     const token = await at.toJwt()

@@ -155,5 +155,14 @@ export function createPlayerProxy(entity, player) {
         world.network.sendTo(player.data.owner, 'playerPush', { force })
       }
     },
+    screenshare(targetId) {
+      if (!targetId) {
+        return console.error(`screenshare has invalid targetId: ${targetId}`)
+      }
+      if (player.data.owner !== world.network.id) {
+        return console.error('screenshare can only be called on local player')
+      }
+      world.livekit.setScreenShareTarget(targetId)
+    },
   }
 }

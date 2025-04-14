@@ -14,6 +14,7 @@ const distanceModels = ['linear', 'inverse', 'exponential']
 const fits = ['none', 'cover', 'contain']
 
 const defaults = {
+  screenId: null,
   src: null,
   linked: false,
   loop: false,
@@ -50,6 +51,7 @@ export class Video extends Node {
     super(data)
     this.name = 'video'
 
+    this.screenId = data.screenId
     this.src = data.src
     this.linked = data.linked
     this.loop = data.loop
@@ -99,9 +101,15 @@ export class Video extends Node {
       key += this._linked
     }
 
-    let factory
-    if (this._src) {
-      factory = this.ctx.world.loader.get('video', this._src)
+    let screen
+    if (this._screenId) {
+      screen = this.ctx.world.livekit.registerScreenNode(this)
+    }
+
+    if (screen) {
+      this.instance = screen
+    } else if (this._src) {
+      let factory = this.ctx.world.loader.get('video', this._src)
       if (!factory) factory = await this.ctx.world.loader.load('video', this._src)
       if (this.n !== n) return
       this.instance = factory.get(key)
@@ -260,6 +268,7 @@ export class Video extends Node {
     if (this.n !== n) return
 
     this.instance.loop = this._loop
+
     this.gain = this.ctx.world.audio.ctx.createGain()
     this.gain.gain.value = this._volume
     this.gain.connect(this.ctx.world.audio.groupGains.music)
@@ -274,10 +283,10 @@ export class Video extends Node {
       this.panner.coneOuterAngle = this._coneOuterAngle
       this.panner.coneOuterGain = this._coneOuterGain
       this.panner.connect(this.gain)
-      this.instance.audio.connect(this.panner)
+      this.instance.audio?.connect(this.panner)
       this.updatePannerPosition()
     } else {
-      this.instance.audio.connect(this.gain)
+      this.instance.audio?.connect(this.gain)
     }
 
     if (this._visible) {
@@ -361,9 +370,9 @@ export class Video extends Node {
     }
     if (this.instance) {
       if (this.panner) {
-        this.instance.audio.disconnect(this.panner)
+        this.instance.audio?.disconnect(this.panner)
       } else {
-        this.instance.audio.disconnect(this.gain)
+        this.instance.audio?.disconnect(this.gain)
       }
       this.panner = null
       this.gain = null
@@ -374,6 +383,7 @@ export class Video extends Node {
       this.ctx.world.stage.octree.remove(this.sItem)
       this.sItem = null
     }
+    this.ctx.world.livekit.unregisterScreenNode(this)
   }
 
   updatePannerPosition() {
@@ -397,6 +407,7 @@ export class Video extends Node {
 
   copy(source, recursive) {
     super.copy(source, recursive)
+    this._screenId = source._screenId
     this._src = source._src
     this._linked = source._linked
     this._loop = source._loop
@@ -430,6 +441,20 @@ export class Video extends Node {
 
     // this._color = source._color
     return this
+  }
+
+  get screenId() {
+    return this._screenId
+  }
+
+  set screenId(value = defaults.screenId) {
+    if (value !== null && !isString(value)) {
+      throw new Error('[video] screenId not null or string')
+    }
+    if (this._screenId === value) return
+    this._screenId = value
+    this.needsRebuild = true
+    this.setDirty()
   }
 
   get src() {
@@ -803,6 +828,12 @@ export class Video extends Node {
     var self = this
     if (!this.proxy) {
       let proxy = {
+        get screenId() {
+          return self.screenId
+        },
+        set screenId(value) {
+          self.screenId = value
+        },
         get src() {
           return self.src
         },

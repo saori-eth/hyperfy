@@ -3,6 +3,7 @@ import * as THREE from '../extras/three'
 
 import { System } from './System'
 import { isBoolean } from 'lodash-es'
+import { TrackSource } from 'livekit-server-sdk'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
@@ -15,8 +16,11 @@ export class ClientLiveKit extends System {
     this.status = {
       connected: false,
       mic: false,
+      screenshare: null,
     }
-    this.playerVoices = new Map() // playerId -> PlayerVoice
+    this.voices = new Map() // playerId -> PlayerVoice
+    this.screens = []
+    this.screenNodes = new Set() // Video
   }
 
   async deserialize(opts) {
@@ -40,15 +44,29 @@ export class ClientLiveKit extends System {
   }
 
   lateUpdate(delta) {
-    this.playerVoices.forEach(voice => {
+    this.voices.forEach(voice => {
       voice.lateUpdate(delta)
     })
   }
 
-  toggleMic(value) {
+  setMicrophoneEnabled(value) {
+    if (!this.room) return console.error('[livekit] setMicrophoneEnabled failed (not connected)')
     value = isBoolean(value) ? value : !this.room.localParticipant.isMicrophoneEnabled
     if (this.status.mic === value) return
     this.room.localParticipant.setMicrophoneEnabled(value)
+  }
+
+  setScreenShareTarget(targetId = null) {
+    if (!this.room) return console.error('[livekit] setScreenShareTarget failed (not connected)')
+    if (this.status.screenshare === targetId) return
+    const metadata = JSON.stringify({
+      screenTargetId: targetId,
+    })
+    this.room.localParticipant.setMetadata(metadata)
+    this.room.localParticipant.setScreenShareEnabled(!!targetId, {
+      // audio: true,
+      // systemAudio: 'include',
+    })
   }
 
   onTrackMuted = track => {
@@ -67,41 +85,106 @@ export class ClientLiveKit extends System {
     }
   }
 
-  onLocalTrackPublished = pub => {
-    // console.log('onLocalTrackPublished', pub)
-    if (pub.source === 'microphone') {
+  onLocalTrackPublished = publication => {
+    const world = this.world
+    const track = publication.track
+    const playerId = this.world.network.id
+    // console.log('onLocalTrackPublished', publication)
+    if (publication.source === 'microphone') {
       this.status.mic = true
+      this.emit('status', this.status)
+    }
+    if (publication.source === 'screen_share') {
+      const metadata = JSON.parse(this.room.localParticipant.metadata || '{}')
+      const targetId = metadata.screenTargetId
+      this.status.screenshare = targetId
+      const screen = createPlayerScreen({ world, playerId, targetId, track, publication })
+      this.addScreen(screen)
       this.emit('status', this.status)
     }
   }
 
-  onLocalTrackUnpublished = pub => {
+  onLocalTrackUnpublished = publication => {
+    const playerId = this.world.network.id
     // console.log('onLocalTrackUnpublished', pub)
-    if (pub.source === 'microphone') {
+    if (publication.source === 'microphone') {
       this.status.mic = false
+      this.emit('status', this.status)
+    }
+    if (publication.source === 'screen_share') {
+      const screen = this.screens.find(s => s.playerId === playerId)
+      this.removeScreen(screen)
+      this.status.screenshare = null
       this.emit('status', this.status)
     }
   }
 
   onTrackSubscribed = (track, publication, participant) => {
     // console.log('onTrackSubscribed', track, publication, participant)
-    if (track.kind === Track.Kind.Audio) {
-      const playerId = participant.identity
-      const player = this.world.entities.getPlayer(playerId)
-      if (!player) return console.error('onTrackSubscribed failed: no player')
-      const voice = new PlayerVoice(this.world, player, track, participant)
-      this.playerVoices.set(playerId, voice)
+    const playerId = participant.identity
+    const player = this.world.entities.getPlayer(playerId)
+    if (!player) return console.error('onTrackSubscribed failed: no player')
+    const world = this.world
+    if (track.source === 'microphone') {
+      const voice = new PlayerVoice(world, player, track, participant)
+      this.voices.set(playerId, voice)
+    }
+    if (track.source === 'screen_share') {
+      const metadata = JSON.parse(participant.metadata || '{}')
+      const targetId = metadata.screenTargetId
+      const screen = createPlayerScreen({ world, playerId, targetId, track, publication })
+      this.addScreen(screen)
     }
   }
 
   onTrackUnsubscribed = (track, publication, participant) => {
     // console.log('onTrackUnsubscribed todo')
-    if (track.kind === Track.Kind.Audio) {
-      const playerId = participant.identity
-      const voice = this.playerVoices.get(playerId)
+    const playerId = participant.identity
+    if (track.source === 'microphone') {
+      const voice = this.voices.get(playerId)
       voice?.destroy()
-      this.playerVoices.delete(playerId)
+      this.voices.delete(playerId)
     }
+    if (track.source === 'screen_share') {
+      const screen = this.screens.find(s => s.playerId === playerId)
+      this.removeScreen(screen)
+    }
+  }
+
+  addScreen(screen) {
+    this.screens.push(screen)
+    for (const node of this.screenNodes) {
+      if (node._screenId === screen.targetId) {
+        node.needsRebuild = true
+        node.setDirty()
+      }
+    }
+  }
+
+  removeScreen(screen) {
+    screen.destroy()
+    this.screens = this.screens.filter(s => s !== screen)
+    for (const node of this.screenNodes) {
+      if (node._screenId === screen.targetId) {
+        node.needsRebuild = true
+        node.setDirty()
+      }
+    }
+  }
+
+  registerScreenNode(node) {
+    this.screenNodes.add(node)
+    let match
+    for (const screen of this.screens) {
+      if (screen.targetId === node._screenId) {
+        match = screen
+      }
+    }
+    return match
+  }
+
+  unregisterScreenNode(node) {
+    this.screenNodes.delete(node)
   }
 }
 
@@ -156,4 +239,145 @@ class PlayerVoice {
     this.player.setSpeaking(false)
     this.track.detach()
   }
+}
+
+function createPlayerScreen({ world, playerId, targetId, track, participant }) {
+  // NOTE: this follows the same construct in ClientLoader.js -> createVideoFactory
+  // so that it is automatically compatible with the video node
+  const elem = document.createElement('video')
+  elem.playsInline = true
+  elem.muted = true
+  // elem.style.width = '1px'
+  // elem.style.height = '1px'
+  // elem.style.position = 'absolute'
+  // elem.style.opacity = '0'
+  // elem.style.zIndex = '-1000'
+  // elem.style.pointerEvents = 'none'
+  // elem.style.overflow = 'hidden'
+  // document.body.appendChild(elem)
+  track.attach(elem)
+  // elem.play()
+  const texture = new THREE.VideoTexture(elem)
+  texture.colorSpace = THREE.SRGBColorSpace
+  texture.minFilter = THREE.LinearFilter
+  texture.magFilter = THREE.LinearFilter
+  texture.anisotropy = world.graphics.maxAnisotropy
+  let width
+  let height
+  let ready = false
+  const prepare = (function () {
+    /**
+     *
+     * A regular video will load data automatically BUT a stream
+     * needs to hit play() before it gets that data.
+     *
+     * The following code handles this for us, and when streaming
+     * will hit play just until we get the data needed, then pause.
+     */
+    return new Promise(async resolve => {
+      let playing = false
+      let data = false
+      elem.addEventListener(
+        'loadeddata',
+        async () => {
+          // if we needed to hit play to fetch data then revert back to paused
+          // console.log('[video] loadeddata', { playing })
+          if (playing) elem.pause()
+          data = true
+          // await new Promise(resolve => setTimeout(resolve, 2000))
+          width = elem.videoWidth
+          height = elem.videoHeight
+          console.log({ width, height })
+          ready = true
+          resolve()
+        },
+        { once: true }
+      )
+      elem.addEventListener(
+        'loadedmetadata',
+        async () => {
+          // we need a gesture before we can potentially hit play
+          // console.log('[video] ready')
+          // await this.engine.driver.gesture
+          // if we already have data do nothing, we're done!
+          // console.log('[video] gesture', { data })
+          if (data) return
+          // otherwise hit play to force data loading for streams
+          // elem.play()
+          // playing = true
+        },
+        { once: true }
+      )
+    })
+  })()
+  function isPlaying() {
+    return true
+    // return elem.currentTime > 0 && !elem.paused && !elem.ended && elem.readyState > 2
+  }
+  function play(restartIfPlaying = false) {
+    // if (restartIfPlaying) elem.currentTime = 0
+    // elem.play()
+  }
+  function pause() {
+    // elem.pause()
+  }
+  function stop() {
+    // elem.currentTime = 0
+    // elem.pause()
+  }
+  function release() {
+    // stop()
+    // audio.disconnect()
+    // track.detach()
+    // texture.dispose()
+    // document.body.removeChild(elem)
+  }
+  function destroy() {
+    console.log('destory')
+    texture.dispose()
+    // help to prevent chrome memory leaks
+    // see: https://github.com/facebook/react/issues/15583#issuecomment-490912533
+    // elem.src = ''
+    // elem.load()
+  }
+  const handle = {
+    isScreen: true,
+    playerId,
+    targetId,
+    elem,
+    audio: null,
+    texture,
+    prepare,
+    get ready() {
+      return ready
+    },
+    get width() {
+      return width
+    },
+    get height() {
+      return height
+    },
+    get loop() {
+      return false
+      // return elem.loop
+    },
+    set loop(value) {
+      // elem.loop = value
+    },
+    get isPlaying() {
+      return isPlaying()
+    },
+    get currentTime() {
+      return elem.currentTime
+    },
+    set currentTime(value) {
+      elem.currentTime = value
+    },
+    play,
+    pause,
+    stop,
+    release,
+    destroy,
+  }
+  return handle
 }

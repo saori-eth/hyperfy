@@ -298,7 +298,7 @@ function Side({ world, menu }) {
           <div
             className='side2-btn'
             onClick={() => {
-              world.livekit.toggleMic()
+              world.livekit.setMicrophoneEnabled()
             }}
           >
             {livekit.mic ? <MicIcon size='1.5rem' /> : <MicOffIcon size='1.5rem' />}

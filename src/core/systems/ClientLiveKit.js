@@ -1,4 +1,4 @@
-import { Participant, ParticipantEvent, Room, RoomEvent, Track } from 'livekit-client'
+import { Participant, ParticipantEvent, Room, RoomEvent, ScreenSharePresets, Track } from 'livekit-client'
 import * as THREE from '../extras/three'
 
 import { System } from './System'
@@ -26,7 +26,15 @@ export class ClientLiveKit extends System {
   async deserialize(opts) {
     if (!opts) return
     // console.log(opts)
-    this.room = new Room({ webAudioMix: { audioContext: this.world.audio.ctx } })
+    this.room = new Room({
+      webAudioMix: {
+        audioContext: this.world.audio.ctx,
+      },
+      publishDefaults: {
+        screenShareEncoding: ScreenSharePresets.h1080fps30.encoding,
+        screenShareSimulcastLayers: [ScreenSharePresets.h1080fps30],
+      },
+    })
     this.room.on(RoomEvent.TrackMuted, this.onTrackMuted)
     this.room.on(RoomEvent.TrackUnmuted, this.onTrackUnmuted)
     this.room.on(RoomEvent.LocalTrackPublished, this.onLocalTrackPublished)

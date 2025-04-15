@@ -17,6 +17,7 @@ import { ClientTarget } from './systems/ClientTarget'
 import { ClientUI } from './systems/ClientUI'
 import { LODs } from './systems/LODs'
 import { Nametags } from './systems/Nametags'
+import { Particles } from './systems/Particles'
 import { Snaps } from './systems/Snaps'
 import { Wind } from './systems/Wind'
 import { XR } from './systems/XR'
@@ -40,6 +41,7 @@ export function createClientWorld() {
   world.register('ui', ClientUI)
   world.register('lods', LODs)
   world.register('nametags', Nametags)
+  world.register('particles', Particles)
   world.register('snaps', Snaps)
   world.register('wind', Wind)
   world.register('xr', XR)

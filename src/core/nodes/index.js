@@ -10,6 +10,7 @@ export { Avatar as avatar } from './Avatar.js'
 export { Action as action } from './Action.js'
 export { Anchor as anchor } from './Anchor.js'
 export { Nametag as nametag } from './Nametag.js'
+export { Particles as particles } from './Particles.js'
 
 export { Sky as sky } from './Sky.js'
 

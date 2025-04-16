@@ -22,7 +22,7 @@ self.onmessage = msg => {
   msg = msg.data
   switch (msg.op) {
     case 'create':
-      console.log('create!!')
+      // console.log('create!!')
       const system = createEmitter(msg)
       emitters[msg.id] = system
       break
@@ -53,10 +53,13 @@ function createEmitter(config) {
 
   let elapsed = 0
   let duration = config.duration
-  let newParticles = 0
+  let newParticlesByTime = 0
+  let newParticlesByDist = 0
   let emitting = true
   let bursts = config.bursts.slice()
   let ended = false
+  let lastPosition = null
+  let rateOverDistance = config.rateOverDistance
 
   const particles = []
 
@@ -165,12 +168,27 @@ function createEmitter(config) {
     camPosition = v1.fromArray(camPosition)
     elapsed += delta
     const center = v2.setFromMatrixPosition(matrixWorld) // center in same space as particles
-    // emit new particles
+    // track distance moved
+    let distanceMoved = 0
+    if (lastPosition) {
+      distanceMoved = center.distanceTo(lastPosition)
+    } else {
+      lastPosition = center.clone()
+    }
+    lastPosition.copy(center)
+    // emit over time
     if (emitting) {
-      newParticles += config.rate * delta
-      const amount = Math.floor(newParticles)
+      newParticlesByTime += config.rate * delta
+      const amount = Math.floor(newParticlesByTime)
       if (amount > 0) emit({ amount, matrixWorld })
-      newParticles -= amount
+      newParticlesByTime -= amount
+    }
+    // emit over distance
+    if (emitting && rateOverDistance && distanceMoved > 0) {
+      newParticlesByDist += rateOverDistance * distanceMoved
+      const amount = Math.floor(newParticlesByDist)
+      if (amount > 0) emit({ amount, matrixWorld })
+      newParticlesByDist -= amount
     }
     // emit bursts
     while (bursts.length && bursts[0].time <= elapsed) {

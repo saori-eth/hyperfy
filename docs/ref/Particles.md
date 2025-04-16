@@ -194,6 +194,10 @@ Orbital velocity constantly applied to particles on specific axis. This can be u
 
 Radial velocity helps push particles away from the center. Optional.
 
+### `.rateOverDistance`: Number
+
+Emits particles based on the distance moved since the last frame. This is useful for things like contrails or dust left behind by moving objects.
+
 ### `.sizeOverLife`: String
 
 Optional, allows particles to change size over their lifetime. This property is a string as it supports the following syntax:

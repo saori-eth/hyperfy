@@ -65,6 +65,7 @@ const defaults = {
   velocityOrbital: null,              // [x,y,z]
   velocityRadial: null,               // number
 
+  rateOverDistance: 0,
   sizeOverLife: null,                 // see lifetime format above for this and the following...
   rotateOverLife: null,
   colorOverLife: null,            
@@ -107,6 +108,7 @@ export class Particles extends Node {
     this.velocityOrbital = data.velocityOrbital
     this.velocityRadial = data.velocityRadial
 
+    this.rateOverDistance = data.rateOverDistance
     this.sizeOverLife = data.sizeOverLife
     this.rotateOverLife = data.rotateOverLife
     this.colorOverLife = data.colorOverLife
@@ -169,6 +171,7 @@ export class Particles extends Node {
     this._velocityOrbital = source._velocityOrbital
     this._velocityRadial = source._velocityRadial
 
+    this._rateOverDistance = source._rateOverDistance
     this._sizeOverLife = source._sizeOverLife
     this._rotateOverLife = source._rotateOverLife
     this._colorOverLife = source._colorOverLife
@@ -210,6 +213,7 @@ export class Particles extends Node {
       velocityOrbital: this._velocityOrbital?.toArray() || null,
       velocityRadial: this._velocityRadial,
 
+      rateOverDistance: this._rateOverDistance,
       sizeOverLife: this._sizeOverLife,
       rotateOverLife: this._rotateOverLife,
       colorOverLife: this._colorOverLife,
@@ -531,6 +535,19 @@ export class Particles extends Node {
     this.setDirty()
   }
 
+  get rateOverDistance() {
+    return this._rateOverDistance
+  }
+
+  set rateOverDistance(value = defaults.rateOverDistance) {
+    if (!isNumber(value)) {
+      throw new Error('[particles] rateOverDistance not a number')
+    }
+    this._rateOverDistance = value
+    this.needsRebuild = true
+    this.setDirty()
+  }
+
   get sizeOverLife() {
     return this._sizeOverLife
   }
@@ -753,6 +770,12 @@ export class Particles extends Node {
         },
         set velocityRadial(value) {
           self.velocityRadial = value
+        },
+        get rateOverDistance() {
+          return self.rateOverDistance
+        },
+        set rateOverDistance(value) {
+          self.rateOverDistance = value
         },
         get sizeOverLife() {
           return self.sizeOverLife

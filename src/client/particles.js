@@ -443,11 +443,8 @@ function createColorStarterLinear(start, end) {
 
 function createColorStarterRandom(from, to) {
   const fn = () => {
-    return [
-      from[0] + Math.random() * (to[0] - from[0]),
-      from[1] + Math.random() * (to[1] - from[1]),
-      from[2] + Math.random() * (to[2] - from[2]),
-    ]
+    const t = Math.random()
+    return [from[0] + t * (to[0] - from[0]), from[1] + t * (to[1] - from[1]), from[2] + t * (to[2] - from[2])]
   }
   fn.kind = 'random'
   return fn

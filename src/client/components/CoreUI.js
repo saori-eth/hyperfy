@@ -10,13 +10,13 @@ import { MouseLeftIcon } from './MouseLeftIcon'
 import { MouseRightIcon } from './MouseRightIcon'
 import { MouseWheelIcon } from './MouseWheelIcon'
 import { buttons, propToLabel } from '../../core/extras/buttons'
-import { cls } from '../utils'
+import { cls, isTouch } from '../utils'
 import { uuid } from '../../core/utils'
 import { ControlPriorities } from '../../core/extras/ControlPriorities'
 import { AppsPane } from './AppsPane'
 import { MenuMain } from './MenuMain'
 import { MenuApp } from './MenuApp'
-import { KeyboardIcon, MenuIcon, MicIcon, MicOffIcon, VRIcon } from './Icons'
+import { CircleUpIcon, HandIcon, KeyboardIcon, MenuIcon, MicIcon, MicOffIcon, VRIcon } from './Icons'
 
 export function CoreUI({ world }) {
   const [ref, width, height] = useElemSize()
@@ -116,12 +116,12 @@ function Content({ world, width, height }) {
       {apps && <AppsPane world={world} close={() => world.ui.toggleApps()} />}
       {!ready && <LoadingOverlay />}
       {kicked && <KickedOverlay code={kicked} />}
+      {ready && isTouch && <TouchBtns world={world} />}
     </div>
   )
 }
 
 function Side({ world, menu }) {
-  const touch = useMemo(() => navigator.userAgent.match(/OculusBrowser|iPhone|iPad|iPod|Android/i), [])
   const inputRef = useRef()
   const [msg, setMsg] = useState('')
   const [chat, setChat] = useState(false)
@@ -255,8 +255,8 @@ function Side({ world, menu }) {
     >
       {menu?.type === 'main' && <MenuMain world={world} />}
       {menu?.type === 'app' && <MenuApp key={menu.app.data.id} world={world} app={menu.app} blur={menu.blur} />}
-      <div className='side2-mid'>{!menu && !touch && actions && <Actions world={world} />}</div>
-      <Messages world={world} active={chat || menu} touch={touch} />
+      <div className='side2-mid'>{!menu && !isTouch && actions && <Actions world={world} />}</div>
+      <Messages world={world} active={chat || menu} />
       <label className={cls('side2-chatbox', { active: chat })}>
         <input
           ref={inputRef}
@@ -279,12 +279,12 @@ function Side({ world, menu }) {
         />
       </label>
       <div className='side2-btns'>
-        {touch && (
+        {isTouch && (
           <div className='side2-btn' onClick={() => world.ui.toggleMain()}>
             <MenuIcon size='1.5rem' />
           </div>
         )}
-        {touch && (
+        {isTouch && (
           <div
             className='side2-btn'
             onClick={() => {
@@ -321,7 +321,7 @@ function Side({ world, menu }) {
 
 const MESSAGES_REFRESH_RATE = 30 // every x seconds
 
-function Messages({ world, active, touch }) {
+function Messages({ world, active }) {
   const initRef = useRef()
   const contentRef = useRef()
   const spacerRef = useRef()
@@ -376,7 +376,7 @@ function Messages({ world, active, touch }) {
         /* padding: 0 0 0.5rem; */
         /* margin-bottom: 20px; */
         flex: 1;
-        max-height: ${touch ? '6.25' : '16'}rem;
+        max-height: ${isTouch ? '6.25' : '16'}rem;
         transition: all 0.15s ease-out;
         display: flex;
         flex-direction: column;
@@ -727,4 +727,66 @@ function ToastMsg({ text }) {
     setTimeout(() => setVisible(false), 1000)
   }, [])
   return <div className={cls('toast-msg', { visible })}>{text}</div>
+}
+
+function TouchBtns({ world }) {
+  const [action, setAction] = useState(world.actions.current.node)
+  useEffect(() => {
+    function onChange(isAction) {
+      setAction(isAction)
+    }
+    world.actions.on('change', onChange)
+    return () => {
+      world.actions.off('change', onChange)
+    }
+  }, [])
+  return (
+    <div
+      className='touchbtns'
+      css={css`
+        position: absolute;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        pointer-events: auto;
+        display: flex;
+        align-items: center;
+        .touchbtns-btn {
+          width: 2.5rem;
+          height: 2.5rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+      `}
+    >
+      {action && (
+        <div
+          className='touchbtns-btn'
+          onTouchStart={e => {
+            e.currentTarget.setPointerCapture(e.pointerId)
+            world.controls.setTouchBtn('touchB', true)
+          }}
+          onTouchEnd={e => {
+            world.controls.setTouchBtn('touchB', false)
+            e.currentTarget.releasePointerCapture(e.pointerId)
+          }}
+        >
+          <HandIcon size='1.5rem' />
+        </div>
+      )}
+      <div
+        className='touchbtns-btn'
+        onTouchStart={e => {
+          e.currentTarget.setPointerCapture(e.pointerId)
+          world.controls.setTouchBtn('touchA', true)
+        }}
+        onTouchEnd={e => {
+          world.controls.setTouchBtn('touchA', false)
+          e.currentTarget.releasePointerCapture(e.pointerId)
+        }}
+      >
+        <CircleUpIcon size='1.5rem' />
+      </div>
+    </div>
+  )
 }

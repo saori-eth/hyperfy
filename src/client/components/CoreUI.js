@@ -747,10 +747,10 @@ function TouchBtns({ world }) {
         position: absolute;
         bottom: 1.5rem;
         right: 1.5rem;
-        pointer-events: auto;
         display: flex;
         align-items: center;
         .touchbtns-btn {
+          pointer-events: auto;
           width: 2.5rem;
           height: 2.5rem;
           display: flex;
@@ -762,11 +762,11 @@ function TouchBtns({ world }) {
       {action && (
         <div
           className='touchbtns-btn'
-          onTouchStart={e => {
+          onPointerDown={e => {
             e.currentTarget.setPointerCapture(e.pointerId)
             world.controls.setTouchBtn('touchB', true)
           }}
-          onTouchEnd={e => {
+          onPointerLeave={e => {
             world.controls.setTouchBtn('touchB', false)
             e.currentTarget.releasePointerCapture(e.pointerId)
           }}
@@ -776,11 +776,11 @@ function TouchBtns({ world }) {
       )}
       <div
         className='touchbtns-btn'
-        onTouchStart={e => {
+        onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
           world.controls.setTouchBtn('touchA', true)
         }}
-        onTouchEnd={e => {
+        onPointerLeave={e => {
           world.controls.setTouchBtn('touchA', false)
           e.currentTarget.releasePointerCapture(e.pointerId)
         }}

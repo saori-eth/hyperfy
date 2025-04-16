@@ -91,7 +91,6 @@ function createEmitter(world, system, node) {
   texture.colorSpace = THREE.SRGBColorSpace
 
   const uniforms = {
-    uSpace: { value: node._space === 'local' ? 0 : 1 },
     uTexture: { value: texture },
     uOrientation: { value: world.rig.quaternion },
   }
@@ -108,7 +107,10 @@ function createEmitter(world, system, node) {
     ...(node._lit ? { roughness: 1, metalness: 0 } : {}),
     blending: node._blending === 'additive' ? THREE.AdditiveBlending : THREE.NormalBlending,
     transparent: true,
-    side: THREE.DoubleSide, // debug only
+    premultipliedAlpha: true,
+    color: 'white',
+    side: THREE.DoubleSide,
+    // side: THREE.FrontSide,
     depthWrite: false,
     depthTest: true,
     uniforms,
@@ -122,7 +124,6 @@ function createEmitter(world, system, node) {
       attribute vec4 aUV;  // u0, v0, u1, v1
 
       uniform vec4 uOrientation;
-      uniform float uSpace; // 0.0 = local, 1.0 = world
 
       varying vec2 vUv;
       varying vec4 vColor;
@@ -162,15 +163,6 @@ function createEmitter(world, system, node) {
 
         // Apply billboard (face camera)
         newPosition = applyQuaternion(newPosition, uOrientation);
-
-        // // Apply final local/world space position
-        // if (uSpace == 0.0) {
-        //   // local space adds position
-        //   csm_Position = newPosition + aPosition;
-        // } else {
-        //   // world space 
-        //   csm_Position = aPosition + newPosition;
-        // }
         
         // Apply particle position
         newPosition += aPosition;

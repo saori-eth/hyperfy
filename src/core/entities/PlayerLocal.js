@@ -691,7 +691,7 @@ export class PlayerLocal extends Entity {
 
     // watch jump presses to either fly or air-jump
     this.jumpDown = isXR ? this.control.xrRightBtn1.down : this.control.space.down || this.control.touchA.down
-    if (isXR ? this.control.xrRightBtn1.pressed : this.control.space.pressed || this.control.touchA.down) {
+    if (isXR ? this.control.xrRightBtn1.pressed : this.control.space.pressed || this.control.touchA.pressed) {
       this.jumpPressed = true
     }
 

@@ -322,8 +322,12 @@ export class UI extends Node {
         const camPosition = v2.setFromMatrixPosition(camera.matrixWorld)
         const distance = uiPosition.distanceTo(camPosition)
         const worldToScreenFactor = this.ctx.world.graphics.worldToScreenFactor
-        const baseScaleFactor = (worldToScreenFactor * distance) / this._size
-        const scaleFactor = clamp(baseScaleFactor, this._scaler[0], this._scaler[1])
+        const [baseScale, minDistance, maxDistance] = this._scaler
+        const clampedDistance = clamp(distance, minDistance, maxDistance)
+        // calculate scale factor based on the distance
+        // When distance is at min, scale is 1.0 (or some other base scale)
+        // When distance is at max, scale adjusts proportionally
+        const scaleFactor = (baseScale * (worldToScreenFactor * clampedDistance)) / this._size
         sca.setScalar(scaleFactor)
       }
       this.mesh.matrixWorld.compose(pos, qua, sca)
@@ -1065,5 +1069,5 @@ function isEdge(value) {
 }
 
 function isScaler(value) {
-  return isArray(value) && isNumber(value[0]) && isNumber(value[1])
+  return isArray(value) && isNumber(value[0]) && isNumber(value[1]) && isNumber(value[2])
 }

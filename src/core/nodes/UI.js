@@ -322,7 +322,7 @@ export class UI extends Node {
         const camPosition = v2.setFromMatrixPosition(camera.matrixWorld)
         const distance = uiPosition.distanceTo(camPosition)
         const worldToScreenFactor = this.ctx.world.graphics.worldToScreenFactor
-        const [baseScale, minDistance, maxDistance] = this._scaler
+        const [minDistance, maxDistance, baseScale = 1] = this._scaler
         const clampedDistance = clamp(distance, minDistance, maxDistance)
         // calculate scale factor based on the distance
         // When distance is at min, scale is 1.0 (or some other base scale)
@@ -1069,5 +1069,5 @@ function isEdge(value) {
 }
 
 function isScaler(value) {
-  return isArray(value) && isNumber(value[0]) && isNumber(value[1]) && isNumber(value[2])
+  return isArray(value) && isNumber(value[0]) && isNumber(value[1])
 }

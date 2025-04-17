@@ -18,12 +18,14 @@ import {
 } from '../extras/yoga'
 import CustomShaderMaterial from '../libs/three-custom-shader-material'
 import { borderRoundRect } from '../extras/borderRoundRect'
+import { clamp } from '../utils'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
 const v3 = new THREE.Vector3()
 const q1 = new THREE.Quaternion()
 const q2 = new THREE.Quaternion()
+const e1 = new THREE.Euler(0, 0, 0, 'YXZ')
 const m1 = new THREE.Matrix4()
 
 const iQuaternion = new THREE.Quaternion(0, 0, 0, 1)
@@ -55,6 +57,7 @@ const defaults = {
   billboard: 'none',
   pivot: 'center',
   offset: [0, 0, 0],
+  scaler: null,
   pointerEvents: true,
 
   transparent: true,
@@ -87,6 +90,7 @@ export class UI extends Node {
     this.billboard = data.billboard
     this.pivot = data.pivot
     this._offset = new THREE.Vector3().fromArray(data.offset || defaults.offset)
+    this.scaler = data.scaler
     this.pointerEvents = data.pointerEvents
 
     this.transparent = data.transparent
@@ -125,21 +129,15 @@ export class UI extends Node {
       this.geometry.scale(this._size, this._size, this._size)
       pivotGeometry(this._pivot, this.geometry, this._width * this._size, this._height * this._size)
       this.pivotOffset = getPivotOffset(this._pivot, this._width, this._height)
-      this.material = this.createMaterial(this._lit, this.texture, this._billboard, this._transparent, this._doubleside)
+      this.material = this.createMaterial(this._lit, this.texture, this._transparent, this._doubleside)
       this.mesh = new THREE.Mesh(this.geometry, this.material)
       this.mesh.matrixAutoUpdate = false
       this.mesh.matrixWorldAutoUpdate = false
-      if (this._billboard !== 'none') {
-        v1.setFromMatrixPosition(this.matrixWorld)
-        v2.setFromMatrixScale(this.matrixWorld)
-        this.mesh.matrixWorld.compose(v1, iQuaternion, v2)
-      } else {
-        this.mesh.matrixWorld.copy(this.matrixWorld)
-      }
+      this.mesh.matrixWorld.copy(this.matrixWorld)
       this.ctx.world.stage.scene.add(this.mesh)
       if (this._pointerEvents) {
         this.sItem = {
-          matrix: this.matrixWorld,
+          matrix: this.mesh.matrixWorld,
           geometry: this.geometry,
           material: this.material,
           getEntity: () => this.ctx.entity,
@@ -147,6 +145,7 @@ export class UI extends Node {
         }
         this.ctx.world.stage.octree.insert(this.sItem)
       }
+      this.ctx.world.setHot(this, true)
     } else {
       // screen-space
       this.canvas.style.position = 'absolute'
@@ -205,6 +204,7 @@ export class UI extends Node {
         this.ctx.world.stage.octree.remove(this.sItem)
         this.sItem = null
       }
+      this.ctx.world.setHot(this, false)
     }
     if (this.canvas) {
       this.ctx.world.pointer.ui.removeChild(this.canvas)
@@ -302,6 +302,37 @@ export class UI extends Node {
     }
   }
 
+  lateUpdate(delta) {
+    if (this._space === 'world') {
+      const pos = v1
+      const qua = q1
+      const sca = v2
+      this.mesh.matrixWorld.decompose(pos, qua, sca)
+      if (this._billboard === 'full') {
+        qua.copy(this.ctx.world.rig.quaternion)
+      } else if (this._billboard === 'y') {
+        e1.setFromQuaternion(this.ctx.world.rig.quaternion)
+        e1.x = 0
+        e1.z = 0
+        qua.setFromEuler(e1)
+      }
+      if (this._scaler) {
+        const camera = this.ctx.world.camera
+        const uiPosition = v1.setFromMatrixPosition(this.matrixWorld)
+        const camPosition = v2.setFromMatrixPosition(camera.matrixWorld)
+        const distance = uiPosition.distanceTo(camPosition)
+        const worldToScreenFactor = this.ctx.world.graphics.worldToScreenFactor
+        const baseScaleFactor = (worldToScreenFactor * distance) / this._size
+        const scaleFactor = clamp(baseScaleFactor, this._scaler[0], this._scaler[1])
+        sca.setScalar(scaleFactor)
+      }
+      this.mesh.matrixWorld.compose(pos, qua, sca)
+      if (this.sItem) {
+        this.ctx.world.stage.octree.move(this.sItem)
+      }
+    }
+  }
+
   unmount() {
     if (this.ctx.world.network.isServer) return
     this.unbuild()
@@ -335,6 +366,8 @@ export class UI extends Node {
     this._doubleside = source._doubleside
     this._billboard = source._billboard
     this._pivot = source._pivot
+    this._offset = source._offset
+    this._scaler = source._scaler
     this._pointerEvents = source._pointerEvents
 
     this._transparent = source._transparent
@@ -390,64 +423,14 @@ export class UI extends Node {
     return findHitNode(this)
   }
 
-  createMaterial(lit, texture, billboard, transparent, doubleside) {
-    if (billboard === 'none') {
-      const material = lit
-        ? new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 })
-        : new THREE.MeshBasicMaterial({})
-      material.color.set('white')
-      material.transparent = transparent
-      material.map = texture
-      material.side = doubleside ? THREE.DoubleSide : THREE.FrontSide
-      this.ctx.world.setupMaterial(material)
-      return material
-    }
-    const uniforms = {
-      uBillboard: { value: billboard === 'full' ? 1 : billboard === 'y' ? 2 : 0 },
-      uOrientation: { value: this.ctx.world.rig.quaternion },
-    }
-    const material = new CustomShaderMaterial({
-      baseMaterial: lit ? THREE.MeshStandardMaterial : THREE.MeshBasicMaterial,
-      ...(lit ? { roughness: 1, metalness: 0 } : {}),
-      color: 'white',
-      transparent,
-      // depthTest: true,
-      // depthWrite: false,
-      map: texture,
-      side: THREE.DoubleSide,
-      uniforms,
-      vertexShader: `
-        uniform vec4 uOrientation;
-        uniform int uBillboard; // 0: none, 1: full, 2: y
-
-        vec3 applyQuaternion(vec3 pos, vec4 quat) {
-          vec3 qv = vec3(quat.x, quat.y, quat.z);
-          vec3 t = 2.0 * cross(qv, pos);
-          return pos + quat.w * t + cross(qv, t);
-        }
-
-        void main() {
-          if (uBillboard == 1) { 
-            // full billboard
-            csm_Position = applyQuaternion(position, uOrientation);
-          } 
-          else if (uBillboard == 2) { 
-            // y-axis billboard
-            vec3 objToCam = normalize(cameraPosition - modelMatrix[3].xyz);
-            objToCam.y = 0.0; // Project onto XZ plane
-            objToCam = normalize(objToCam);            
-            float cosAngle = objToCam.z;
-            float sinAngle = objToCam.x;            
-            mat3 rotY = mat3(
-              cosAngle, 0.0, -sinAngle,
-              0.0, 1.0, 0.0,
-              sinAngle, 0.0, cosAngle
-            );            
-            csm_Position = rotY * position;
-          }
-        }
-      `,
-    })
+  createMaterial(lit, texture, transparent, doubleside) {
+    const material = lit
+      ? new THREE.MeshStandardMaterial({ roughness: 1, metalness: 0 })
+      : new THREE.MeshBasicMaterial({})
+    material.color.set('white')
+    material.transparent = transparent
+    material.map = texture
+    material.side = doubleside ? THREE.DoubleSide : THREE.FrontSide
     this.ctx.world.setupMaterial(material)
     return material
   }
@@ -573,6 +556,26 @@ export class UI extends Node {
 
   get offset() {
     return this._offset
+  }
+
+  set offset(value) {
+    if (!value || !value.isVector3) {
+      throw new Error(`[ui] offset invalid`)
+    }
+    this._offset.copy(value)
+    this.rebuild()
+  }
+
+  get scaler() {
+    return this._scaler
+  }
+
+  set scaler(value = defaults.scaler) {
+    if (value !== null && !isScaler(value)) {
+      throw new Error('[ui] scaler invalid')
+    }
+    this._scaler = value
+    this.rebuild()
   }
 
   get pointerEvents() {
@@ -820,6 +823,15 @@ export class UI extends Node {
         get offset() {
           return self.offset
         },
+        set offset(value) {
+          self.offset = value
+        },
+        get scaler() {
+          return self.scaler
+        },
+        set scaler(value) {
+          self.scaler = value
+        },
         get pointerEvents() {
           return self.pointerEvents
         },
@@ -1050,4 +1062,8 @@ function isEdge(value) {
     return value.length === 4 && every(value, n => isNumber(n))
   }
   return false
+}
+
+function isScaler(value) {
+  return isArray(value) && isNumber(value[0]) && isNumber(value[1])
 }

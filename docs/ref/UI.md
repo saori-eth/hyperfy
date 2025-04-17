@@ -70,6 +70,20 @@ Defaults to `center`.
 Only applicable when using screen-space.
 The offset in pixels applied after the `position` value.
 
+### `.scaler`: Array|null
+
+When creating UI in world-space you sometimes want it to scale as if it was in screen-space, so that when you are far away it scales up to match the size it would be if it were on screen and vice versa. This is useful for things like buttons and chat bubbles.
+
+To enable this, set the `scaler` property to an array with minFactor and maxFactor, eg:
+
+```jsx
+ui.scaler = [0, Infinity] // always scale to match screen space
+// or...
+ui.scaler = [0.5, 2] // scale to match screen space only within this min/max factor
+```
+
+Defaults to `null`.
+
 ### `.pointerEvents`: Boolean
 
 Whether the UI should receive or ignore pointer events. Defaults to `true`.

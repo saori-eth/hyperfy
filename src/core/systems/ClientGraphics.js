@@ -125,6 +125,14 @@ export class ClientGraphics extends System {
     this.render()
   }
 
+  preTick() {
+    // calc world to screen factor
+    const camera = this.world.camera
+    const fovRadians = camera.fov * (Math.PI / 180)
+    const rendererHeight = this.height
+    this.worldToScreenFactor = (Math.tan(fovRadians / 2) * 2) / rendererHeight
+  }
+
   scaleUI(object3d, heightPx, pxToMeters) {
     const camera = this.world.camera
     const vFov = (camera.fov * Math.PI) / 180 // Convert vertical FOV from degrees to radians

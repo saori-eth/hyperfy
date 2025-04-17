@@ -35,6 +35,7 @@ export class ClientAudio extends System {
     this.listener.upZ.value = 0
     this.lastDelta = 0
 
+    this.queue = []
     this.unlocked = this.ctx.state !== 'suspended'
     if (!this.unlocked) {
       this.setupUnlockListener()
@@ -43,43 +44,49 @@ export class ClientAudio extends System {
 
   ready(fn) {
     if (this.unlocked) return fn()
-    this.unlock.then(() => fn())
+    this.queue.push(fn)
   }
 
   setupUnlockListener() {
-    let resolve
-    this.unlock = new Promise(r => (resolve = r))
-    const unlock = () => {
-      this.ctx.resume().then(() => {
-        console.log('audio resumed')
-      })
-      // play and immediately pause a silent video to ensure video playback is allowed
-      const video = document.createElement('video')
-      video.setAttribute('playsinline', '') // Important for iOS
-      video.muted = true
-      video.src = '/tiny.mp4'
-      video
-        .play()
-        .then(() => {
-          video.pause()
-          video.remove()
-          console.log('video unlock successful')
-          this.unlocked = true
-          resolve()
-        })
-        .catch(e => {
-          console.warn('video unlock failed', e)
-        })
-        .finally(() => {
-          document.removeEventListener('click', unlock)
-          document.removeEventListener('touchstart', unlock)
-          document.removeEventListener('keydown', unlock)
-        })
+    const complete = () => {
+      this.unlocked = true
+      document.removeEventListener('click', unlock)
+      document.removeEventListener('touchstart', unlock)
+      document.removeEventListener('keydown', unlock)
+      while (this.queue.length) {
+        this.queue.pop()()
+      }
+      console.log('[audio] unlocked')
+    }
+    const unlock = async () => {
+      try {
+        await this.ctx.resume()
+        if (this.ctx.state !== 'running') throw new Error('Audio still suspended')
+        const video = document.createElement('video')
+        video.playsInline = true
+        video.muted = true
+        video.src = '/tiny.mp4'
+        video
+          .play()
+          .then(() => {
+            video.pause()
+            video.remove()
+            console.log('[audio] video played')
+          })
+          .catch(err => {
+            console.log('[audio] video failed')
+          })
+      } catch (err) {
+        console.error(err)
+      } finally {
+        // either way, mark the system as unlocked
+        complete()
+      }
     }
     document.addEventListener('click', unlock)
     document.addEventListener('touchstart', unlock)
     document.addEventListener('keydown', unlock)
-    console.log('audio suspended, waiting for interact...')
+    console.log('[audio] suspended, waiting for interact...')
   }
 
   async init() {

@@ -304,6 +304,12 @@ export class UI extends Node {
 
   lateUpdate(delta) {
     if (this._space === 'world') {
+      const camera = this.ctx.world.camera
+      const camPosition = v1.setFromMatrixPosition(camera.matrixWorld)
+      const uiPosition = v2.setFromMatrixPosition(this.matrixWorld)
+      const distance = camPosition.distanceTo(uiPosition)
+      this.mesh.renderOrder = -distance // Same ordering as particles
+
       const pos = v1
       const qua = q1
       const sca = v2
@@ -317,10 +323,6 @@ export class UI extends Node {
         qua.setFromEuler(e1)
       }
       if (this._scaler) {
-        const camera = this.ctx.world.camera
-        const uiPosition = v1.setFromMatrixPosition(this.matrixWorld)
-        const camPosition = v2.setFromMatrixPosition(camera.matrixWorld)
-        const distance = uiPosition.distanceTo(camPosition)
         const worldToScreenFactor = this.ctx.world.graphics.worldToScreenFactor
         const [minDistance, maxDistance, baseScale = 1] = this._scaler
         const clampedDistance = clamp(distance, minDistance, maxDistance)
@@ -433,6 +435,8 @@ export class UI extends Node {
       : new THREE.MeshBasicMaterial({})
     material.color.set('white')
     material.transparent = transparent
+    // material.depthTest = true
+    // material.depthWrite = false
     material.map = texture
     material.side = doubleside ? THREE.DoubleSide : THREE.FrontSide
     this.ctx.world.setupMaterial(material)

@@ -5,6 +5,7 @@ import { DEG2RAD } from '../extras/general'
 import { uuid } from '../utils'
 
 const v1 = new THREE.Vector3()
+const v2 = new THREE.Vector3()
 const arr1 = []
 const arr2 = []
 
@@ -252,8 +253,8 @@ function createEmitter(world, system, node) {
   }
 
   function update(delta) {
-    const camPosition = world.rig.position
-    const worldPosition = v1.setFromMatrixPosition(matrixWorld)
+    const camPosition = v1.setFromMatrixPosition(world.camera.matrixWorld)
+    const worldPosition = v2.setFromMatrixPosition(matrixWorld)
 
     // draw emitter back-to-front
     const distance = camPosition.distanceTo(worldPosition)

@@ -104,11 +104,15 @@ export class PlayerLocal extends Entity {
     this.aura.add(this.nametag)
 
     this.bubble = createNode('ui', {
+      id: 'bubble',
+      // space: 'screen',
       width: 300,
       height: 512,
-      size: 0.005,
+      // size: 0.01,
       pivot: 'bottom-center',
+      // pivot: 'top-left',
       billboard: 'full',
+      scaler: [3, 30],
       justifyContent: 'flex-end',
       alignItems: 'center',
       active: false,

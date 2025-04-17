@@ -49,9 +49,9 @@ export class PlayerRemote extends Entity {
     this.bubble = createNode('ui', {
       width: 300,
       height: 512,
-      size: 0.005,
       pivot: 'bottom-center',
       billboard: 'full',
+      scaler: [3, 30],
       justifyContent: 'flex-end',
       alignItems: 'center',
       active: false,

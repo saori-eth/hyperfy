@@ -296,14 +296,14 @@ export class UI extends Node {
       this.draw()
     }
     if (didMove) {
-      if (this._billboard !== 'none') {
-        v1.setFromMatrixPosition(this.matrixWorld)
-        v2.setFromMatrixScale(this.matrixWorld)
-        this.mesh.matrixWorld.compose(v1, iQuaternion, v2)
-      } else {
-        this.mesh.matrixWorld.copy(this.matrixWorld)
-        this.ctx.world.stage.octree.move(this.sItem)
-      }
+      // if (this._billboard !== 'none') {
+      //   v1.setFromMatrixPosition(this.matrixWorld)
+      //   v2.setFromMatrixScale(this.matrixWorld)
+      //   this.mesh.matrixWorld.compose(v1, iQuaternion, v2)
+      // } else {
+      //   this.mesh.matrixWorld.copy(this.matrixWorld)
+      //   this.ctx.world.stage.octree.move(this.sItem)
+      // }
     }
   }
 
@@ -319,7 +319,7 @@ export class UI extends Node {
       const pos = v3
       const qua = q1
       const sca = v4
-      this.mesh.matrixWorld.decompose(pos, qua, sca)
+      this.matrixWorld.decompose(pos, qua, sca)
       if (this._billboard === 'full') {
         if (world.xr.session) {
           // full in XR means lookAt camera (excludes roll)
@@ -360,7 +360,8 @@ export class UI extends Node {
         // if (world.xr.session) scaleFactor *= 0.3 // roughly matches desktop fov etc
         sca.setScalar(scaleFactor)
       }
-      this.mesh.matrixWorld.compose(pos, qua, sca)
+      this.matrixWorld.compose(pos, qua, sca)
+      this.mesh.matrixWorld.copy(this.matrixWorld)
       if (this.sItem) {
         world.stage.octree.move(this.sItem)
       }

@@ -170,6 +170,10 @@ Defaults to `normal`.
 
 Determines whether the particle is affected by PBR lighting. Defaults to `false`.
 
+### `.billboard`: String
+
+Either `full` or `y`. Defaults to `full`.
+
 ### `.space`: String
 
 Whether particles are in `local` or `world` space. Local particles with move with the emitter where-as World particles will not. Defaults to `world`.

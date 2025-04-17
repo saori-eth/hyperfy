@@ -6,6 +6,7 @@ import { uuid } from '../utils'
 
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
+const e1 = new THREE.Euler(0, 0, 0, 'YXZ')
 const arr1 = []
 const arr2 = []
 
@@ -13,7 +14,8 @@ export class Particles extends System {
   constructor(world) {
     super(world)
     this.worker = null
-    this.uOrientation = { value: this.world.rig.quaternion }
+    this.uOrientationFull = { value: this.world.rig.quaternion }
+    this.uOrientationY = { value: new THREE.Quaternion() }
     this.emitters = new Map() // id -> emitter
   }
 
@@ -32,6 +34,11 @@ export class Particles extends System {
   }
 
   update(delta) {
+    e1.setFromQuaternion(this.uOrientationFull.value)
+    e1.x = 0
+    e1.z = 0
+    this.uOrientationY.value.setFromEuler(e1)
+
     this.emitters.forEach(emitter => {
       emitter.update(delta)
     })
@@ -48,7 +55,7 @@ export class Particles extends System {
   }
 
   onXRSession = session => {
-    this.uOrientation.value = session ? this.world.xr.camera.quaternion : this.world.rig.quaternion
+    this.uOrientationFull.value = session ? this.world.xr.camera.quaternion : this.world.rig.quaternion
   }
 }
 
@@ -102,7 +109,7 @@ function createEmitter(world, system, node) {
 
   const uniforms = {
     uTexture: { value: texture },
-    uOrientation: system.uOrientation,
+    uOrientation: node._billboard === 'full' ? system.uOrientationFull : system.uOrientationY,
   }
   world.loader.load('texture', node._image).then(texture => {
     texture.colorSpace = THREE.SRGBColorSpace

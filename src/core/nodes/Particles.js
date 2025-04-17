@@ -6,6 +6,7 @@ import { Node } from './Node'
 const shapeTypes = ['point', 'sphere', 'hemisphere', 'cone', 'box', 'circle', 'rectangle']
 const spaces = ['local', 'world']
 const blendings = ['additive', 'normal']
+const billboards = ['full', 'y']
 
 // shape types
 // -------------
@@ -57,6 +58,7 @@ const defaults = {
   spritesheet: null,                  // [rows, cols, frameRate, loops]
   blending: 'normal',                 // additive or normal (normal requires sorting)
   lit: false,                         // lit or unlit material
+  billboard: 'full',
   space: 'world',                     // world or local space
 
   // simulation
@@ -101,6 +103,7 @@ export class Particles extends Node {
     this.spritesheet = data.spritesheet
     this.blending = data.blending
     this.lit = data.lit
+    this.billboard = data.billboard
     this.space = data.space
 
     this.force = data.force
@@ -164,6 +167,7 @@ export class Particles extends Node {
     this._spritesheet = source._spritesheet
     this._blending = source._blending
     this._lit = source._lit
+    this._billboard = source._billboard
     this._space = source._space
 
     this._force = source._force
@@ -206,6 +210,7 @@ export class Particles extends Node {
       spritesheet: this._spritesheet,
       blending: this._blending,
       lit: this._lit,
+      billboard: this._billboard,
       space: this._space,
 
       force: this._force?.toArray() || null,
@@ -466,6 +471,19 @@ export class Particles extends Node {
       throw new Error('[particles] lit not a boolean')
     }
     this._lit = value
+    this.needsRebuild = true
+    this.setDirty()
+  }
+
+  get billboard() {
+    return this._billboard
+  }
+
+  set billboard(value = defaults.billboard) {
+    if (!isBillboard(value)) {
+      throw new Error('[particles] billboard invalid')
+    }
+    this._billboard = value
     this.needsRebuild = true
     this.setDirty()
   }
@@ -741,6 +759,12 @@ export class Particles extends Node {
         set lit(value) {
           self.lit = value
         },
+        get billboard() {
+          return self.billboard
+        },
+        set billboard(value) {
+          self.billboard = value
+        },
         get space() {
           return self.space
         },
@@ -847,4 +871,8 @@ function isBlending(value) {
 
 function isSpace(value) {
   return spaces.includes(value)
+}
+
+function isBillboard(value) {
+  return billboards.includes(value)
 }

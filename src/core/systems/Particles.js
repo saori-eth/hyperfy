@@ -13,6 +13,7 @@ export class Particles extends System {
   constructor(world) {
     super(world)
     this.worker = null
+    this.uOrientation = { value: this.world.rig.quaternion }
     this.emitters = new Map() // id -> emitter
   }
 
@@ -20,6 +21,10 @@ export class Particles extends System {
     this.worker = new Worker(window.PARTICLES_PATH)
     this.worker.onmessage = this.onMessage
     this.worker.onerror = this.onError
+  }
+
+  start() {
+    this.world.on('xrSession', this.onXRSession)
   }
 
   register(node) {
@@ -40,6 +45,10 @@ export class Particles extends System {
 
   onError = err => {
     console.error('[ParticleSystem]', err)
+  }
+
+  onXRSession = session => {
+    this.uOrientation.value = session ? this.world.xr.camera.quaternion : this.world.rig.quaternion
   }
 }
 
@@ -93,7 +102,7 @@ function createEmitter(world, system, node) {
 
   const uniforms = {
     uTexture: { value: texture },
-    uOrientation: { value: world.rig.quaternion },
+    uOrientation: system.uOrientation,
   }
   world.loader.load('texture', node._image).then(texture => {
     texture.colorSpace = THREE.SRGBColorSpace

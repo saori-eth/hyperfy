@@ -23,10 +23,15 @@ import { clamp } from '../utils'
 const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
 const v3 = new THREE.Vector3()
+const v4 = new THREE.Vector3()
+const v5 = new THREE.Vector3()
+const v6 = new THREE.Vector3()
 const q1 = new THREE.Quaternion()
 const q2 = new THREE.Quaternion()
 const e1 = new THREE.Euler(0, 0, 0, 'YXZ')
 const m1 = new THREE.Matrix4()
+
+const FORWARD = new THREE.Vector3(0, 0, 1)
 
 const iQuaternion = new THREE.Quaternion(0, 0, 0, 1)
 const iScale = new THREE.Vector3(1, 1, 1)
@@ -304,37 +309,60 @@ export class UI extends Node {
 
   lateUpdate(delta) {
     if (this._space === 'world') {
-      const camera = this.ctx.world.camera
+      const world = this.ctx.world
+      const camera = world.camera
       const camPosition = v1.setFromMatrixPosition(camera.matrixWorld)
       const uiPosition = v2.setFromMatrixPosition(this.matrixWorld)
       const distance = camPosition.distanceTo(uiPosition)
       this.mesh.renderOrder = -distance // Same ordering as particles
 
-      const pos = v1
+      const pos = v3
       const qua = q1
-      const sca = v2
+      const sca = v4
       this.mesh.matrixWorld.decompose(pos, qua, sca)
       if (this._billboard === 'full') {
-        qua.copy(this.ctx.world.rig.quaternion)
+        if (world.xr.session) {
+          // full in XR means lookAt camera (excludes roll)
+          v5.subVectors(camPosition, pos).normalize()
+          qua.setFromUnitVectors(FORWARD, v5)
+          e1.setFromQuaternion(qua)
+          e1.z = 0
+          qua.setFromEuler(e1)
+        } else {
+          // full in desktop/mobile means matching camera rotation
+          qua.copy(world.rig.quaternion)
+        }
       } else if (this._billboard === 'y') {
-        e1.setFromQuaternion(this.ctx.world.rig.quaternion)
-        e1.x = 0
-        e1.z = 0
-        qua.setFromEuler(e1)
+        if (world.xr.session) {
+          // full in XR means lookAt camera (only y)
+          v5.subVectors(camPosition, pos).normalize()
+          qua.setFromUnitVectors(FORWARD, v5)
+          e1.setFromQuaternion(qua)
+          e1.x = 0
+          e1.z = 0
+          qua.setFromEuler(e1)
+        } else {
+          // full in desktop/mobile means matching camera y rotation
+          e1.setFromQuaternion(world.rig.quaternion)
+          e1.x = 0
+          e1.z = 0
+          qua.setFromEuler(e1)
+        }
       }
       if (this._scaler) {
-        const worldToScreenFactor = this.ctx.world.graphics.worldToScreenFactor
+        const worldToScreenFactor = world.graphics.worldToScreenFactor
         const [minDistance, maxDistance, baseScale = 1] = this._scaler
         const clampedDistance = clamp(distance, minDistance, maxDistance)
         // calculate scale factor based on the distance
         // When distance is at min, scale is 1.0 (or some other base scale)
         // When distance is at max, scale adjusts proportionally
-        const scaleFactor = (baseScale * (worldToScreenFactor * clampedDistance)) / this._size
+        let scaleFactor = (baseScale * (worldToScreenFactor * clampedDistance)) / this._size
+        // if (world.xr.session) scaleFactor *= 0.3 // roughly matches desktop fov etc
         sca.setScalar(scaleFactor)
       }
       this.mesh.matrixWorld.compose(pos, qua, sca)
       if (this.sItem) {
-        this.ctx.world.stage.octree.move(this.sItem)
+        world.stage.octree.move(this.sItem)
       }
     }
   }

@@ -16,7 +16,18 @@ import { ControlPriorities } from '../../core/extras/ControlPriorities'
 import { AppsPane } from './AppsPane'
 import { MenuMain } from './MenuMain'
 import { MenuApp } from './MenuApp'
-import { CircleUpIcon, HandIcon, KeyboardIcon, MenuIcon, MicIcon, MicOffIcon, VRIcon } from './Icons'
+import {
+  ChatIcon,
+  ChevronDoubleUpIcon,
+  CircleUpIcon,
+  HandIcon,
+  KeyboardIcon,
+  MenuIcon,
+  MicIcon,
+  MicOffIcon,
+  SettingsIcon,
+  VRIcon,
+} from './Icons'
 
 export function CoreUI({ world }) {
   const [ref, width, height] = useElemSize()
@@ -187,27 +198,36 @@ function Side({ world, menu }) {
       createdAt: moment().toISOString(),
     }
     world.chat.add(data, true)
+    if (isTouch) {
+      e.target.blur()
+      // setTimeout(() => setChat(false), 10)
+    }
   }
   return (
     <div
-      className='side2'
+      className='side'
       css={css`
         position: absolute;
-        top: 4rem;
-        left: 4rem;
-        bottom: 4rem;
-        max-width: 21rem;
-        width: 100%;
+        top: calc(4rem + env(safe-area-inset-top));
+        left: calc(4rem + env(safe-area-inset-left));
+        bottom: calc(4rem + env(safe-area-inset-bottom));
+        right: calc(4rem + env(safe-area-inset-right));
         display: flex;
-        flex-direction: column;
         align-items: stretch;
         font-size: 1rem;
-        .side2-btns {
+        .side-content {
+          max-width: 21rem;
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .side-btns {
           display: flex;
           align-items: center;
           margin-left: -0.5rem;
         }
-        .side2-btn {
+        .side-btn {
           pointer-events: auto;
           /* margin-bottom: 1rem; */
           width: 2.5rem;
@@ -220,13 +240,13 @@ function Side({ world, menu }) {
             filter: drop-shadow(0 0.0625rem 0.125rem rgba(0, 0, 0, 0.2));
           }
         }
-        .side2-mid {
+        .side-mid {
           flex: 1;
           display: flex;
           flex-direction: column;
           justify-content: center;
         }
-        .side2-chatbox {
+        .side-chatbox {
           margin-top: 0.5rem;
           background: rgba(0, 0, 0, 0.3);
           padding: 0.625rem;
@@ -247,76 +267,107 @@ function Side({ world, menu }) {
           }
         }
         @media all and (max-width: 700px), (max-height: 700px) {
-          top: 1.5rem;
-          left: 1.5rem;
-          bottom: 1.5rem;
+          top: calc(1.5rem + env(safe-area-inset-top));
+          left: calc(1.5rem + env(safe-area-inset-left));
+          bottom: calc(1.5rem + env(safe-area-inset-bottom));
+          right: calc(1.5rem + env(safe-area-inset-right));
         }
       `}
     >
-      {menu?.type === 'main' && <MenuMain world={world} />}
-      {menu?.type === 'app' && <MenuApp key={menu.app.data.id} world={world} app={menu.app} blur={menu.blur} />}
-      <div className='side2-mid'>{!menu && !isTouch && actions && <Actions world={world} />}</div>
-      <Messages world={world} active={chat || menu} />
-      <label className={cls('side2-chatbox', { active: chat })}>
-        <input
-          ref={inputRef}
-          className='side2-chatbox-input'
-          type='text'
-          placeholder='Say something...'
-          value={msg}
-          onChange={e => setMsg(e.target.value)}
-          onKeyDown={e => {
-            if (e.code === 'Escape') {
-              setChat(false)
-            }
-            // meta quest 3 isn't spec complaint and instead has e.code = '' and e.key = 'Enter'
-            // spec says e.code should be a key code and e.key should be the text output of the key eg 'b', 'B', and '\n'
-            if (e.code === 'Enter' || e.key === 'Enter') {
-              send(e)
-            }
-          }}
-          onBlur={() => setChat(false)}
-        />
-      </label>
-      <div className='side2-btns'>
-        {isTouch && (
-          <div className='side2-btn' onClick={() => world.ui.toggleMain()}>
+      <div className='side-content'>
+        <div className='side-btns'>
+          <div className='side-btn' onClick={() => world.ui.toggleMain()}>
             <MenuIcon size='1.5rem' />
           </div>
-        )}
-        {isTouch && (
-          <div
-            className='side2-btn'
-            onClick={() => {
-              if (!chat) setChat(true)
+          {isTouch && (
+            <div
+              className='side-btn'
+              onClick={() => {
+                console.log('setChat', !chat)
+                setChat(!chat)
+              }}
+            >
+              <ChatIcon size='1.5rem' />
+            </div>
+          )}
+          {livekit.connected && (
+            <div
+              className='side-btn'
+              onClick={() => {
+                world.livekit.setMicrophoneEnabled()
+              }}
+            >
+              {livekit.mic ? <MicIcon size='1.5rem' /> : <MicOffIcon size='1.5rem' />}
+            </div>
+          )}
+          {world.xr.supportsVR && (
+            <div
+              className='side-btn'
+              onClick={() => {
+                world.xr.enter()
+              }}
+            >
+              <VRIcon size='1.5rem' />
+            </div>
+          )}
+        </div>
+        {menu?.type === 'main' && <MenuMain world={world} />}
+        {menu?.type === 'app' && <MenuApp key={menu.app.data.id} world={world} app={menu.app} blur={menu.blur} />}
+        {isTouch && !chat && <MiniMessages world={world} />}
+        <div className='side-mid'>{!menu && !isTouch && actions && <Actions world={world} />}</div>
+        {(isTouch ? chat : true) && <Messages world={world} active={chat || menu} />}
+        <label className={cls('side-chatbox', { active: chat })}>
+          <input
+            ref={inputRef}
+            className='side-chatbox-input'
+            type='text'
+            placeholder='Say something...'
+            value={msg}
+            onChange={e => setMsg(e.target.value)}
+            onKeyDown={e => {
+              if (e.code === 'Escape') {
+                setChat(false)
+              }
+              // meta quest 3 isn't spec complaint and instead has e.code = '' and e.key = 'Enter'
+              // spec says e.code should be a key code and e.key should be the text output of the key eg 'b', 'B', and '\n'
+              if (e.code === 'Enter' || e.key === 'Enter') {
+                send(e)
+              }
             }}
-          >
-            <KeyboardIcon size='1.5rem' />
-          </div>
-        )}
-        {livekit.connected && (
-          <div
-            className='side2-btn'
-            onClick={() => {
-              world.livekit.setMicrophoneEnabled()
+            onBlur={e => {
+              if (!isTouch) {
+                setChat(false)
+              }
             }}
-          >
-            {livekit.mic ? <MicIcon size='1.5rem' /> : <MicOffIcon size='1.5rem' />}
-          </div>
-        )}
-        {world.xr.supportsVR && (
-          <div
-            className='side2-btn'
-            onClick={() => {
-              world.xr.enter()
-            }}
-          >
-            <VRIcon size='1.5rem' />
-          </div>
-        )}
+          />
+        </label>
       </div>
     </div>
   )
+}
+
+function MiniMessages({ world }) {
+  const [msg, setMsg] = useState(null)
+  useEffect(() => {
+    let init
+    return world.chat.subscribe(msgs => {
+      if (!init) {
+        init = true
+        return // skip first
+      }
+      const msg = msgs[msgs.length - 1]
+      if (msg.fromId === world.network.id) return
+      setMsg(msg)
+    })
+  }, [])
+  useEffect(() => {
+    const timerId = setTimeout(() => {
+      setMsg(null)
+    }, 4000)
+    return () => clearTimeout(timerId)
+  }, [msg])
+  if (!msg) return null
+  return <Message msg={msg} />
 }
 
 const MESSAGES_REFRESH_RATE = 30 // every x seconds
@@ -325,20 +376,20 @@ function Messages({ world, active }) {
   const initRef = useRef()
   const contentRef = useRef()
   const spacerRef = useRef()
-  const [now, setNow] = useState(() => moment())
+  // const [now, setNow] = useState(() => moment())
   const [msgs, setMsgs] = useState([])
   useEffect(() => {
     return world.chat.subscribe(setMsgs)
   }, [])
-  useEffect(() => {
-    let timerId
-    const updateNow = () => {
-      setNow(moment())
-      timerId = setTimeout(updateNow, MESSAGES_REFRESH_RATE * 1000)
-    }
-    timerId = setTimeout(updateNow, MESSAGES_REFRESH_RATE * 1000)
-    return () => clearTimeout(timerId)
-  }, [])
+  // useEffect(() => {
+  //   let timerId
+  //   const updateNow = () => {
+  //     setNow(moment())
+  //     timerId = setTimeout(updateNow, MESSAGES_REFRESH_RATE * 1000)
+  //   }
+  //   timerId = setTimeout(updateNow, MESSAGES_REFRESH_RATE * 1000)
+  //   return () => clearTimeout(timerId)
+  // }, [])
   useEffect(() => {
     if (!msgs.length) return
     const didInit = !initRef.current
@@ -376,7 +427,7 @@ function Messages({ world, active }) {
         /* padding: 0 0 0.5rem; */
         /* margin-bottom: 20px; */
         flex: 1;
-        max-height: ${isTouch ? '6.25' : '16'}rem;
+        max-height: 16rem;
         transition: all 0.15s ease-out;
         display: flex;
         flex-direction: column;
@@ -390,46 +441,48 @@ function Messages({ world, active }) {
         .messages-spacer {
           flex-shrink: 0;
         }
-        .message {
-          padding: 0.25rem 0;
-          line-height: 1.4;
-          font-size: 1rem;
-          paint-order: stroke fill;
-          -webkit-text-stroke: 0.25rem rgba(0, 0, 0, 0.2);
-          &-from {
-            margin-right: 0.25rem;
-          }
-          &-body {
-            // ...
-          }
-        }
       `}
     >
       <div className='messages-spacer' ref={spacerRef} />
       {msgs.map(msg => (
-        <Message key={msg.id} msg={msg} now={now} />
+        <Message key={msg.id} msg={msg} /*now={now}*/ />
       ))}
     </div>
   )
 }
 
 function Message({ msg, now }) {
-  const timeAgo = useMemo(() => {
-    const createdAt = moment(msg.createdAt)
-    const age = now.diff(createdAt, 'seconds')
-    // up to 10s ago show now
-    if (age < 10) return 'now'
-    // under a minute show seconds
-    if (age < 60) return `${age}s ago`
-    // under an hour show minutes
-    if (age < 3600) return Math.floor(age / 60) + 'm ago'
-    // under a day show hours
-    if (age < 86400) return Math.floor(age / 3600) + 'h ago'
-    // otherwise show days
-    return Math.floor(age / 86400) + 'd ago'
-  }, [now])
+  // const timeAgo = useMemo(() => {
+  //   const createdAt = moment(msg.createdAt)
+  //   const age = now.diff(createdAt, 'seconds')
+  //   // up to 10s ago show now
+  //   if (age < 10) return 'now'
+  //   // under a minute show seconds
+  //   if (age < 60) return `${age}s ago`
+  //   // under an hour show minutes
+  //   if (age < 3600) return Math.floor(age / 60) + 'm ago'
+  //   // under a day show hours
+  //   if (age < 86400) return Math.floor(age / 3600) + 'h ago'
+  //   // otherwise show days
+  //   return Math.floor(age / 86400) + 'd ago'
+  // }, [now])
   return (
-    <div className='message'>
+    <div
+      className='message'
+      css={css`
+        padding: 0.25rem 0;
+        line-height: 1.4;
+        font-size: 1rem;
+        paint-order: stroke fill;
+        -webkit-text-stroke: 0.25rem rgba(0, 0, 0, 0.2);
+        .message-from {
+          margin-right: 0.25rem;
+        }
+        .message-body {
+          // ...
+        }
+      `}
+    >
       {msg.from && <span className='message-from'>[{msg.from}]</span>}
       <span className='message-body'>{msg.body}</span>
       {/* <span>{timeAgo}</span> */}
@@ -745,23 +798,36 @@ function TouchBtns({ world }) {
       className='touchbtns'
       css={css`
         position: absolute;
-        bottom: 1.5rem;
-        right: 1.5rem;
-        display: flex;
-        align-items: center;
+        top: calc(1.5rem + env(safe-area-inset-top));
+        right: calc(1.5rem + env(safe-area-inset-right));
+        bottom: calc(1.5rem + env(safe-area-inset-bottom));
+        left: calc(1.5rem + env(safe-area-inset-left));
         .touchbtns-btn {
           pointer-events: auto;
-          width: 2.5rem;
-          height: 2.5rem;
+          position: absolute;
+          border: 1px solid rgba(255, 255, 255, 0.2);
+          border-radius: 10rem;
           display: flex;
           align-items: center;
           justify-content: center;
+          &.jump {
+            width: 4rem;
+            height: 4rem;
+            bottom: 1rem;
+            right: 1rem;
+          }
+          &.action {
+            width: 2.5rem;
+            height: 2.5rem;
+            bottom: 6rem;
+            right: 4rem;
+          }
         }
       `}
     >
       {action && (
         <div
-          className='touchbtns-btn'
+          className='touchbtns-btn action'
           onPointerDown={e => {
             e.currentTarget.setPointerCapture(e.pointerId)
             world.controls.setTouchBtn('touchB', true)
@@ -775,7 +841,7 @@ function TouchBtns({ world }) {
         </div>
       )}
       <div
-        className='touchbtns-btn'
+        className='touchbtns-btn jump'
         onPointerDown={e => {
           e.currentTarget.setPointerCapture(e.pointerId)
           world.controls.setTouchBtn('touchA', true)
@@ -785,7 +851,7 @@ function TouchBtns({ world }) {
           e.currentTarget.releasePointerCapture(e.pointerId)
         }}
       >
-        <CircleUpIcon size='1.5rem' />
+        <ChevronDoubleUpIcon size='1.5rem' />
       </div>
     </div>
   )

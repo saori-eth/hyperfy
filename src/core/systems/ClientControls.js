@@ -540,6 +540,7 @@ export class ClientControls extends System {
     for (let i = 0; i < e.changedTouches.length; i++) {
       const touch = e.changedTouches[i]
       const info = this.touches.get(touch.identifier)
+      if (!info) continue
       const currentX = touch.clientX
       const currentY = touch.clientY
       info.delta.x += currentX - info.prevPosition.x

@@ -2,6 +2,7 @@ import { isBoolean, isNumber } from 'lodash-es'
 
 import { System } from './System'
 import { storage } from '../storage'
+import { isTouch } from '../../client/utils'
 
 /**
  * Client Prefs System
@@ -11,11 +12,17 @@ export class ClientPrefs extends System {
   constructor(world) {
     super(world)
 
-    const data = storage.get('prefs', {})
     const isQuest = /OculusBrowser/.test(navigator.userAgent)
-    const isTouch = navigator.userAgent.match(/OculusBrowser|iPhone|iPad|iPod|Android/i)
 
-    this.ui = isNumber(data.ui) ? data.ui : 1
+    const data = storage.get('prefs', {})
+
+    // v2: reset ui scale for new mobile default
+    if (!data.v) {
+      data.v = 2
+      data.ui = null
+    }
+
+    this.ui = isNumber(data.ui) ? data.ui : isTouch ? 0.9 : 1
     this.actions = isBoolean(data.actions) ? data.actions : true
     this.stats = isBoolean(data.stats) ? data.stats : false
     this.dpr = isNumber(data.dpr) ? data.dpr : 1

@@ -13,4 +13,4 @@ export function cls(...args) {
   return str
 }
 
-export const isTouch = navigator.userAgent.match(/OculusBrowser|iPhone|iPad|iPod|Android/i)
+export const isTouch = !!navigator.userAgent.match(/OculusBrowser|iPhone|iPad|iPod|Android/i)

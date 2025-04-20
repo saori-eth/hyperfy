@@ -63,19 +63,18 @@ export class RigidBody extends Node {
       // this.actor.setMass(this.mass)
       PHYSX.PxRigidBodyExt.prototype.setMassAndUpdateInertia(this.actor, this._mass)
       // this.untrack = this.ctx.world.physics.track(this.actor, this.onPhysicsMovement)
-      if (this._centerOfMass) {
-        this.actor.setCMassLocalPose({
-          translation: this._centerOfMass,
-          rotation: _q1.set(0, 0, 0, 1),
-        })
-      }
-      this.actor.setLinearDamping(this._linearDamping)
-      this.actor.setAngularDamping(this._angularDamping)
     } else if (this._type === 'dynamic') {
       this.actor = this.ctx.world.physics.physics.createRigidDynamic(this.transform)
       // this.actor.setMass(this.mass)
       PHYSX.PxRigidBodyExt.prototype.setMassAndUpdateInertia(this.actor, this._mass)
       // this.untrack = this.ctx.world.physics.track(this.actor, this.onPhysicsMovement)
+      if (this._centerOfMass) {
+        const pose = new PHYSX.PxTransform(PHYSX.PxIDENTITYEnum.PxIdentity)
+        this._centerOfMass.toPxTransform(pose)
+        this.actor.setCMassLocalPose(pose)
+      }
+      this.actor.setLinearDamping(this._linearDamping)
+      this.actor.setAngularDamping(this._angularDamping)
     }
     for (const shape of this.shapes) {
       this.actor.attachShape(shape)

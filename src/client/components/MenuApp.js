@@ -163,7 +163,13 @@ function MenuItemField({ world, props, field, value, modify }) {
   }
   if (field.type === 'text') {
     return (
-      <MenuItemText label={field.label} hint={field.hint} value={value} onChange={value => modify(field.key, value)} />
+      <MenuItemText
+        label={field.label}
+        hint={field.hint}
+        placeholder={field.placeholder}
+        value={value}
+        onChange={value => modify(field.key, value)}
+      />
     )
   }
   if (field.type === 'textarea') {

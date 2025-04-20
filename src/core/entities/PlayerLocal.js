@@ -796,19 +796,6 @@ export class PlayerLocal extends Entity {
       this.base.quaternion.slerp(q1, alpha)
     }
 
-    // make camera follow our position horizontally
-    this.cam.position.copy(this.base.position)
-    if (isXR) {
-      // ...
-    } else {
-      // and vertically at our vrm model height
-      this.cam.position.y += this.camHeight
-      // and slightly to the right over the avatars shoulder, when not in XR
-      const forward = v1.copy(FORWARD).applyQuaternion(this.cam.quaternion)
-      const right = v2.crossVectors(forward, UP).normalize()
-      this.cam.position.add(right.multiplyScalar(0.3))
-    }
-
     // emote
     let emote
     if (this.data.effect?.emote) {
@@ -880,6 +867,7 @@ export class PlayerLocal extends Entity {
   }
 
   lateUpdate(delta) {
+    const isXR = this.world.xr.session
     const anchor = this.getAnchorMatrix()
     // if we're anchored, force into that pose
     if (anchor) {
@@ -888,6 +876,18 @@ export class PlayerLocal extends Entity {
       const pose = this.capsule.getGlobalPose()
       this.base.position.toPxTransform(pose)
       this.capsuleHandle.snap(pose)
+    }
+    // make camera follow our position horizontally
+    this.cam.position.copy(this.base.position)
+    if (isXR) {
+      // ...
+    } else {
+      // and vertically at our vrm model height
+      this.cam.position.y += this.camHeight
+      // and slightly to the right over the avatars shoulder, when not in XR
+      const forward = v1.copy(FORWARD).applyQuaternion(this.cam.quaternion)
+      const right = v2.crossVectors(forward, UP).normalize()
+      this.cam.position.add(right.multiplyScalar(0.3))
     }
     if (this.world.xr.session) {
       // in vr snap camera

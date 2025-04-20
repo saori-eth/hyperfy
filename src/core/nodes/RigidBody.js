@@ -25,6 +25,19 @@ const defaults = {
   onTriggerLeave: null,
 }
 
+let forceModes
+function getForceMode(mode) {
+  if (!forceModes) {
+    forceModes = {
+      force: PHYSX.PxForceModeEnum.eFORCE,
+      impulse: PHYSX.PxForceModeEnum.eIMPULSE,
+      acceleration: PHYSX.PxForceModeEnum.eACCELERATION,
+      velocityChange: PHYSX.PxForceModeEnum.eVELOCITY_CHANGE,
+    }
+  }
+  return forceModes[mode] || forceModes.force
+}
+
 export class RigidBody extends Node {
   constructor(data = {}) {
     super(data)
@@ -300,8 +313,8 @@ export class RigidBody extends Node {
     if (!force?.isVector3) {
       throw new Error('[rigidbody] addForce force must be Vector3')
     }
-    // TODO: modes + enums injected into script
-    this.actor?.addForce(force.toPxVec3(), PHYSX.PxForceModeEnum.eFORCE, true)
+    mode = getForceMode(mode)
+    this.actor?.addForce(force.toPxVec3(), mode, true)
   }
 
   addForceAtPos(force, pos) {

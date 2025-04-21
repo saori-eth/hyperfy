@@ -126,6 +126,7 @@ export class Video extends Node {
         uGeoAspect: { value: this._aspect },
         uFit: { value: this._fit === 'cover' ? 1 : this._fit === 'contain' ? 2 : 0 }, // 0 = none, 1 = cover, 2 = contain
         uColor: { value: new THREE.Color(this._color) },
+        uOffset: { value: new THREE.Vector2(0, 0) },
       }
       // const color = this.instance?.ready ? 'white' : this._color
       material = new CustomShaderMaterial({
@@ -147,6 +148,7 @@ export class Video extends Node {
           uniform float uGeoAspect;
           uniform float uFit; // 0 = none, 1 = cover, 2 = contain
           uniform vec3 uColor; 
+          uniform vec2 uOffset;
           
           varying vec2 vUv;
 
@@ -161,59 +163,61 @@ export class Video extends Node {
           void main() {
             // Calculate aspect ratio relationship between video and geometry
             float aspect = uGeoAspect / uVidAspect;
-            
-            // Initialize UV coordinates for sampling the texture
-            vec2 scaledUv = vUv;
+
+            vec2 uv = vUv;
+
+            // Apply UV offset
+            uv = uv + uOffset;
             
             // COVER MODE (uFit = 1.0)
             if (abs(uFit - 1.0) < 0.01) {
               // Center the UV coordinates
-              scaledUv = scaledUv - 0.5;
+              uv = uv - 0.5;
               
               if (aspect > 1.0) {
                 // Geometry is wider than video:
                 // - Fill horizontally (maintain x scale)
                 // - Scale vertically to maintain aspect ratio (shrink y)
-                scaledUv.y /= aspect;
+                uv.y /= aspect;
               } else {
                 // Geometry is taller than video:
                 // - Fill vertically (maintain y scale)
                 // - Scale horizontally to maintain aspect ratio (shrink x)
-                scaledUv.x *= aspect;
+                uv.x *= aspect;
               }
               
               // Return to 0-1 range
-              scaledUv = scaledUv + 0.5;
+              uv = uv + 0.5;
             }
             // CONTAIN MODE (uFit = 2.0)
             else if (abs(uFit - 2.0) < 0.01) {
               // Center the UV coordinates
-              scaledUv = scaledUv - 0.5;
+              uv = uv - 0.5;
               
               if (aspect > 1.0) {
                 // Geometry is wider than video:
                 // - Fill vertically (maintain y scale)
                 // - Scale horizontally to fit entire video (expand x)
-                scaledUv.x *= aspect;
+                uv.x *= aspect;
               } else {
                 // Geometry is taller than video:
                 // - Fill horizontally (maintain x scale)
                 // - Scale vertically to fit entire video (expand y)
-                scaledUv.y /= aspect;
+                uv.y /= aspect;
               }
               
               // Return to 0-1 range
-              scaledUv = scaledUv + 0.5;
+              uv = uv + 0.5;
             }
             
             // Check if UVs are outside the 0-1 range (only needed for contain mode)
             vec4 col;
-            if (uHasMap < 0.5 || scaledUv.x < 0.0 || scaledUv.x > 1.0 || scaledUv.y < 0.0 || scaledUv.y > 1.0) {
+            if (uHasMap < 0.5 || uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
               // we are outside the texture or there is no video texture yet
               col = vec4(uColor, 1.0);
             } else {
               // Sample the texture with the calculated UVs
-              col = texture2D(uMap, scaledUv);
+              col = texture2D(uMap, uv);
             }
             csm_DiffuseColor = sRGBToLinear(col);
           }
@@ -808,6 +812,31 @@ export class Video extends Node {
     }
   }
 
+  get material() {
+    if (!this._materialProxy) {
+      const self = this
+      this._materialProxy = {
+        get textureX() {
+          return self.mesh.material.uniforms.uOffset.value.x
+        },
+        set textureX(value) {
+          self.mesh.material.uniforms.uOffset.value.x = value
+        },
+        get textureY() {
+          return self.mesh.material.uniforms.uOffset.value.y
+        },
+        set textureY(value) {
+          self.mesh.material.uniforms.uOffset.value.y = value
+        },
+      }
+    }
+    return this._materialProxy
+  }
+
+  set material(value) {
+    throw new Error('[video] cannot set material')
+  }
+
   play(restartIfPlaying) {
     if (this.instance) {
       this.instance.play(restartIfPlaying)
@@ -986,6 +1015,12 @@ export class Video extends Node {
         },
         set currentTime(value) {
           self.currentTime = value
+        },
+        get material() {
+          return self.material
+        },
+        set material(value) {
+          self.material = value
         },
         play(restartIfPlaying) {
           self.play(restartIfPlaying)

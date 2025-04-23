@@ -26,6 +26,7 @@ export class PlayerRemote extends Entity {
     this.base.quaternion.fromArray(this.data.quaternion)
 
     this.body = createNode('rigidbody', { type: 'kinematic' })
+    this.body.active = this.data.effect?.anchorId ? false : true
     this.base.add(this.body)
     this.collider = createNode('collider', {
       type: 'geometry',
@@ -138,6 +139,7 @@ export class PlayerRemote extends Entity {
     }
     this.data.effect = effect
     this.onEffectEnd = onEnd
+    this.body.active = effect?.anchorId ? false : true
   }
 
   setSpeaking(speaking) {
@@ -164,12 +166,7 @@ export class PlayerRemote extends Entity {
       this.data.emote = data.e
     }
     if (data.hasOwnProperty('ef')) {
-      if (this.data.effect) {
-        this.data.effect = null
-        this.onEffectEnd?.()
-        this.onEffectEnd = null
-      }
-      this.data.effect = data.ef
+      this.setEffect(data.ef)
     }
     if (data.hasOwnProperty('name')) {
       this.data.name = data.name

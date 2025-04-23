@@ -11,6 +11,10 @@ app.add(particles)
 
 ## Properties
 
+### `.emitting`: Boolean
+
+Whether the emitter should be emitting particles. Defaults to `true`.
+
 ### `.shape`: Array
 
 The shape that particles are emitted from

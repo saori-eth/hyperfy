@@ -35,6 +35,7 @@ const billboards = ['full', 'y']
 // prettier-ignore
 const defaults = {
   // emitter
+  emitting: true,
   shape: ['cone', 1, 1, 25],
   direction: 0,                       // 0 = no direction randomization, 1 = completely randomize direction
   rate: 10,                           // number of particles emitted per second
@@ -82,6 +83,7 @@ export class Particles extends Node {
     super(data)
     this.name = 'particles'
 
+    this.emitting = data.emitting
     this.shape = data.shape
     this.direction = data.direction
     this.rate = data.rate
@@ -146,6 +148,7 @@ export class Particles extends Node {
   copy(source, recursive) {
     super.copy(source, recursive)
 
+    this._emitting = source._emitting
     this._shape = source._shape
     this._direction = source._direction
     this._rate = source._rate
@@ -189,6 +192,7 @@ export class Particles extends Node {
 
   getConfig() {
     const config = {
+      emitting: this._emitting,
       shape: this._shape,
       direction: this._direction,
       rate: this._rate,
@@ -226,6 +230,19 @@ export class Particles extends Node {
       emissiveOverLife: this._emissiveOverLife,
     }
     return config
+  }
+
+  get emitting() {
+    return this._emitting
+  }
+
+  set emitting(value = defaults.emitting) {
+    if (!isBoolean(value)) {
+      throw new Error('[particles] emitting not a boolean')
+    }
+    if (this._emitting === value) return
+    this._emitting = value
+    this.emitter?.setEmitting(value)
   }
 
   get shape() {
@@ -645,6 +662,12 @@ export class Particles extends Node {
     var self = this
     if (!this.proxy) {
       let proxy = {
+        get emitting() {
+          return self.emitting
+        },
+        set emitting(value) {
+          self.emitting = value
+        },
         get shape() {
           return self.shape
         },

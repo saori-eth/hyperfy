@@ -226,6 +226,10 @@ function createEmitter(world, system, node) {
     system.worker.postMessage(msg, transfers)
   }
 
+  function setEmitting(value) {
+    send({ op: 'emitting', value })
+  }
+
   function onMessage(msg) {
     if (msg.op === 'update') {
       const n = msg.n
@@ -330,6 +334,7 @@ function createEmitter(world, system, node) {
     id,
     node,
     send,
+    setEmitting,
     onMessage,
     update,
     destroy,

@@ -26,6 +26,9 @@ self.onmessage = msg => {
       const system = createEmitter(msg)
       emitters[msg.id] = system
       break
+    case 'emitting':
+      emitters[msg.emitterId]?.setEmitting(msg.value)
+      break
     // case 'play':
     //   emitters[msg.emitterId]?.play()
     //   break
@@ -55,11 +58,13 @@ function createEmitter(config) {
   let duration = config.duration
   let newParticlesByTime = 0
   let newParticlesByDist = 0
-  let emitting = true
+  let emitting = config.emitting
   let bursts = config.bursts.slice()
   let ended = false
-  let lastPosition = null
   let rateOverDistance = config.rateOverDistance
+  let distanceRemainder = 0
+  let lastWorldPos = null
+  let moveDir = new Vector3()
 
   const particles = []
 
@@ -160,22 +165,46 @@ function createEmitter(config) {
     }
   }
 
-  function update({ delta, camPosition, matrixWorld, aPosition, aRotation, aSize, aColor, aAlpha, aEmissive, aUV }) {
+  function update({
+    delta,
+    camPosition,
+    matrixWorld,
+    aPosition,
+    aRotation,
+    aDirection,
+    aSize,
+    aColor,
+    aAlpha,
+    aEmissive,
+    aUV,
+  }) {
     delta *= config.timescale
     // console.time('update')
     // console.log('m1', matrixWorld)
     matrixWorld = m1.fromArray(matrixWorld)
     camPosition = v1.fromArray(camPosition)
     elapsed += delta
-    const center = v2.setFromMatrixPosition(matrixWorld) // center in same space as particles
-    // track distance moved
-    let distanceMoved = 0
-    if (lastPosition) {
-      distanceMoved = center.distanceTo(lastPosition)
+    // track move direction and distance
+    const currWorldPos = v2.setFromMatrixPosition(matrixWorld)
+    let distanceMoved
+    if (lastWorldPos) {
+      distanceMoved = currWorldPos.distanceTo(lastWorldPos)
+      if (distanceMoved > 0.0001) {
+        moveDir.copy(currWorldPos).sub(lastWorldPos).normalize()
+      }
     } else {
-      lastPosition = center.clone()
+      distanceMoved = 0
+      lastWorldPos = currWorldPos.clone()
     }
-    lastPosition.copy(center)
+
+    // const center = v2.setFromMatrixPosition(matrixWorld) // center in same space as particles
+    // let distanceMoved = 0
+    // if (lastPosition) {
+    //   distanceMoved = center.distanceTo(lastPosition)
+    // } else {
+    //   lastPosition = center.clone()
+    // }
+
     // emit over time
     if (emitting) {
       newParticlesByTime += config.rate * delta
@@ -184,12 +213,52 @@ function createEmitter(config) {
       newParticlesByTime -= amount
     }
     // emit over distance
+    // if (emitting && rateOverDistance && distanceMoved > 0) {
+    //   newParticlesByDist += rateOverDistance * distanceMoved
+    //   const amount = Math.floor(newParticlesByDist)
+    //   if (amount > 0) emit({ amount, matrixWorld })
+    //   newParticlesByDist -= amount
+    // }
+    // emit over distance
     if (emitting && rateOverDistance && distanceMoved > 0) {
-      newParticlesByDist += rateOverDistance * distanceMoved
-      const amount = Math.floor(newParticlesByDist)
-      if (amount > 0) emit({ amount, matrixWorld })
-      newParticlesByDist -= amount
+      // Calculate the distance interval between particles
+      const distanceBetweenParticles = 1.0 / rateOverDistance
+
+      // Add current movement to remainder from previous frames
+      distanceRemainder += distanceMoved
+
+      // Calculate how many complete particles we should emit based on distance
+      const particlesToEmit = Math.floor(distanceRemainder / distanceBetweenParticles)
+
+      if (particlesToEmit > 0) {
+        // Create particles along the movement path
+        for (let i = 0; i < particlesToEmit; i++) {
+          // Calculate position along the movement path
+          // The +1 ensures we start from the previous position, not the current one
+          const lerpFactor = (i + 1) / (particlesToEmit + 1)
+
+          // Create a position vector along the path
+          const emitPosition = new Vector3().copy(lastWorldPos).lerp(currWorldPos, lerpFactor)
+
+          // Create a temporary matrix with this position
+          const tempMatrix = new Matrix4().copy(matrixWorld)
+          tempMatrix.setPosition(emitPosition)
+
+          // Emit a single particle at this position
+          emit({
+            amount: 1,
+            matrixWorld: tempMatrix,
+            // isDistanceEmission: true,
+            // movementDirection,
+          })
+        }
+
+        // Update remainder for next frame (keep fractional part)
+        distanceRemainder -= particlesToEmit * distanceBetweenParticles
+      }
     }
+    // track new pos
+    lastWorldPos.copy(currWorldPos)
     // emit bursts
     while (bursts.length && bursts[0].time <= elapsed) {
       const burst = bursts.shift()
@@ -223,7 +292,7 @@ function createEmitter(config) {
       // orbital velocity
       if (velocityOrbital) {
         // Calculate vector from emitter center to particle
-        v3.copy(particle.position).sub(center)
+        v3.copy(particle.position).sub(currWorldPos)
         // For each axis (X, Y, Z), rotate around that axis
         if (velocityOrbital.x !== 0) {
           // Rotate around X axis
@@ -241,7 +310,7 @@ function createEmitter(config) {
           v3.applyQuaternion(q2)
         }
         // Set particle position to emitter center + rotated offset
-        particle.position.copy(center).add(v3)
+        particle.position.copy(currWorldPos).add(v3)
         // Update velocity to match orbital motion
         // This ensures it continues to move in the tangent direction
         if (v3.length() > 0.001) {
@@ -265,7 +334,7 @@ function createEmitter(config) {
       // radial velocity (away from emitter center)
       if (velocityRadial) {
         // Get direction from emitter center to particle
-        v3.copy(particle.position).sub(center)
+        v3.copy(particle.position).sub(currWorldPos)
         if (v3.length() > 0.001) {
           // Normalize to get direction
           v3.normalize()
@@ -347,6 +416,34 @@ function createEmitter(config) {
       aPosition[n * 3 + 1] = particle.finalPosition.y
       aPosition[n * 3 + 2] = particle.finalPosition.z
       aRotation[n * 1 + 0] = particle.rotation
+
+      aDirection[n * 3 + 0] = particle.direction.x
+      aDirection[n * 3 + 1] = particle.direction.y
+      aDirection[n * 3 + 2] = particle.direction.z
+
+      // // For direction billboarding, use normalized velocity if it has magnitude
+      // // otherwise fall back to the initial direction
+      // let dx, dy, dz
+      // if (particle.velocity.lengthSq() > 0.0001) {
+      //   // Use normalized velocity as direction
+      //   const velLength = Math.sqrt(
+      //     particle.velocity.x * particle.velocity.x +
+      //       particle.velocity.y * particle.velocity.y +
+      //       particle.velocity.z * particle.velocity.z
+      //   )
+      //   dx = particle.velocity.x / velLength
+      //   dy = particle.velocity.y / velLength
+      //   dz = particle.velocity.z / velLength
+      // } else {
+      //   // Fallback to the initial particle direction
+      //   dx = particle.direction.x
+      //   dy = particle.direction.y
+      //   dz = particle.direction.z
+      // }
+      // aDirection[n * 3 + 0] = dx
+      // aDirection[n * 3 + 1] = dy
+      // aDirection[n * 3 + 2] = dz
+
       aSize[n * 1 + 0] = particle.size
       aColor[n * 3 + 0] = particle.color[0]
       aColor[n * 3 + 1] = particle.color[1]
@@ -367,6 +464,7 @@ function createEmitter(config) {
         n,
         aPosition,
         aRotation,
+        aDirection,
         aSize,
         aColor,
         aAlpha,
@@ -377,6 +475,7 @@ function createEmitter(config) {
         // prettier-ignore
         aPosition.buffer,
         aRotation.buffer,
+        aDirection.buffer,
         aSize.buffer,
         aColor.buffer,
         aAlpha.buffer,
@@ -392,6 +491,9 @@ function createEmitter(config) {
   }
 
   return {
+    setEmitting(value) {
+      emitting = value
+    },
     update,
     destroy,
   }

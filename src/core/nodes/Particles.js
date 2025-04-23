@@ -6,7 +6,7 @@ import { Node } from './Node'
 const shapeTypes = ['point', 'sphere', 'hemisphere', 'cone', 'box', 'circle', 'rectangle']
 const spaces = ['local', 'world']
 const blendings = ['additive', 'normal']
-const billboards = ['full', 'y']
+const billboards = ['full', 'y', 'direction']
 
 // shape types
 // -------------

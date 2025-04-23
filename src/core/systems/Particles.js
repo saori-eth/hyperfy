@@ -10,6 +10,12 @@ const e1 = new THREE.Euler(0, 0, 0, 'YXZ')
 const arr1 = []
 const arr2 = []
 
+const billboardModeInts = {
+  full: 0,
+  y: 1,
+  direction: 2,
+}
+
 export class Particles extends System {
   constructor(world) {
     super(world)
@@ -73,6 +79,10 @@ function createEmitter(world, system, node) {
   aRotation.setUsage(THREE.DynamicDrawUsage)
   geometry.setAttribute('aRotation', aRotation)
 
+  const aDirection = new THREE.InstancedBufferAttribute(new Float32Array(node._max * 3), 3)
+  aDirection.setUsage(THREE.DynamicDrawUsage)
+  geometry.setAttribute('aDirection', aDirection)
+
   const aSize = new THREE.InstancedBufferAttribute(new Float32Array(node._max * 1), 1)
   aSize.setUsage(THREE.DynamicDrawUsage)
   geometry.setAttribute('aSize', aSize)
@@ -97,6 +107,7 @@ function createEmitter(world, system, node) {
   const next = {
     aPosition: new Float32Array(node._max * 3),
     aRotation: new Float32Array(node._max * 1),
+    aDirection: new Float32Array(node._max * 3),
     aSize: new Float32Array(node._max * 1),
     aColor: new Float32Array(node._max * 3),
     aAlpha: new Float32Array(node._max * 1),
@@ -109,6 +120,7 @@ function createEmitter(world, system, node) {
 
   const uniforms = {
     uTexture: { value: texture },
+    uBillboard: { value: billboardModeInts[node._billboard] },
     uOrientation: node._billboard === 'full' ? system.uOrientationFull : system.uOrientationY,
   }
   world.loader.load('texture', node._image).then(texture => {
@@ -134,12 +146,14 @@ function createEmitter(world, system, node) {
     vertexShader: `
       attribute vec3 aPosition;
       attribute float aRotation;
+      attribute vec3 aDirection;
       attribute float aSize;
       attribute vec3 aColor;
       attribute float aAlpha;
       attribute float aEmissive;
       attribute vec4 aUV;  // u0, v0, u1, v1
 
+      uniform float uBillboard;
       uniform vec4 uOrientation;
 
       varying vec2 vUv;
@@ -147,6 +161,22 @@ function createEmitter(world, system, node) {
       varying float vEmissive;
 
       const float DEG2RAD = ${DEG2RAD};
+
+      mat3 rotationFromDirection(vec3 dir) {
+        vec3 n = normalize(dir);              // target normal (+Z after the rotation)
+        vec3 up = vec3(0.0, 1.0, 0.0);
+        // pick a new 'up' if we are too parallel
+        if (abs(dot(n, up)) > 0.99) {
+          up = vec3(1.0, 0.0, 0.0);
+        } 
+        vec3 right = normalize(cross(up, n)); // 1st column
+        up = cross(n, right); // 2nd column (already normalised)
+        return mat3(
+          right,  // column 0
+          up,     // column 1
+          n       // column 2  ←  billboard normal
+        );                   
+      }
 
       vec3 applyQuaternion(vec3 pos, vec4 quat) {
         vec3 qv = vec3(quat.x, quat.y, quat.z);
@@ -178,8 +208,17 @@ function createEmitter(world, system, node) {
           -newPosition.x * sinRot + newPosition.y * cosRot
         );
 
-        // Apply billboard (face camera)
-        newPosition = applyQuaternion(newPosition, uOrientation);
+        // Apply billboard
+        if (uBillboard < 0.1) {
+          // full
+          newPosition = applyQuaternion(newPosition, uOrientation);
+        } else if (uBillboard < 1.1) {
+          // y
+          newPosition = applyQuaternion(newPosition, uOrientation);
+        } else {
+          // direction 
+          newPosition = rotationFromDirection(aDirection) * newPosition;
+        }
         
         // Apply particle position
         newPosition += aPosition;
@@ -236,6 +275,7 @@ function createEmitter(world, system, node) {
 
       next.aPosition = aPosition.array
       next.aRotation = aRotation.array
+      next.aDirection = aDirection.array
       next.aSize = aSize.array
       next.aColor = aColor.array
       next.aAlpha = aAlpha.array
@@ -248,6 +288,9 @@ function createEmitter(world, system, node) {
       aRotation.array = msg.aRotation
       aRotation.addUpdateRange(0, n * 1)
       aRotation.needsUpdate = true
+      aDirection.array = msg.aDirection
+      aDirection.addUpdateRange(0, n * 3)
+      aDirection.needsUpdate = true
       aSize.array = msg.aSize
       aSize.addUpdateRange(0, n * 1)
       aSize.needsUpdate = true
@@ -287,6 +330,7 @@ function createEmitter(world, system, node) {
       skippedDelta = 0
       const aPosition = next.aPosition
       const aRotation = next.aRotation
+      const aDirection = next.aDirection
       const aSize = next.aSize
       const aColor = next.aColor
       const aAlpha = next.aAlpha
@@ -302,6 +346,7 @@ function createEmitter(world, system, node) {
           matrixWorld: matrixWorld.toArray(arr2),
           aPosition,
           aRotation,
+          aDirection,
           aSize,
           aColor,
           aAlpha,
@@ -312,6 +357,7 @@ function createEmitter(world, system, node) {
           // prettier-ignore
           aPosition.buffer,
           aRotation.buffer,
+          aDirection.buffer,
           aSize.buffer,
           aColor.buffer,
           aAlpha.buffer,

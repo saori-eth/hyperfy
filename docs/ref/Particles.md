@@ -176,11 +176,11 @@ Determines whether the particle is affected by PBR lighting. Defaults to `false`
 
 ### `.billboard`: String
 
-Either `full` or `y`. Defaults to `full`.
+Either `full`, `y` or `direction`. Defaults to `full`.
 
 ### `.space`: String
 
-Whether particles are in `local` or `world` space. Local particles with move with the emitter where-as World particles will not. Defaults to `world`.
+Whether particles are in `local` or `world` space. Local particles will move with the emitter where-as World particles will not. Defaults to `world`.
 
 ### `.force`: Vector3|null
 
@@ -246,21 +246,6 @@ particles.onEnd = () => {
   world.remove(particles)
 }
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ### `.{...Node}`
 

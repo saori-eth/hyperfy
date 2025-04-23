@@ -122,6 +122,7 @@ export class PlayerRemote extends Entity {
       this.quaternion.snap()
       this.base.position.setFromMatrixPosition(anchor)
       this.base.quaternion.setFromRotationMatrix(anchor)
+      this.base.clean()
     }
     if (this.avatar) {
       const matrix = this.avatar.getBoneTransform('head')

@@ -91,7 +91,7 @@ export function MenuItemBack({ hint, onClick }) {
       onPointerLeave={() => setHint(null)}
       onClick={onClick}
     >
-      <ChevronLeftIcon />
+      <ChevronLeftIcon size={'1.5rem'} />
       <div className='menuback-label'>
         <span>Back</span>
       </div>

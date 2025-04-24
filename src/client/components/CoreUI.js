@@ -128,6 +128,7 @@ function Content({ world, width, height }) {
       {!ready && <LoadingOverlay />}
       {kicked && <KickedOverlay code={kicked} />}
       {ready && isTouch && <TouchBtns world={world} />}
+      <div id='core-ui-portal' />
     </div>
   )
 }

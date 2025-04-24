@@ -72,6 +72,7 @@ export class App extends Entity {
         root = glb.toNodes()
       } catch (err) {
         console.error(err)
+        crashed = true
         // no model, will use crash block below
       }
       // fetch script (if any)
@@ -86,7 +87,7 @@ export class App extends Entity {
       }
     }
     // if script crashed (or failed to load model), show crash-block
-    if (crashed || !root) {
+    if (crashed) {
       let glb = this.world.loader.get('model', 'asset://crash-block.glb')
       if (!glb) glb = await this.world.loader.load('model', 'asset://crash-block.glb')
       root = glb.toNodes()
@@ -390,7 +391,7 @@ export class App extends Entity {
     if (!proxy || proxy.destroyed) {
       const player = this.world.entities.getPlayer(playerId)
       if (!player) return null
-      proxy = createPlayerProxy(player)
+      proxy = createPlayerProxy(this, player)
       this.playerProxies.set(playerId, proxy)
     }
     return proxy

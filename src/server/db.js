@@ -208,4 +208,19 @@ const migrations = [
       }
     }
   },
+  // add entity.scale field
+  async db => {
+    const entities = await db('entities')
+    for (const entity of entities) {
+      const data = JSON.parse(entity.data)
+      if (!data.scale) {
+        data.scale = [1, 1, 1]
+        await db('entities')
+          .where('id', entity.id)
+          .update({
+            data: JSON.stringify(data),
+          })
+      }
+    }
+  },
 ]

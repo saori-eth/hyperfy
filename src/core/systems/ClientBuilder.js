@@ -26,6 +26,7 @@ const modeLabels = {
   grab: 'Grab',
   translate: 'Translate',
   rotate: 'Rotate',
+  scale: 'Scale',
 }
 
 /**
@@ -94,7 +95,7 @@ export class ClientBuilder extends System {
     if (this.enabled && !this.selected) {
       actions.push({ type: 'mouseLeft', label: modeLabels[this.mode] })
       actions.push({ type: 'mouseRight', label: 'Inspect' })
-      actions.push({ type: 'custom', btn: '123', label: 'Grab / Translate / Rotate' })
+      actions.push({ type: 'custom', btn: '1234', label: 'Grab / Translate / Rotate / Scale' })
       actions.push({ type: 'keyR', label: 'Duplicate' })
       actions.push({ type: 'keyP', label: 'Pin' })
       actions.push({ type: 'keyX', label: 'Destroy' })
@@ -105,7 +106,7 @@ export class ClientBuilder extends System {
       actions.push({ type: 'mouseLeft', label: 'Place' })
       actions.push({ type: 'mouseWheel', label: 'Rotate' })
       actions.push({ type: 'mouseRight', label: 'Inspect' })
-      actions.push({ type: 'custom', btn: '123', label: 'Grab / Translate / Rotate' })
+      actions.push({ type: 'custom', btn: '1234', label: 'Grab / Translate / Rotate / Scale' })
       actions.push({ type: 'keyF', label: 'Push' })
       actions.push({ type: 'keyC', label: 'Pull' })
       actions.push({ type: 'keyX', label: 'Destroy' })
@@ -116,7 +117,7 @@ export class ClientBuilder extends System {
     if (this.enabled && this.selected && (this.mode === 'translate' || this.mode === 'rotate')) {
       actions.push({ type: 'mouseLeft', label: 'Select / Transform' })
       actions.push({ type: 'mouseRight', label: 'Inspect' })
-      actions.push({ type: 'custom', btn: '123', label: 'Grab / Translate / Rotate' })
+      actions.push({ type: 'custom', btn: '1234', label: 'Grab / Translate / Rotate / Scale' })
       actions.push({ type: 'keyT', label: this.localSpace ? 'World Space' : 'Local Space' })
       actions.push({ type: 'keyX', label: 'Destroy' })
       actions.push({ type: 'controlLeft', label: 'No Snap (Hold)' })
@@ -207,7 +208,7 @@ export class ClientBuilder extends System {
       }
     }
     // gizmo local/world toggle
-    if (this.control.keyT.pressed & (this.mode === 'translate' || this.mode === 'rotate')) {
+    if (this.control.keyT.pressed & (this.mode === 'translate' || this.mode === 'rotate' || this.mode === 'scale')) {
       this.localSpace = !this.localSpace
       this.gizmo.space = this.localSpace ? 'local' : 'world'
       this.updateActions()
@@ -224,6 +225,10 @@ export class ClientBuilder extends System {
     if (this.control.digit3.pressed) {
       this.setMode('rotate')
     }
+    // scale mode
+    if (this.control.digit4.pressed) {
+      this.setMode('scale')
+    }
     // left-click place/select/reselect/deselect
     if (!this.justPointerLocked && this.control.pointer.locked && this.control.mouseLeft.pressed) {
       // if nothing selected, attempt to select
@@ -235,8 +240,12 @@ export class ClientBuilder extends System {
       else if (this.selected && this.mode === 'grab') {
         this.select(null)
       }
-      // if selected in translate/rotate mode, re-select/deselect
-      else if (this.selected && (this.mode === 'translate' || this.mode === 'rotate') && !this.gizmoActive) {
+      // if selected in translate/rotate/scale mode, re-select/deselect
+      else if (
+        this.selected &&
+        (this.mode === 'translate' || this.mode === 'rotate' || this.mode === 'scale') &&
+        !this.gizmoActive
+      ) {
         const entity = this.getEntityAtReticle()
         if (entity?.isApp) this.select(entity)
         else this.select(null)
@@ -280,6 +289,7 @@ export class ClientBuilder extends System {
           blueprint: blueprintId,
           position: entity.root.position.toArray(),
           quaternion: entity.root.quaternion.toArray(),
+          scale: entity.root.scale.toArray(),
           mover: this.world.network.id,
           uploader: null,
           pinned: false,
@@ -318,6 +328,7 @@ export class ClientBuilder extends System {
       const app = this.selected
       app.root.position.copy(this.gizmoTarget.position)
       app.root.quaternion.copy(this.gizmoTarget.quaternion)
+      app.root.scale.copy(this.gizmoTarget.scale)
     }
     // rotate updates
     if (this.selected && this.mode === 'rotate' && this.control.controlLeft.pressed) {
@@ -330,6 +341,12 @@ export class ClientBuilder extends System {
       const app = this.selected
       app.root.position.copy(this.gizmoTarget.position)
       app.root.quaternion.copy(this.gizmoTarget.quaternion)
+      app.root.scale.copy(this.gizmoTarget.scale)
+    }
+    // scale updates
+    if (this.selected && this.mode === 'scale' && this.gizmoActive) {
+      const app = this.selected
+      app.root.scale.copy(this.gizmoTarget.scale)
     }
     // grab updates
     if (this.selected && this.mode === 'grab') {
@@ -359,6 +376,7 @@ export class ClientBuilder extends System {
       // apply movement
       app.root.position.copy(this.target.position)
       app.root.quaternion.copy(this.target.quaternion)
+      app.root.scale.copy(this.target.scale)
       // snap rotation to degrees
       if (!this.control.controlLeft.down) {
         const newY = this.target.rotation.y
@@ -389,6 +407,7 @@ export class ClientBuilder extends System {
           id: app.data.id,
           position: app.root.position.toArray(),
           quaternion: app.root.quaternion.toArray(),
+          scale: app.root.scale.toArray(),
         })
         this.lastMoveSendTime = 0
       }
@@ -423,6 +442,7 @@ export class ClientBuilder extends System {
         id: undo.entityId,
         position: entity.data.position,
         quaternion: entity.data.quaternion,
+        scale: entity.data.scale,
       })
       entity.build()
       return
@@ -452,7 +472,7 @@ export class ClientBuilder extends System {
         this.control.keyC.capture = false
         this.control.scrollDelta.capture = false
       }
-      if (this.mode === 'translate' || this.mode === 'rotate') {
+      if (this.mode === 'translate' || this.mode === 'rotate' || this.mode === 'scale') {
         this.detachGizmo()
       }
     }
@@ -465,10 +485,11 @@ export class ClientBuilder extends System {
         this.control.scrollDelta.capture = true
         this.target.position.copy(app.root.position)
         this.target.quaternion.copy(app.root.quaternion)
+        this.target.scale.copy(app.root.scale)
         this.target.limit = PROJECT_MAX
       }
     }
-    if (this.mode === 'translate' || this.mode === 'rotate') {
+    if (this.mode === 'translate' || this.mode === 'rotate' || this.mode === 'scale') {
       if (this.selected) {
         this.attachGizmo(this.selected, this.mode)
       }
@@ -486,12 +507,14 @@ export class ClientBuilder extends System {
         app.data.mover = null
         app.data.position = app.root.position.toArray()
         app.data.quaternion = app.root.quaternion.toArray()
+        app.data.scale = app.root.scale.toArray()
         app.data.state = {}
         this.world.network.send('entityModified', {
           id: app.data.id,
           mover: null,
           position: app.data.position,
           quaternion: app.data.quaternion,
+          scale: app.data.scale,
           state: app.data.state,
         })
         app.build()
@@ -501,7 +524,7 @@ export class ClientBuilder extends System {
         this.control.keyC.capture = false
         this.control.scrollDelta.capture = false
       }
-      if (this.mode === 'translate' || this.mode === 'rotate') {
+      if (this.mode === 'translate' || this.mode === 'rotate' || this.mode === 'scale') {
         this.detachGizmo()
       }
     }
@@ -512,6 +535,7 @@ export class ClientBuilder extends System {
         entityId: app.data.id,
         position: app.data.position.slice(),
         quaternion: app.data.quaternion.slice(),
+        scale: app.data.scale.slice(),
       })
       if (app.data.mover !== this.world.network.id) {
         app.data.mover = this.world.network.id
@@ -524,9 +548,10 @@ export class ClientBuilder extends System {
         this.control.scrollDelta.capture = true
         this.target.position.copy(app.root.position)
         this.target.quaternion.copy(app.root.quaternion)
+        this.target.scale.copy(app.root.scale)
         this.target.limit = PROJECT_MAX
       }
-      if (this.mode === 'translate' || this.mode === 'rotate') {
+      if (this.mode === 'translate' || this.mode === 'rotate' || this.mode === 'scale') {
         this.attachGizmo(app, this.mode)
       }
     }
@@ -554,6 +579,7 @@ export class ClientBuilder extends System {
     // initialize it
     this.gizmoTarget.position.copy(app.root.position)
     this.gizmoTarget.quaternion.copy(app.root.quaternion)
+    this.gizmoTarget.scale.copy(app.root.scale)
     this.world.stage.scene.add(this.gizmoTarget)
     this.world.stage.scene.add(this.gizmoHelper)
     this.gizmo.rotationSnap = SNAP_DEGREES * DEG2RAD
@@ -716,6 +742,7 @@ export class ClientBuilder extends System {
       blueprint: blueprint.id,
       position: transform.position,
       quaternion: transform.quaternion,
+      scale: [1, 1, 1],
       mover: null,
       uploader: this.world.network.id,
       pinned: false,
@@ -773,6 +800,7 @@ export class ClientBuilder extends System {
       blueprint: blueprint.id,
       position: transform.position,
       quaternion: transform.quaternion,
+      scale: [1, 1, 1],
       mover: null,
       uploader: this.world.network.id,
       pinned: false,
@@ -830,6 +858,7 @@ export class ClientBuilder extends System {
           blueprint: blueprint.id,
           position: transform.position,
           quaternion: transform.quaternion,
+          scale: [1, 1, 1],
           mover: null,
           uploader: this.world.network.id,
           pinned: false,

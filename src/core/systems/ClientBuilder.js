@@ -371,8 +371,15 @@ export class ClientBuilder extends System {
         if (this.target.limit < PROJECT_MIN) this.target.limit = PROJECT_MIN
         if (hitDistance && this.target.limit > hitDistance) this.target.limit = hitDistance
       }
-      // if not holding shift, mouse wheel rotates
-      this.target.rotation.y += this.control.scrollDelta.value * 0.1 * delta
+      // shift + mouse wheel scales
+      if (this.control.shiftLeft.down) {
+        const scaleFactor = 1 + this.control.scrollDelta.value * 0.1 * delta
+        this.target.scale.multiplyScalar(scaleFactor)
+      }
+      // !shift + mouse wheel rotates
+      else {
+        this.target.rotation.y += this.control.scrollDelta.value * 0.1 * delta
+      }
       // apply movement
       app.root.position.copy(this.target.position)
       app.root.quaternion.copy(this.target.quaternion)

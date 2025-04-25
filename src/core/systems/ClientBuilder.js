@@ -183,6 +183,7 @@ export class ClientBuilder extends System {
           locked: entity.blueprint.locked,
           frozen: entity.blueprint.frozen,
           unique: entity.blueprint.unique,
+          disabled: entity.blueprint.disabled,
         }
         this.world.blueprints.add(blueprint, true)
         // assign new blueprint
@@ -268,6 +269,7 @@ export class ClientBuilder extends System {
             locked: entity.blueprint.locked,
             frozen: entity.blueprint.frozen,
             unique: entity.blueprint.unique,
+            disabled: entity.blueprint.disabled,
           }
           this.world.blueprints.add(blueprint, true)
           blueprintId = blueprint.id
@@ -705,6 +707,7 @@ export class ClientBuilder extends System {
       locked: info.blueprint.locked,
       frozen: info.blueprint.frozen,
       unique: info.blueprint.unique,
+      disabled: info.blueprint.disabled,
     }
     this.world.blueprints.add(blueprint, true)
     const data = {
@@ -757,6 +760,7 @@ export class ClientBuilder extends System {
       public: false,
       locked: false,
       unique: false,
+      disabled: false,
     }
     // register blueprint
     this.world.blueprints.add(blueprint, true)
@@ -813,6 +817,7 @@ export class ClientBuilder extends System {
           public: false,
           locked: false,
           unique: false,
+          disabled: false,
         }
         // register blueprint
         this.world.blueprints.add(blueprint, true)

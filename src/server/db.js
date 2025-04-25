@@ -193,4 +193,19 @@ const migrations = [
       await db('config').where('key', 'config').delete()
     }
   },
+  // add blueprint.disabled field
+  async db => {
+    const blueprints = await db('blueprints')
+    for (const blueprint of blueprints) {
+      const data = JSON.parse(blueprint.data)
+      if (data.disabled === undefined) {
+        data.disabled = false
+        await db('blueprints')
+          .where('id', blueprint.id)
+          .update({
+            data: JSON.stringify(data),
+          })
+      }
+    }
+  },
 ]

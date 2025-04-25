@@ -53,6 +53,13 @@ export class App extends Entity {
     // fetch blueprint
     const blueprint = this.world.blueprints.get(this.data.blueprint)
 
+    if (blueprint.disabled) {
+      this.unbuild()
+      this.blueprint = blueprint
+      this.building = false
+      return
+    }
+
     let root
     let script
     // if someone else is uploading glb, show a loading indicator

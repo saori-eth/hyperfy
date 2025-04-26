@@ -750,6 +750,12 @@ export const fileKinds = {
     exts: ['jpg', 'jpeg', 'png', 'webp'],
     placeholder: 'jpg,png,webp',
   },
+  image: {
+    type: 'image',
+    accept: '.jpg,.jpeg,.png,.webp',
+    exts: ['jpg', 'jpeg', 'png', 'webp'],
+    placeholder: 'jpg,png,webp',
+  },
   video: {
     type: 'video',
     accept: '.mp4',

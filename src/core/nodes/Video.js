@@ -209,17 +209,22 @@ export class Video extends Node {
               // Return to 0-1 range
               uv = uv + 0.5;
             }
-            
-            // Check if UVs are outside the 0-1 range (only needed for contain mode)
-            vec4 col;
-            if (uHasMap < 0.5 || uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) {
-              // we are outside the texture or there is no video texture yet
-              col = vec4(uColor, 1.0);
-            } else {
-              // Sample the texture with the calculated UVs
-              col = texture2D(uMap, uv);
-            }
-            csm_DiffuseColor = col;
+
+            // pull UV into [0,1] before sampling
+            vec2 uvClamped = clamp(uv, 0.0, 1.0);
+            vec4 col = texture2D(uMap, uvClamped);
+
+            // outside coloring (for contain mode)
+            if (uFit >= 1.5) {
+              const float EPS = 0.005;
+              // decide “outside” based on the *raw* uv
+              bool outside = uv.x < -EPS || uv.x > 1.0 + EPS || uv.y < -EPS || uv.y > 1.0 + EPS;
+              if (outside) {
+                col = vec4(uColor, 1.0);
+              }
+            } 
+
+            csm_DiffuseColor = sRGBToLinear(col);
           }
         `,
       })

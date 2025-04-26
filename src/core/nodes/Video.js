@@ -219,7 +219,7 @@ export class Video extends Node {
               // Sample the texture with the calculated UVs
               col = texture2D(uMap, uv);
             }
-            csm_DiffuseColor = sRGBToLinear(col);
+            csm_DiffuseColor = col;
           }
         `,
       })

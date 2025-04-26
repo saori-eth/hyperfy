@@ -270,6 +270,7 @@ function createPlayerScreen({ world, playerId, targetId, track, participant }) {
   texture.minFilter = THREE.LinearFilter
   texture.magFilter = THREE.LinearFilter
   texture.anisotropy = world.graphics.maxAnisotropy
+  texture.needsUpdate = true
   let width
   let height
   let ready = false

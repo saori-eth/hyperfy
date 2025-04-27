@@ -88,7 +88,8 @@ export class Image extends Node {
     if (this.ctx.world.network.isServer) return
     if (!this._src) return
     const n = ++this.n
-    const image = await this.ctx.world.loader.load('image', this._src)
+    let image = this.ctx.world.loader.get('image', this._src)
+    if (!image) image = await this.ctx.world.loader.load('image', this._src)
     if (this.n !== n) return
     this.unbuild()
     const imgAspect = image.width / image.height

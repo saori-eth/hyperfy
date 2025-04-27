@@ -35,6 +35,7 @@ export class App extends Entity {
     this.fields = []
     this.target = null
     this.projectLimit = Infinity
+    this.keepActive = false
     this.playerProxies = new Map()
     this.hitResultsPool = []
     this.hitResults = []
@@ -116,9 +117,12 @@ export class App extends Entity {
     // activate
     this.root.activate({ world: this.world, entity: this, moving: !!this.data.mover })
     // execute script
-    if (this.mode === Modes.ACTIVE && script && !crashed) {
+    const runScript =
+      (this.mode === Modes.ACTIVE && script && !crashed) || (this.mode === Modes.MOVING && this.keepActive)
+    if (runScript) {
       this.abortController = new AbortController()
       this.script = script
+      this.keepActive = false // allow script to re-enable
       try {
         this.script.exec(this.getWorldProxy(), this.getAppProxy(), this.fetch, blueprint.props, this.setTimeout)
       } catch (err) {

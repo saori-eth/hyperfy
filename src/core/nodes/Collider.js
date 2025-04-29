@@ -344,6 +344,11 @@ export class Collider extends Node {
     this.restitution = restitution
   }
 
+  requestRebuild() {
+    this.needsRebuild = true
+    this.setDirty()
+  }
+
   getProxy() {
     if (!this.proxy) {
       const self = this
@@ -428,6 +433,9 @@ export class Collider extends Node {
         },
         setMaterial(staticFriction, dynamicFriction, restitution) {
           self.setMaterial(staticFriction, dynamicFriction, restitution)
+        },
+        requestRebuild() {
+          self.requestRebuild()
         },
       }
       proxy = Object.defineProperties(proxy, Object.getOwnPropertyDescriptors(super.getProxy())) // inherit Node properties

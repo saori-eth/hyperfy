@@ -70,11 +70,7 @@ export class Collider extends Node {
       }
       PHYSX.destroy(scale)
     }
-    const material = this.ctx.world.physics.physics.createMaterial(
-      this._staticFriction,
-      this._dynamicFriction,
-      this._restitution
-    )
+    const material = this.ctx.world.physics.getMaterial(this._staticFriction, this._dynamicFriction, this._restitution)
     const flags = new PHYSX.PxShapeFlags()
     if (this._trigger) {
       flags.raise(PHYSX.PxShapeFlagEnum.eTRIGGER_SHAPE)

@@ -89,7 +89,7 @@ export class ClientBuilder extends System {
     const actions = []
     if (!this.enabled) {
       if (this.canBuild()) {
-        actions.push({ type: 'tab', label: 'Build Mode' })
+        // actions.push({ type: 'tab', label: 'Build Mode' })
       }
     }
     if (this.enabled && !this.selected) {
@@ -100,7 +100,7 @@ export class ClientBuilder extends System {
       actions.push({ type: 'keyP', label: 'Pin' })
       actions.push({ type: 'keyX', label: 'Destroy' })
       actions.push({ type: 'space', label: 'Jump / Fly (Double-Tap)' })
-      actions.push({ type: 'tab', label: 'Exit Build Mode' })
+      // actions.push({ type: 'tab', label: 'Exit Build Mode' })
     }
     if (this.enabled && this.selected && this.mode === 'grab') {
       actions.push({ type: 'mouseLeft', label: 'Place' })
@@ -112,9 +112,13 @@ export class ClientBuilder extends System {
       actions.push({ type: 'keyX', label: 'Destroy' })
       actions.push({ type: 'controlLeft', label: 'No Snap (Hold)' })
       actions.push({ type: 'space', label: 'Jump / Fly (Double-Tap)' })
-      actions.push({ type: 'tab', label: 'Exit Build Mode' })
+      // actions.push({ type: 'tab', label: 'Exit Build Mode' })
     }
-    if (this.enabled && this.selected && (this.mode === 'translate' || this.mode === 'rotate')) {
+    if (
+      this.enabled &&
+      this.selected &&
+      (this.mode === 'translate' || this.mode === 'rotate' || this.mode === 'scale')
+    ) {
       actions.push({ type: 'mouseLeft', label: 'Select / Transform' })
       actions.push({ type: 'mouseRight', label: 'Inspect' })
       actions.push({ type: 'custom', btn: '1234', label: 'Grab / Translate / Rotate / Scale' })
@@ -122,7 +126,7 @@ export class ClientBuilder extends System {
       actions.push({ type: 'keyX', label: 'Destroy' })
       actions.push({ type: 'controlLeft', label: 'No Snap (Hold)' })
       actions.push({ type: 'space', label: 'Jump / Fly (Double-Tap)' })
-      actions.push({ type: 'tab', label: 'Exit Build Mode' })
+      // actions.push({ type: 'tab', label: 'Exit Build Mode' })
     }
     this.control.setActions(actions)
   }
@@ -150,7 +154,7 @@ export class ClientBuilder extends System {
       if (entity?.isApp) {
         this.select(null)
         this.control.pointer.unlock()
-        this.world.ui.setMenu({ type: 'app', app: entity })
+        this.world.ui.setApp(entity)
       }
     }
     // inspect out of pointer-lock
@@ -159,7 +163,7 @@ export class ClientBuilder extends System {
       if (entity?.isApp) {
         this.select(null)
         this.control.pointer.unlock()
-        this.world.ui.setMenu({ type: 'app', app: entity })
+        this.world.ui.setApp(entity)
       }
     }
     // unlink
@@ -321,6 +325,11 @@ export class ClientBuilder extends System {
       !this.control.shiftLeft.down &&
       (this.control.metaLeft.down || this.control.controlLeft.down)
     ) {
+      console.log('undo', {
+        shiftLeft: this.control.shiftLeft.down,
+        metaLeft: this.control.metaLeft.down,
+        controlLeft: this.control.controlLeft.down,
+      })
       this.undo()
     }
     // translate updates

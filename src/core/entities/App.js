@@ -265,11 +265,19 @@ export class App extends Entity {
     }
     if (data.hasOwnProperty('quaternion')) {
       this.data.quaternion = data.quaternion
-      this.networkQuat.pushArray(data.quaternion)
+      if (this.data.mover) {
+        this.networkQuat.pushArray(data.quaternion)
+      } else {
+        rebuild = true
+      }
     }
     if (data.hasOwnProperty('scale')) {
       this.data.scale = data.scale
-      this.networkSca.pushArray(data.scale)
+      if (this.data.mover) {
+        this.networkSca.pushArray(data.scale)
+      } else {
+        rebuild = true
+      }
     }
     if (data.hasOwnProperty('pinned')) {
       this.data.pinned = data.pinned

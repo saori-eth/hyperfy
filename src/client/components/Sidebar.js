@@ -30,6 +30,7 @@ import { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { usePermissions } from './usePermissions'
 import {
   FieldBtn,
+  FieldCurve,
   FieldFile,
   FieldNumber,
   FieldRange,

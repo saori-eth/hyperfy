@@ -681,6 +681,7 @@ export function FieldNumber({
           onChange={e => setLocal(e.target.value)}
           onKeyDown={e => {
             if (e.code === 'Enter') {
+              e.preventDefault()
               e.target.blur()
             }
             if (e.code === 'ArrowUp') {
@@ -806,6 +807,7 @@ export function FieldVec3({
           onChange={e => setLocalX(e.target.value)}
           onKeyDown={e => {
             if (e.code === 'Enter') {
+              e.preventDefault()
               e.target.blur()
             }
             if (e.code === 'ArrowUp') {
@@ -844,6 +846,7 @@ export function FieldVec3({
           onChange={e => setLocalY(e.target.value)}
           onKeyDown={e => {
             if (e.code === 'Enter') {
+              e.preventDefault()
               e.target.blur()
             }
             if (e.code === 'ArrowUp') {
@@ -882,6 +885,7 @@ export function FieldVec3({
           onChange={e => setLocalZ(e.target.value)}
           onKeyDown={e => {
             if (e.code === 'Enter') {
+              e.preventDefault()
               e.target.blur()
             }
             if (e.code === 'ArrowUp') {

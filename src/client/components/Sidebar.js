@@ -1,5 +1,5 @@
 import { css } from '@firebolt-dev/css'
-import { MenuIcon, MicIcon, MicOffIcon, SettingsIcon } from './Icons'
+import { MenuIcon, MicIcon, MicOffIcon, SettingsIcon, VRIcon } from './Icons'
 import {
   BookTextIcon,
   BoxIcon,
@@ -142,6 +142,15 @@ export function Sidebar({ world, ui }) {
                 }}
               >
                 {livekit.mic ? <MicIcon size='1.25rem' /> : <MicOffIcon size='1.25rem' />}
+              </Btn>
+            )}
+            {world.xr.supportsVR && (
+              <Btn
+                onClick={() => {
+                  world.xr.enter()
+                }}
+              >
+                <VRIcon size='1.25rem' />
               </Btn>
             )}
           </Section>
@@ -1223,6 +1232,7 @@ function AppField({ world, props, field, value, modify }) {
         min={field.min}
         max={field.max}
         step={field.step}
+        bigStep={field.bigStep}
         value={value}
         onChange={value => modify(field.key, value)}
       />

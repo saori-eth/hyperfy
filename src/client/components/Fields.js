@@ -595,7 +595,17 @@ export function FieldFile({ world, label, hint, kind: kindName, value, onChange 
   )
 }
 
-export function FieldNumber({ label, hint, dp = 0, min = -Infinity, max = Infinity, step = 1, value, onChange }) {
+export function FieldNumber({
+  label,
+  hint,
+  dp = 0,
+  min = -Infinity,
+  max = Infinity,
+  step = 1,
+  bigStep = 2,
+  value,
+  onChange,
+}) {
   const { setHint } = useContext(HintContext)
   if (value === undefined || value === null) {
     value = 0
@@ -674,10 +684,12 @@ export function FieldNumber({ label, hint, dp = 0, min = -Infinity, max = Infini
               e.target.blur()
             }
             if (e.code === 'ArrowUp') {
-              setTo(value + step)
+              const amount = e.shiftKey ? bigStep : step
+              setTo(value + amount)
             }
             if (e.code === 'ArrowDown') {
-              setTo(value - step)
+              const amount = e.shiftKey ? bigStep : step
+              setTo(value - amount)
             }
           }}
           onFocus={e => {

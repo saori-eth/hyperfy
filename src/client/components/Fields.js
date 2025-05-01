@@ -758,14 +758,14 @@ export function FieldVec3({
   }
   return (
     <label
-      className='fieldnumber'
+      className='fieldvec3'
       css={css`
         display: flex;
         align-items: center;
         height: 2.5rem;
         padding: 0 1rem;
         cursor: text;
-        .fieldnumber-label {
+        .fieldvec3-label {
           width: 9.4rem;
           flex-shrink: 0;
           white-space: nowrap;
@@ -774,7 +774,7 @@ export function FieldVec3({
           font-size: 0.9375rem;
           color: rgba(255, 255, 255, 0.6);
         }
-        .fieldnumber-field {
+        .fieldvec3-field {
           flex: 1;
           display: flex;
           align-items: center;
@@ -799,8 +799,8 @@ export function FieldVec3({
       onPointerEnter={() => setHint(hint)}
       onPointerLeave={() => setHint(null)}
     >
-      <div className='fieldnumber-label'>{label}</div>
-      <div className='fieldnumber-field'>
+      <div className='fieldvec3-label'>{label}</div>
+      <div className='fieldvec3-field'>
         <input
           type='text'
           value={localX}

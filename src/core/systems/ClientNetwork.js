@@ -133,6 +133,7 @@ export class ClientNetwork extends System {
     }
     this.world.loader.execPreload()
 
+    this.world.collections.deserialize(data.collections)
     this.world.settings.deserialize(data.settings)
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)

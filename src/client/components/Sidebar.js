@@ -45,7 +45,7 @@ import { useFullscreen } from './useFullscreen'
 import { downloadFile } from '../../core/extras/downloadFile'
 import { exportApp } from '../../core/extras/appTools'
 import { hashFile } from '../../core/utils-client'
-import { isArray, isBoolean } from 'lodash-es'
+import { cloneDeep, isArray, isBoolean } from 'lodash-es'
 import { storage } from '../../core/storage'
 import { ScriptEditor } from './ScriptEditor'
 import { NodeHierarchy } from './NodeHierarchy'
@@ -53,6 +53,7 @@ import { AppsList } from './AppsList'
 import { DEG2RAD, RAD2DEG } from '../../core/extras/general'
 import * as THREE from '../../core/extras/three'
 import { isTouch } from '../utils'
+import { uuid } from '../../core/utils'
 
 const mainSectionPanes = ['prefs']
 const worldSectionPanes = ['world', 'docs', 'apps', 'add']
@@ -177,13 +178,13 @@ export function Sidebar({ world, ui }) {
               >
                 <LayersIcon size='1.25rem' />
               </Btn>
-              {/* <Btn
+              <Btn
                 active={activePane === 'add'}
                 suspended={ui.pane === 'add' && !activePane}
                 onClick={() => world.ui.togglePane('add')}
               >
                 <CirclePlusIcon size='1.25rem' />
-              </Btn> */}
+              </Btn>
             </Section>
           )}
           {ui.app && (
@@ -805,6 +806,35 @@ function Apps({ world, hidden }) {
 }
 
 function Add({ world, hidden }) {
+  // note: multiple collections are supported by the engine but for now we just use the 'default' collection.
+  const collection = world.collections.get('default')
+  const span = 4
+  const gap = '0.5rem'
+  const add = blueprint => {
+    blueprint = cloneDeep(blueprint)
+    blueprint.id = uuid()
+    blueprint.version = 0
+    world.blueprints.add(blueprint, true)
+    const transform = world.builder.getSpawnTransform(true)
+    world.builder.toggle(true)
+    world.builder.control.pointer.lock()
+    setTimeout(() => {
+      const data = {
+        id: uuid(),
+        type: 'app',
+        blueprint: blueprint.id,
+        position: transform.position,
+        quaternion: transform.quaternion,
+        scale: [1, 1, 1],
+        mover: world.network.id,
+        uploader: null,
+        pinned: false,
+        state: {},
+      }
+      const app = world.entities.add(data, true)
+      world.builder.select(app)
+    }, 100)
+  }
   return (
     <Pane hidden={hidden}>
       <div
@@ -823,7 +853,6 @@ function Add({ world, hidden }) {
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             align-items: center;
-            margin: 0 0 0.5rem;
           }
           .add-title {
             font-weight: 500;
@@ -833,7 +862,30 @@ function Add({ world, hidden }) {
           .add-content {
             flex: 1;
             overflow-y: auto;
-            padding: 0.5rem 0;
+            padding: 1rem;
+          }
+          .add-items {
+            display: flex;
+            align-items: stretch;
+            flex-wrap: wrap;
+            gap: ${gap};
+          }
+          .add-item {
+            flex-basis: calc((100% / ${span}) - (${gap} * (${span} - 1) / ${span}));
+            cursor: pointer;
+          }
+          .add-item-image {
+            width: 100%;
+            aspect-ratio: 1;
+            background-color: #1c1d22;
+            background-size: cover;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: 0.7rem;
+            margin: 0 0 0.4rem;
+          }
+          .add-item-name {
+            text-align: center;
+            font-size: 0.875rem;
           }
         `}
       >
@@ -841,7 +893,19 @@ function Add({ world, hidden }) {
           <div className='add-title'>Add</div>
         </div>
         <div className='add-content noscrollbar'>
-          <div>Meow</div>
+          <div className='add-items'>
+            {collection.blueprints.map(blueprint => (
+              <div className='add-item' key={blueprint.id} onClick={() => add(blueprint)}>
+                <div
+                  className='add-item-image'
+                  css={css`
+                    background-image: url(${world.resolveURL(blueprint.image?.url)});
+                  `}
+                ></div>
+                <div className='add-item-name'>{blueprint.name}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
     </Pane>

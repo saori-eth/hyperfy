@@ -37,7 +37,7 @@ export function AppsList({ world, query, perf, refresh, setRefresh }) {
       if (!entity.isApp) continue
       const blueprint = world.blueprints.get(entity.data.blueprint)
       if (!blueprint) continue // still loading?
-      console.log(entity)
+      if (!blueprint.model) continue // corrupt app?
       let item = itemMap.get(blueprint.id)
       if (!item) {
         let count = 0

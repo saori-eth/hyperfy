@@ -915,8 +915,10 @@ export class ClientBuilder extends System {
     })
   }
 
-  getSpawnTransform() {
-    const hit = this.world.stage.raycastPointer(this.control.pointer.position)[0]
+  getSpawnTransform(atReticle) {
+    const hit = atReticle
+      ? this.world.stage.raycastReticle()[0]
+      : this.world.stage.raycastPointer(this.control.pointer.position)[0]
     const position = hit ? hit.point.toArray() : [0, 0, 0]
     let quaternion
     if (hit) {

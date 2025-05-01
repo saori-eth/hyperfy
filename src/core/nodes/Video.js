@@ -12,6 +12,17 @@ const q1 = new THREE.Quaternion()
 const groups = ['music', 'sfx']
 const distanceModels = ['linear', 'inverse', 'exponential']
 const fits = ['none', 'cover', 'contain']
+const pivots = [
+  'top-left',
+  'top-center',
+  'top-right',
+  'center-left',
+  'center',
+  'center-right',
+  'bottom-left',
+  'bottom-center',
+  'bottom-right',
+]
 
 const defaults = {
   screenId: null,
@@ -31,6 +42,7 @@ const defaults = {
 
   width: null,
   height: 1,
+  pivot: 'center',
 
   geometry: null,
 
@@ -68,6 +80,7 @@ export class Video extends Node {
 
     this.width = data.width
     this.height = data.height
+    this.pivot = data.pivot
 
     this.geometry = data.geometry
 
@@ -251,6 +264,7 @@ export class Video extends Node {
         geometry = new THREE.PlaneGeometry(width, height)
         geometry._oWidth = width
         geometry._oHeight = height
+        applyPivot(geometry, width, height, this._pivot)
       }
 
       // mesh
@@ -328,7 +342,9 @@ export class Video extends Node {
         }
         // new geometry if changed
         if (geometry._oWidth !== width || geometry._oHeight !== height) {
-          this.mesh.geometry = new THREE.PlaneGeometry(width, height)
+          const newGeometry = new THREE.PlaneGeometry(width, height)
+          applyPivot(newGeometry, width, height, this._pivot)
+          this.mesh.geometry = newGeometry
           geometry.dispose()
         }
         // if the video aspect is different to the plane aspect we need to ensure the texture is scaled correctly.
@@ -433,6 +449,7 @@ export class Video extends Node {
 
     this._width = source._width
     this._height = source._height
+    this._pivot = source._pivot
 
     this._geometry = source._geometry
 
@@ -649,6 +666,20 @@ export class Video extends Node {
     }
     if (this._height === value) return
     this._height = value
+    this.needsRebuild = true
+    this.setDirty()
+  }
+
+  get pivot() {
+    return this._pivot
+  }
+
+  set pivot(value = defaults.pivot) {
+    if (!isPivot(value)) {
+      throw new Error('[video] pivot invalid')
+    }
+    if (this._pivot === value) return
+    this._pivot = value
     this.needsRebuild = true
     this.setDirty()
   }
@@ -946,6 +977,12 @@ export class Video extends Node {
         set height(value) {
           self.height = value
         },
+        get pivot() {
+          return self.pivot
+        },
+        set pivot(value) {
+          self.pivot = value
+        },
         get geometry() {
           return self.geometry
         },
@@ -1054,4 +1091,27 @@ function isGroup(value) {
 
 function isFit(value) {
   return fits.includes(value)
+}
+
+function isPivot(value) {
+  return pivots.includes(value)
+}
+
+function applyPivot(geometry, width, height, pivot) {
+  if (pivot === 'center') return
+  let offsetX = 0
+  let offsetY = 0
+  if (pivot.includes('left')) {
+    offsetX = width / 2
+  } else if (pivot.includes('right')) {
+    offsetX = -width / 2
+  }
+  if (pivot.includes('top')) {
+    offsetY = -height / 2
+  } else if (pivot.includes('bottom')) {
+    offsetY = height / 2
+  }
+  if (offsetX !== 0 || offsetY !== 0) {
+    geometry.translate(offsetX, offsetY, 0)
+  }
 }

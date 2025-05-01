@@ -96,11 +96,14 @@ export class Video extends Node {
     this.coneOuterGain = data.coneOuterGain
 
     this.n = 0
+
+    this._loading = true
   }
 
   async mount() {
     this.needsRebuild = false
     if (this.ctx.world.network.isServer) return
+    this._loading = true
 
     const n = ++this.n
 
@@ -359,6 +362,9 @@ export class Video extends Node {
       material.uniforms.uHasMap.value = 1
       material.needsUpdate = true
 
+      this._loading = false
+      this._onLoad?.()
+
       if (this.shouldPlay) {
         this.instance.play()
         this.shouldPlay = false
@@ -386,6 +392,7 @@ export class Video extends Node {
   }
 
   unmount() {
+    if (this.ctx.world.network.isServer) return
     this.n++
     if (this.mesh) {
       this.ctx.world.stage.scene.remove(this.mesh)
@@ -493,6 +500,7 @@ export class Video extends Node {
     }
     if (this._src === value) return
     this._src = value
+    this._loading = true
     this.needsRebuild = true
     this.setDirty()
   }
@@ -834,15 +842,23 @@ export class Video extends Node {
     }
   }
 
-  get isPlaying() {
+  get loading() {
+    return this._loading
+  }
+
+  get duration() {
+    return this.instance ? this.instance.duration : 0
+  }
+
+  get playing() {
     return this.instance ? this.instance.isPlaying : false
   }
 
-  get currentTime() {
+  get time() {
     return this.instance ? this.instance.currentTime : 0
   }
 
-  set currentTime(value) {
+  set time(value) {
     if (this.instance) {
       this.instance.currentTime = value
     }
@@ -871,6 +887,14 @@ export class Video extends Node {
 
   set material(value) {
     throw new Error('[video] cannot set material')
+  }
+
+  get onLoad() {
+    return this._onLoad
+  }
+
+  set onLoad(value) {
+    this._onLoad = value
   }
 
   play(restartIfPlaying) {
@@ -1049,20 +1073,44 @@ export class Video extends Node {
         set coneOuterGain(value) {
           self.coneOuterGain = value
         },
+        get loading() {
+          return self.loading
+        },
+        get duration() {
+          return self.duration
+        },
+        get playing() {
+          return self.playing
+        },
         get isPlaying() {
-          return self.isPlaying
+          // deprecated (use .playing)
+          return self.playing
+        },
+        get time() {
+          return self.time
+        },
+        set time(value) {
+          self.time = value
         },
         get currentTime() {
-          return self.currentTime
+          // deprecated (use .time)
+          return self.time
         },
         set currentTime(value) {
-          self.currentTime = value
+          // deprecated (use .time)
+          self.time = value
         },
         get material() {
           return self.material
         },
         set material(value) {
           self.material = value
+        },
+        get onLoad() {
+          return self.onLoad
+        },
+        set onLoad(value) {
+          self.onLoad = value
         },
         play(restartIfPlaying) {
           self.play(restartIfPlaying)

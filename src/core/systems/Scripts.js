@@ -6,6 +6,7 @@ import { clamp, num, uuid } from '../utils'
 import { LerpVector3 } from '../extras/LerpVector3'
 import { LerpQuaternion } from '../extras/LerpQuaternion'
 import { Curve } from '../extras/Curve'
+import { prng } from '../extras/prng'
 
 /**
  * Script System
@@ -37,6 +38,7 @@ export class Scripts extends System {
       harden: undefined,
       lockdown: undefined,
       num,
+      prng,
       clamp,
       // Layers,
       Object3D: THREE.Object3D,

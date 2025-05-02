@@ -53,6 +53,10 @@ const clientHtmlDest = path.join(rootDir, 'build/public/index.html')
           build.onEnd(async result => {
             // copy over public files
             await fs.copy(clientPublicDir, clientBuildDir)
+            // copy physx wasm to public
+            const physxWasmSrc = path.join(rootDir, 'src/core/physx-js-webidl.wasm')
+            const physxWasmDest = path.join(rootDir, 'build/public/physx-js-webidl.wasm')
+            await fs.copy(physxWasmSrc, physxWasmDest)
             // find js output files
             const metafile = result.metafile
             const outputFiles = Object.keys(metafile.outputs)
@@ -109,7 +113,7 @@ let spawn
         setup(build) {
           build.onEnd(async result => {
             // copy over physx wasm
-            const physxWasmSrc = path.join(rootDir, 'src/server/physx/physx-js-webidl.wasm')
+            const physxWasmSrc = path.join(rootDir, 'src/core/physx-js-webidl.wasm')
             const physxWasmDest = path.join(rootDir, 'build/physx-js-webidl.wasm')
             await fs.copy(physxWasmSrc, physxWasmDest)
             // start the server or stop here

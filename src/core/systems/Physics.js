@@ -2,6 +2,7 @@ import * as THREE from '../extras/three'
 import { extendThreePhysX } from '../extras/extendThreePhysX'
 import { System } from './System'
 import { Layers } from '../extras/Layers'
+import { loadPhysX } from '../loadPhysX'
 
 const _raycastHit = {
   actor: null,
@@ -42,7 +43,7 @@ export class Physics extends System {
     this.scene = null
   }
 
-  async init({ loadPhysX }) {
+  async init() {
     const info = await loadPhysX()
     this.version = info.version
     this.allocator = info.allocator

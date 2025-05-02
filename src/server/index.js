@@ -12,8 +12,6 @@ import compress from '@fastify/compress'
 import statics from '@fastify/static'
 import multipart from '@fastify/multipart'
 
-import { loadPhysX } from './physx/loadPhysX'
-
 import { createServerWorld } from '../core/createServerWorld'
 import { hashFile } from '../core/utils-server'
 import { getDB } from './db'
@@ -47,7 +45,7 @@ const storage = new Storage(path.join(worldDir, '/storage.json'))
 // create world
 const world = createServerWorld()
 world.collections.deserialize(collections)
-world.init({ db, storage, loadPhysX })
+world.init({ db, storage })
 
 const fastify = Fastify({ logger: { level: 'error' } })
 

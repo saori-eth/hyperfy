@@ -16,6 +16,14 @@ const billboardModeInts = {
   direction: 2,
 }
 
+let worker = null
+function getWorker() {
+  if (!worker) {
+    worker = new Worker(window.PARTICLES_PATH)
+  }
+  return worker
+}
+
 export class Particles extends System {
   constructor(world) {
     super(world)
@@ -26,7 +34,7 @@ export class Particles extends System {
   }
 
   init() {
-    this.worker = new Worker(window.PARTICLES_PATH)
+    this.worker = getWorker()
     this.worker.onmessage = this.onMessage
     this.worker.onerror = this.onError
   }

@@ -37,6 +37,11 @@ export class ClientPointer extends System {
     // capture all mouse click events if our pointer is interacting with world UI
     this.control.mouseLeft.capture = !!screenHit
   }
+
+  destroy() {
+    this.control?.release()
+    this.control = null
+  }
 }
 
 const PointerEvents = {

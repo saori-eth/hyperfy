@@ -342,6 +342,13 @@ export class ClientLoader extends System {
     }
     this.promises.set(key, promise)
   }
+
+  destroy() {
+    this.files.clear()
+    this.promises.clear()
+    this.results.clear()
+    this.preloadItems = []
+  }
 }
 
 function createVideoFactory(world, url) {

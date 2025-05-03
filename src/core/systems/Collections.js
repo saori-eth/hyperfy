@@ -17,4 +17,8 @@ export class Collections extends System {
   serialize() {
     return this.collections
   }
+
+  destroy() {
+    this.collections = []
+  }
 }

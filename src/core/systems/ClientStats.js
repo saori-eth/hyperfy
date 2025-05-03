@@ -141,4 +141,8 @@ export class ClientStats extends System {
       this.toggle(changes.stats.value)
     }
   }
+
+  destroy() {
+    this.toggle(false)
+  }
 }

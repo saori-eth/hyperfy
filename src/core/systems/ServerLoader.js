@@ -185,4 +185,10 @@ export class ServerLoader extends System {
     this.promises.set(key, promise)
     return promise
   }
+
+  destroy() {
+    this.promises.clear()
+    this.results.clear()
+    this.preloadItems = []
+  }
 }

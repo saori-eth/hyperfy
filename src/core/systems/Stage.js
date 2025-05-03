@@ -245,6 +245,10 @@ export class Stage extends System {
     this.octree.raycast(this.raycaster, this.raycastHits)
     return this.raycastHits
   }
+
+  destroy() {
+    this.models.clear()
+  }
 }
 
 class Model {

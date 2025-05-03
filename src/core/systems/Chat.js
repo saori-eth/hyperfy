@@ -103,4 +103,9 @@ export class Chat extends System {
       this.listeners.delete(callback)
     }
   }
+
+  destroy() {
+    this.msgs = []
+    this.listeners.clear()
+  }
 }

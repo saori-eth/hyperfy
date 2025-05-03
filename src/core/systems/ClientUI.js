@@ -73,4 +73,9 @@ export class ClientUI extends System {
   broadcast() {
     this.world.emit('ui', { ...this.state })
   }
+
+  destroy() {
+    this.control?.release()
+    this.control = null
+  }
 }

@@ -196,6 +196,30 @@ export class ClientLiveKit extends System {
   unregisterScreenNode(node) {
     this.screenNodes.delete(node)
   }
+
+  destroy() {
+    this.voices.forEach(voice => {
+      voice.destroy()
+    })
+    this.voices.clear()
+    this.screens.forEach(screen => {
+      screen.destroy()
+    })
+    this.screens = []
+    this.screenNodes.clear()
+    if (this.room) {
+      this.room.off(RoomEvent.TrackMuted, this.onTrackMuted)
+      this.room.off(RoomEvent.TrackUnmuted, this.onTrackUnmuted)
+      this.room.off(RoomEvent.LocalTrackPublished, this.onLocalTrackPublished)
+      this.room.off(RoomEvent.LocalTrackUnpublished, this.onLocalTrackUnpublished)
+      this.room.off(RoomEvent.TrackSubscribed, this.onTrackSubscribed)
+      this.room.off(RoomEvent.TrackUnsubscribed, this.onTrackUnsubscribed)
+      if (this.room.localParticipant) {
+        this.room.localParticipant.off(ParticipantEvent.IsSpeakingChanged)
+      }
+      this.room?.disconnect()
+    }
+  }
 }
 
 class PlayerVoice {

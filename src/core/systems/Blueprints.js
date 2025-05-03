@@ -56,4 +56,8 @@ export class Blueprints extends System {
       this.add(data)
     }
   }
+
+  destroy() {
+    this.items.clear()
+  }
 }

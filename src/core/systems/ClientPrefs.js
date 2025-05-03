@@ -113,4 +113,8 @@ export class ClientPrefs extends System {
   setVoice(value) {
     this.modify('voice', value)
   }
+
+  destroy() {
+    // ...
+  }
 }

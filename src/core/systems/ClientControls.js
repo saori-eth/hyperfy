@@ -209,7 +209,7 @@ export class ClientControls extends System {
     this.viewport.addEventListener('touchend', this.onTouchEnd)
     this.viewport.addEventListener('touchcancel', this.onTouchEnd)
     this.viewport.addEventListener('pointerup', this.onPointerUp)
-    this.viewport.addEventListener('wheel', this.onScroll, { passive: false }) // prettier-ignore
+    this.viewport.addEventListener('wheel', this.onScroll, { passive: false })
     document.body.addEventListener('contextmenu', this.onContextMenu)
     window.addEventListener('resize', this.onResize)
     window.addEventListener('blur', this.onBlur)
@@ -612,6 +612,24 @@ export class ClientControls extends System {
 
   isInputFocused() {
     return document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA'
+  }
+
+  destroy() {
+    if (!isBrowser) return
+    window.removeEventListener('keydown', this.onKeyDown)
+    window.removeEventListener('keyup', this.onKeyUp)
+    document.removeEventListener('pointerlockchange', this.onPointerLockChange)
+    this.viewport.removeEventListener('pointerdown', this.onPointerDown)
+    window.removeEventListener('pointermove', this.onPointerMove)
+    this.viewport.removeEventListener('touchstart', this.onTouchStart)
+    this.viewport.removeEventListener('touchmove', this.onTouchMove)
+    this.viewport.removeEventListener('touchend', this.onTouchEnd)
+    this.viewport.removeEventListener('touchcancel', this.onTouchEnd)
+    this.viewport.removeEventListener('pointerup', this.onPointerUp)
+    this.viewport.removeEventListener('wheel', this.onScroll, { passive: false })
+    document.body.removeEventListener('contextmenu', this.onContextMenu)
+    window.removeEventListener('resize', this.onResize)
+    window.removeEventListener('blur', this.onBlur)
   }
 }
 

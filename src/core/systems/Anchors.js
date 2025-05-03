@@ -24,4 +24,8 @@ export class Anchors extends System {
   remove(id) {
     this.matrices.delete(id)
   }
+
+  destroy() {
+    this.matrices.clear()
+  }
 }

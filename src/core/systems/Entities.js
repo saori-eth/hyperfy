@@ -22,6 +22,7 @@ export class Entities extends System {
     super(world)
     this.items = new Map()
     this.players = new Map()
+    this.player = null
     this.hot = new Set()
     this.removed = []
   }
@@ -62,7 +63,7 @@ export class Entities extends System {
 
   remove(id) {
     const entity = this.items.get(id)
-    if (!entity) console.warn(`tried to remove entity that did not exist: ${id}`)
+    if (!entity) return console.warn(`tried to remove entity that did not exist: ${id}`)
     if (entity.isPlayer) this.players.delete(entity.data.id)
     entity.destroy()
     this.items.delete(id)
@@ -107,5 +108,14 @@ export class Entities extends System {
     for (const data of datas) {
       this.add(data)
     }
+  }
+
+  destroy() {
+    this.items.forEach(item => {
+      this.remove(item.data.id)
+    })
+    this.items.clear()
+    this.players.clear()
+    this.hot.clear()
   }
 }

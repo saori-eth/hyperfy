@@ -36,6 +36,8 @@ const FORWARD = new THREE.Vector3(0, 0, 1)
 const iQuaternion = new THREE.Quaternion(0, 0, 0, 1)
 const iScale = new THREE.Vector3(1, 1, 1)
 
+const isBrowser = typeof window !== 'undefined'
+
 const spaces = ['world', 'screen']
 const billboards = ['none', 'full', 'y']
 const pivots = [
@@ -117,6 +119,7 @@ export class UI extends Node {
   }
 
   build() {
+    if (!isBrowser) return
     this.unbuild()
     this.canvas = document.createElement('canvas')
     this.canvas.width = this._width * this._res
@@ -220,6 +223,7 @@ export class UI extends Node {
   }
 
   draw() {
+    if (!isBrowser) return
     this.yogaNode.calculateLayout(this._width * this._res, this._height * this._res, Yoga.DIRECTION_LTR)
     const ctx = this.canvasCtx
     ctx.clearRect(0, 0, this._width * this._res, this._height * this._res)

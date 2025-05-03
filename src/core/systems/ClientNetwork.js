@@ -216,4 +216,15 @@ export class ClientNetwork extends System {
     this.world.emit('disconnect', code || true)
     console.log('disconnect', code)
   }
+
+  destroy() {
+    if (this.ws) {
+      this.ws.removeEventListener('message', this.onPacket)
+      this.ws.removeEventListener('close', this.onClose)
+      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+        this.ws.close()
+      }
+      this.ws = null
+    }
+  }
 }

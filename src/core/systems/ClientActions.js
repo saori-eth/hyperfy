@@ -85,6 +85,7 @@ export class ClientActions extends System {
   destroy() {
     this.control.release()
     this.control = null
+    this.nodes = []
   }
 }
 

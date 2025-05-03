@@ -13,6 +13,7 @@ const TICK_RATE = 1 / 30
 export class NodeClient extends System {
   constructor(world) {
     super(world)
+    this.timerId = null
   }
 
   start() {
@@ -22,6 +23,10 @@ export class NodeClient extends System {
   tick = () => {
     const time = performance.now()
     this.world.tick(time)
-    setTimeout(this.tick, TICK_RATE * 1000)
+    this.timerId = setTimeout(this.tick, TICK_RATE * 1000)
+  }
+
+  destroy() {
+    clearTimeout(this.timerId)
   }
 }

@@ -84,6 +84,10 @@ export class ClientTarget extends System {
       this.guide.style.display = 'block'
     }
   }
+
+  destroy() {
+    this.hide()
+  }
 }
 
 const targetSVG = `

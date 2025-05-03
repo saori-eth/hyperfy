@@ -39,4 +39,8 @@ export class LODs extends System {
       this.cursor = (this.cursor + size) % this.nodes.length
     }
   }
+
+  destroy() {
+    this.nodes = []
+  }
 }

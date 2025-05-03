@@ -217,5 +217,6 @@ export class ClientGraphics extends System {
 
   destroy() {
     this.resizer.disconnect()
+    this.viewport.removeChild(this.renderer.domElement)
   }
 }

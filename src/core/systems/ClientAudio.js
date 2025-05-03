@@ -131,4 +131,14 @@ export class ClientAudio extends System {
       this.groupGains.voice.gain.value = changes.voice.value
     }
   }
+
+  destroy() {
+    this.groupGains.music.disconnect()
+    this.groupGains.sfx.disconnect()
+    this.groupGains.voice.disconnect()
+    this.masterGain.disconnect()
+    this.ctx.close()
+    this.handles.clear()
+    this.queue = []
+  }
 }

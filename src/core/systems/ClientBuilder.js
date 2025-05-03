@@ -935,6 +935,13 @@ export class ClientBuilder extends System {
     }
     return { position, quaternion }
   }
+
+  destroy() {
+    this.viewport.removeEventListener('dragover', this.onDragOver)
+    this.viewport.removeEventListener('dragenter', this.onDragEnter)
+    this.viewport.removeEventListener('dragleave', this.onDragLeave)
+    this.viewport.removeEventListener('drop', this.onDrop)
+  }
 }
 
 function getAsString(item) {

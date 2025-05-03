@@ -427,8 +427,7 @@ function Prefs({ world, hidden }) {
   const [stats, setStats] = useState(world.prefs.stats)
   const changeName = name => {
     if (!name) return setName(player.data.name)
-    player.modify({ name })
-    world.network.send('entityModified', { id: player.data.id, name })
+    player.setName(name)
   }
   const dprOptions = useMemo(() => {
     const width = world.graphics.width

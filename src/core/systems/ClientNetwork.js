@@ -24,9 +24,12 @@ export class ClientNetwork extends System {
     this.queue = []
   }
 
-  init({ wsUrl }) {
+  init({ wsUrl, name, avatar }) {
     const authToken = storage.get('authToken')
-    this.ws = new WebSocket(`${wsUrl}?authToken=${authToken}`)
+    let url = `${wsUrl}?authToken=${authToken}`
+    if (name) url += `&name=${encodeURIComponent(name)}`
+    if (avatar) url += `&avatar=${encodeURIComponent(avatar)}`
+    this.ws = new WebSocket(url)
     this.ws.binaryType = 'arraybuffer'
     this.ws.addEventListener('message', this.onPacket)
     this.ws.addEventListener('close', this.onClose)

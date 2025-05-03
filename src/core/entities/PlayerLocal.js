@@ -963,6 +963,11 @@ export class PlayerLocal extends Entity {
     }
   }
 
+  setName(name) {
+    this.modify({ name })
+    this.world.network.send('entityModified', { id: this.data.id, name })
+  }
+
   setSessionAvatar(avatar) {
     this.data.sessionAvatar = avatar
     this.applyAvatar()

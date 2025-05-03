@@ -192,7 +192,7 @@ try {
 
 async function worldNetwork(fastify) {
   fastify.get('/ws', { websocket: true }, (ws, req) => {
-    world.network.onConnection(ws, req.query.authToken)
+    world.network.onConnection(ws, req.query)
   })
 }
 

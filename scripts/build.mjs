@@ -113,7 +113,7 @@ let spawn
         setup(build) {
           build.onEnd(async result => {
             // copy over physx js
-            const physxIdlSrc = path.join(rootDir, 'src/server/physx/physx-js-webidl.js')
+            const physxIdlSrc = path.join(rootDir, 'src/core/physx-js-webidl.js')
             const physxIdlDest = path.join(rootDir, 'build/physx-js-webidl.js')
             await fs.copy(physxIdlSrc, physxIdlDest)
             // copy over physx wasm

@@ -1,8 +1,11 @@
 import 'ses'
 import '../core/lockdown'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
+// support `__dirname` in ESM
+globalThis.__dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export { createNodeClientWorld } from '../core/createNodeClientWorld'
 export { System } from '../core/systems/System'
 export { storage } from '../core/storage'
-
-export { loadPhysX } from '../server/physx/loadPhysX'

@@ -1,3 +1,5 @@
+import moment from 'moment'
+import { uuid } from '../utils'
 import { System } from './System'
 
 /**
@@ -66,6 +68,21 @@ export class Chat extends System {
     if (broadcast) {
       this.world.network.send('chatCleared')
     }
+  }
+
+  send(text) {
+    // only available as a client
+    if (!this.world.network.isClient) return
+    const player = this.world.entities.player
+    const data = {
+      id: uuid(),
+      from: player.data.name,
+      fromId: player.data.id,
+      body: text,
+      createdAt: moment().toISOString(),
+    }
+    this.add(data, true)
+    return data
   }
 
   serialize() {

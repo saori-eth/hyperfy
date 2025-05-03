@@ -390,15 +390,7 @@ function Chat({ world }) {
       return
     }
     // otherwise post it
-    const player = world.entities.player
-    const data = {
-      id: uuid(),
-      from: player.data.name,
-      fromId: player.data.id,
-      body: msg,
-      createdAt: moment().toISOString(),
-    }
-    world.chat.add(data, true)
+    world.chat.send(msg)
     if (isTouch) {
       // setActive(false)
       e.target.blur()

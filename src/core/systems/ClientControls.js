@@ -20,6 +20,8 @@ let actionIds = 0
  *
  */
 
+const isBrowser = typeof window !== 'undefined'
+
 const controlTypes = {
   // key: createButton,
   mouseLeft: createButton,
@@ -193,6 +195,7 @@ export class ClientControls extends System {
   }
 
   async init({ viewport }) {
+    if (!isBrowser) return
     this.viewport = viewport
     this.screen.width = this.viewport.offsetWidth
     this.screen.height = this.viewport.offsetHeight
@@ -322,6 +325,35 @@ export class ClientControls extends System {
         }
       }
     } else {
+      this.buttonsDown.delete(prop)
+      for (const control of this.controls) {
+        const button = control.entries[prop]
+        if (button?.$button && button.down) {
+          button.down = false
+          button.released = true
+          button.onRelease?.()
+        }
+      }
+    }
+  }
+
+  simulateButton(prop, pressed) {
+    if (pressed) {
+      if (this.buttonsDown.has(prop)) return
+      this.buttonsDown.add(prop)
+      for (const control of this.controls) {
+        const button = control.entries[prop]
+        if (button?.$button) {
+          button.pressed = true
+          button.down = true
+          const capture = button.onPress?.()
+          if (capture || button.capture) break
+        }
+        const capture = control.onButtonPress?.(prop, text)
+        if (capture) break
+      }
+    } else {
+      if (!this.buttonsDown.has(prop)) return
       this.buttonsDown.delete(prop)
       for (const control of this.controls) {
         const button = control.entries[prop]

@@ -98,7 +98,7 @@ export class ClientNetwork extends System {
     // preload environment model and avatar
     if (data.settings.model) {
       this.world.loader.preload('model', data.settings.model.url)
-    } else {
+    } else if (this.world.environment.base) {
       this.world.loader.preload('model', this.world.environment.base.model)
     }
     if (data.settings.avatar) {
@@ -138,7 +138,7 @@ export class ClientNetwork extends System {
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)
-    this.world.livekit.deserialize(data.livekit)
+    this.world.livekit?.deserialize(data.livekit)
     storage.set('authToken', data.authToken)
   }
 

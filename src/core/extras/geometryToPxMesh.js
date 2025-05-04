@@ -82,7 +82,16 @@ export function geometryToPxMesh(world, geometry, convex) {
     // console.log('points.count', desc.points.count)
     // console.log('points.stride', desc.points.stride)
 
-    const indices = index.array // Uint16Array or Uint32Array
+    // convert Uint32Array to 16 bit due to a memory issue with Uint32Array
+    let indices = index.array // Uint16Array or Uint32Array
+    const is16 = indices instanceof Uint16Array
+    if (!is16) {
+      indices = new Uint16Array(index.array.length)
+      for (let i = 0; i < index.array.length; i++) {
+        indices[i] = index.array[i]
+      }
+    }
+
     const indexBytes = indices.length * indices.BYTES_PER_ELEMENT
     const indexPtr = PHYSX._webidl_malloc(indexBytes)
     if (indices instanceof Uint16Array) {
@@ -90,6 +99,7 @@ export function geometryToPxMesh(world, geometry, convex) {
       desc.triangles.stride = 6 // 3 × 2 bytes per triangle
       desc.flags.raise(PHYSX.PxTriangleMeshFlagEnum.e16_BIT_INDICES)
     } else {
+      // note: this is here for brevity but no longer used as we force everything to 16 bit
       PHYSX.HEAPU32.set(indices, indexPtr >> 2)
       desc.triangles.stride = 12 // 3 × 4 bytes per triangle
     }

@@ -235,17 +235,16 @@ class OBJECT_OT_lod_property_toggle(Operator):
     def execute(self, context):
         obj = context.active_object
         
-        # If property exists, toggle its value
+        # If property exists and is false, remove it to revert to default (true)
         if self.property_name in obj:
-            if obj[self.property_name]:
-                # If true, remove it (to match engine default)
+            if obj[self.property_name] == False:
                 del obj[self.property_name]
+            # If it's set to true explicitly (which shouldn't happen normally), set to false
             else:
-                # Toggle to true
-                obj[self.property_name] = True
+                obj[self.property_name] = False
         else:
-            # Property doesn't exist, set it to true
-            obj[self.property_name] = True
+            # Property doesn't exist (default is true), set it to false
+            obj[self.property_name] = False
         
         # Notify Blender that the object has been updated
         obj.update_tag(refresh={'OBJECT'})
@@ -530,8 +529,8 @@ class VIEW3D_PT_hyperfy_panel(Panel):
                 # Add a title for the LOD options section
                 layout.label(text="LOD Options")
                 
-                # Check if property exists and set the checkbox state accordingly
-                is_scale_aware = "scaleAware" in obj and obj["scaleAware"] == True
+                # Check if property exists and is false, otherwise it's considered true (default)
+                is_scale_aware = not ("scaleAware" in obj and obj["scaleAware"] == False)
                 
                 # Scale Aware checkbox
                 row = layout.row()

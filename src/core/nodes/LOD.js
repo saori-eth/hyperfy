@@ -8,7 +8,7 @@ const v1 = new THREE.Vector3()
 const v2 = new THREE.Vector3()
 
 const defaults = {
-  scaleAware: false,
+  scaleAware: true,
 }
 
 export class LOD extends Node {

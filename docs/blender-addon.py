@@ -256,7 +256,7 @@ class OBJECT_OT_lod_property_toggle(Operator):
         return {'FINISHED'}
 
 class OBJECT_OT_hyperfy_export_all(Operator):
-    """Export entire scene as GLB with custom properties enabled"""
+    """Export entire scene as GLB with custom properties enabled and webp textures"""
     bl_idname = "object.hyperfy_export_all"
     bl_label = "Export All"
     bl_options = {'REGISTER'}
@@ -307,7 +307,7 @@ class OBJECT_OT_hyperfy_export_all(Operator):
         return {'FINISHED'}
 
 class OBJECT_OT_hyperfy_export_individual(Operator):
-    """Export each root object individually as GLB with custom properties enabled"""
+    """Export each root object individually as GLB with custom properties enabled and webp textures"""
     bl_idname = "object.hyperfy_export_individual"
     bl_label = "Export Individual"
     bl_options = {'REGISTER'}
@@ -504,7 +504,7 @@ class VIEW3D_PT_hyperfy_panel(Panel):
                 layout.separator()
                 
                 # Add a title for the collider options section
-                layout.label(text="Collider Options")
+                layout.label(text="Collider")
                 
                 # Check if properties exist and set the checkbox state accordingly
                 is_convex = "convex" in obj and obj["convex"] == True
@@ -527,7 +527,7 @@ class VIEW3D_PT_hyperfy_panel(Panel):
                 layout.separator()
                 
                 # Add a title for the LOD options section
-                layout.label(text="LOD Options")
+                layout.label(text="LOD")
                 
                 # Check if property exists and is false, otherwise it's considered true (default)
                 is_scale_aware = not ("scaleAware" in obj and obj["scaleAware"] == False)
@@ -548,7 +548,7 @@ class VIEW3D_PT_hyperfy_panel(Panel):
                 layout.prop(obj, "hyperfy_max_distance")
             
             # If object is a mesh, show mesh options regardless of node type
-            if obj.type == 'MESH':
+            if obj.type == 'MESH' and current_node_type == NODE_NONE:
                 # Add a separator
                 layout.separator()
                 
@@ -586,10 +586,10 @@ class VIEW3D_PT_hyperfy_panel(Panel):
             col2 = split.column(align=True)
             
             # "All" button on the left
-            col1.operator("object.hyperfy_export_all", text="All", icon='EXPORT')
+            col1.operator("object.hyperfy_export_all", text="All", icon='FILE_TICK')
             
             # "Individual" button on the right
-            col2.operator("object.hyperfy_export_individual", text="Individual", icon='EXPORT')
+            col2.operator("object.hyperfy_export_individual", text="Individual", icon='FILE_TICK')
                 
         else:
             layout.label(text="No object selected")
@@ -626,7 +626,7 @@ def register():
     # register our “proxy” property on all Objects
     bpy.types.Object.hyperfy_max_distance = IntProperty(
         name="Max Distance",
-        description="Maximum LOD distance (0 = no limit)",
+        description="Maximum LOD distance (0 = ignored by lod group)",
         get=get_max_distance,
         set=set_max_distance,
     )

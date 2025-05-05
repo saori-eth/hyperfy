@@ -215,10 +215,10 @@ class OBJECT_OT_mesh_property_toggle(Operator):
                 
         return {'FINISHED'}
 
-class OBJECT_OT_hyperfy_export(Operator):
-    """Export as GLB with custom properties enabled"""
-    bl_idname = "object.hyperfy_export"
-    bl_label = "Export GLB"
+class OBJECT_OT_hyperfy_export_all(Operator):
+    """Export entire scene as GLB with custom properties enabled"""
+    bl_idname = "object.hyperfy_export_all"
+    bl_label = "Export All"
     bl_options = {'REGISTER'}
     
     @classmethod
@@ -264,6 +264,98 @@ class OBJECT_OT_hyperfy_export(Operator):
 
         self.report({'INFO'}, f"Exported to {filepath}")
 
+        return {'FINISHED'}
+
+class OBJECT_OT_hyperfy_export_individual(Operator):
+    """Export each root object individually as GLB with custom properties enabled"""
+    bl_idname = "object.hyperfy_export_individual"
+    bl_label = "Export Individual"
+    bl_options = {'REGISTER'}
+    
+    @classmethod
+    def poll(cls, context):
+        # Export button is always available if there are objects in the scene
+        return len(context.scene.objects) > 0
+    
+    def execute(self, context):
+        # Get the current blend file path
+        blend_filepath = bpy.data.filepath
+        
+        # Create a directory for exported GLBs
+        if not blend_filepath:
+            base_directory = os.path.join(os.path.expanduser("~"), "Documents")
+        else:
+            base_directory = os.path.dirname(blend_filepath)
+        
+        export_directory = os.path.join(base_directory, "exported_glbs")
+        
+        # Create the directory if it doesn't exist
+        if not os.path.exists(export_directory):
+            os.makedirs(export_directory)
+        
+        # Store original selection
+        original_selection = context.selected_objects.copy()
+        original_active = context.active_object
+        
+        # Deselect all objects
+        bpy.ops.object.select_all(action='DESELECT')
+        
+        # Find all root objects (objects with no parent)
+        root_objects = [obj for obj in context.scene.objects if obj.parent is None]
+        
+        # For each root object
+        for obj in root_objects:
+            # Store the original location
+            original_location = obj.location.copy()
+            
+            # Set object position to 0,0,0
+            obj.location = (0, 0, 0)
+            
+            # Select the object and all its children
+            obj.select_set(True)
+            for child in obj.children_recursive:
+                child.select_set(True)
+            
+            # Set as active object
+            context.view_layer.objects.active = obj
+            
+            # Define export path
+            filepath = os.path.join(export_directory, f"{obj.name}.glb")
+            
+            export_params = {
+                'filepath': filepath,
+                'export_format': 'GLB',
+                'export_image_format': 'WEBP',
+                'export_extras': True,  # custom properties
+                'export_apply': True,   # apply modifiers
+                'use_selection': True   # only selected objects
+            }
+            
+            try:
+                bpy.ops.export_scene.gltf(**export_params)
+            except TypeError as e:
+                # If there's an error about WebP not being found, try without it
+                if "enum \"WEBP\" not found" in str(e):
+                    del export_params['export_image_format']
+                    bpy.ops.export_scene.gltf(**export_params)
+                else:
+                    # If it's some other error, re-raise it
+                    raise e
+            
+            # Move object back to original position
+            obj.location = original_location
+            
+            # Deselect all objects for the next iteration
+            bpy.ops.object.select_all(action='DESELECT')
+        
+        # Restore original selection
+        for obj in original_selection:
+            obj.select_set(True)
+        if original_active:
+            context.view_layer.objects.active = original_active
+        
+        self.report({'INFO'}, f"Exported {len(root_objects)} objects to {export_directory}")
+        
         return {'FINISHED'}
 
 class VIEW3D_PT_hyperfy_panel(Panel):
@@ -426,11 +518,21 @@ class VIEW3D_PT_hyperfy_panel(Panel):
             layout.separator()
             layout.label(text="Export")
             
-            # Add the Export button at the bottom of the panel
+            # Add the Export buttons at the bottom of the panel
             box = layout.box()
-            row = box.row()
-            row.scale_y = 1.5  # Make the button a bit larger
-            row.operator("object.hyperfy_export", text="Export", icon='EXPORT')
+            row = box.row(align=True)
+            row.scale_y = 1.5  # Make the buttons a bit larger
+            
+            # Split into two columns
+            split = row.split(factor=0.5)
+            col1 = split.column(align=True)
+            col2 = split.column(align=True)
+            
+            # "All" button on the left
+            col1.operator("object.hyperfy_export_all", text="All", icon='EXPORT')
+            
+            # "Individual" button on the right
+            col2.operator("object.hyperfy_export_individual", text="Individual", icon='EXPORT')
                 
         else:
             layout.label(text="No object selected")
@@ -441,7 +543,8 @@ classes = (
     OBJECT_OT_rigidbody_type_set,
     OBJECT_OT_collider_property_toggle,
     OBJECT_OT_mesh_property_toggle,
-    OBJECT_OT_hyperfy_export, 
+    OBJECT_OT_hyperfy_export_all, 
+    OBJECT_OT_hyperfy_export_individual, 
     VIEW3D_PT_hyperfy_panel,
 )
 

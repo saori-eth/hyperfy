@@ -215,6 +215,47 @@ class OBJECT_OT_mesh_property_toggle(Operator):
                 
         return {'FINISHED'}
 
+class OBJECT_OT_lod_property_toggle(Operator):
+    """Toggle LOD Property"""
+    bl_idname = "object.lod_property_toggle"
+    bl_label = "Toggle LOD Property"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    property_name: StringProperty(
+        name="Property Name",
+        description="Name of the property to toggle",
+        default=""
+    )
+    
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and "node" in obj and obj["node"] == NODE_LOD
+    
+    def execute(self, context):
+        obj = context.active_object
+        
+        # If property exists, toggle its value
+        if self.property_name in obj:
+            if obj[self.property_name]:
+                # If true, remove it (to match engine default)
+                del obj[self.property_name]
+            else:
+                # Toggle to true
+                obj[self.property_name] = True
+        else:
+            # Property doesn't exist, set it to true
+            obj[self.property_name] = True
+        
+        # Notify Blender that the object has been updated
+        obj.update_tag(refresh={'OBJECT'})
+        
+        # Force update of the UI
+        for area in context.screen.areas:
+            area.tag_redraw()
+                
+        return {'FINISHED'}
+
 class OBJECT_OT_hyperfy_export_all(Operator):
     """Export entire scene as GLB with custom properties enabled"""
     bl_idname = "object.hyperfy_export_all"
@@ -479,6 +520,23 @@ class VIEW3D_PT_hyperfy_panel(Panel):
                 row = layout.row()
                 op = row.operator("object.collider_property_toggle", text="Trigger", icon='CHECKBOX_HLT' if is_trigger else 'CHECKBOX_DEHLT')
                 op.property_name = "trigger"
+
+            # Inside the draw method, after checking for different node types
+            # Add this code right after the NODE_LOD check in the current if statements
+            elif current_node_type == NODE_LOD:
+                # Add a separator
+                layout.separator()
+                
+                # Add a title for the LOD options section
+                layout.label(text="LOD Options")
+                
+                # Check if property exists and set the checkbox state accordingly
+                is_scale_aware = "scaleAware" in obj and obj["scaleAware"] == True
+                
+                # Scale Aware checkbox
+                row = layout.row()
+                op = row.operator("object.lod_property_toggle", text="Scale Aware", icon='CHECKBOX_HLT' if is_scale_aware else 'CHECKBOX_DEHLT')
+                op.property_name = "scaleAware"
             
             # Check if object is a child of an LOD node
             parent = obj.parent
@@ -543,6 +601,7 @@ classes = (
     OBJECT_OT_rigidbody_type_set,
     OBJECT_OT_collider_property_toggle,
     OBJECT_OT_mesh_property_toggle,
+    OBJECT_OT_lod_property_toggle,
     OBJECT_OT_hyperfy_export_all, 
     OBJECT_OT_hyperfy_export_individual, 
     VIEW3D_PT_hyperfy_panel,

@@ -50,6 +50,7 @@ export function glbToNodes(glb, world) {
           position: object3d.position.toArray(),
           quaternion: object3d.quaternion.toArray(),
           scale: object3d.scale.toArray(),
+          scaleAware: props.scaleAware,
         })
         parentNode.add(node)
         parse(object3d.children, node)

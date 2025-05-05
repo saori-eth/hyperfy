@@ -4,6 +4,10 @@ A LOD can hold multiple child nodes and automatically activate/deactivate them b
 
 ## Properties
 
+### `.scaleAware`: Boolean
+
+When enabled, the max distance of child items are multiplied by their scale. This produces a balance where larger objects will retain higher lod levels over further distances. Defaults to `false`.
+
 ### `.{...Node}`
 
 Inherits all [Node](/docs/ref/Node.md) properties

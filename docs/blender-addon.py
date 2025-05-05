@@ -22,6 +22,7 @@ NODE_NONE = 'none'
 NODE_RIGIDBODY = 'rigidbody'
 NODE_COLLIDER = 'collider'
 NODE_LOD = 'lod'
+NODE_SNAP = 'snap'
 
 # Rigidbody type options
 TYPE_STATIC = 'static'
@@ -238,31 +239,46 @@ class VIEW3D_PT_hyperfy_panel(Panel):
             
             # None button
             row = layout.row()
+            none_button_label = "Group" if obj.type == 'EMPTY' else "Mesh" if obj.type == 'MESH' else "Skinned Mesh" if obj.type == "ARMATURE" else "None"
             if current_node_type == NODE_NONE:
-                row.operator("object.node_type_set", text="None", icon='RADIOBUT_ON').node_type = NODE_NONE
+                row.operator("object.node_type_set", text=none_button_label, icon='RADIOBUT_ON').node_type = NODE_NONE
             else:
-                row.operator("object.node_type_set", text="None", icon='RADIOBUT_OFF').node_type = NODE_NONE
+                row.operator("object.node_type_set", text=none_button_label, icon='RADIOBUT_OFF').node_type = NODE_NONE
             
-            # Rigidbody button
-            row = layout.row()
-            if current_node_type == NODE_RIGIDBODY:
-                row.operator("object.node_type_set", text="Rigidbody", icon='RADIOBUT_ON').node_type = NODE_RIGIDBODY
-            else:
-                row.operator("object.node_type_set", text="Rigidbody", icon='RADIOBUT_OFF').node_type = NODE_RIGIDBODY
-            
-            # Collider button
-            row = layout.row()
-            if current_node_type == NODE_COLLIDER:
-                row.operator("object.node_type_set", text="Collider", icon='RADIOBUT_ON').node_type = NODE_COLLIDER
-            else:
-                row.operator("object.node_type_set", text="Collider", icon='RADIOBUT_OFF').node_type = NODE_COLLIDER
-            
-            # LOD button
-            row = layout.row()
-            if current_node_type == NODE_LOD:
-                row.operator("object.node_type_set", text="LOD Group", icon='RADIOBUT_ON').node_type = NODE_LOD
-            else:
-                row.operator("object.node_type_set", text="LOD Group", icon='RADIOBUT_OFF').node_type = NODE_LOD
+            # Meshes can be:
+            if obj.type == 'MESH':
+
+                # Collider button
+                row = layout.row()
+                if current_node_type == NODE_COLLIDER:
+                    row.operator("object.node_type_set", text="Collider", icon='RADIOBUT_ON').node_type = NODE_COLLIDER
+                else:
+                    row.operator("object.node_type_set", text="Collider", icon='RADIOBUT_OFF').node_type = NODE_COLLIDER
+
+            # Empties can be:
+            if obj.type == 'EMPTY':
+
+                # Rigidbody button
+                if obj.type == 'EMPTY':
+                    row = layout.row()
+                    if current_node_type == NODE_RIGIDBODY:
+                        row.operator("object.node_type_set", text="Rigidbody", icon='RADIOBUT_ON').node_type = NODE_RIGIDBODY
+                    else:
+                        row.operator("object.node_type_set", text="Rigidbody", icon='RADIOBUT_OFF').node_type = NODE_RIGIDBODY
+
+                # LOD Group button
+                row = layout.row()
+                if current_node_type == NODE_LOD:
+                    row.operator("object.node_type_set", text="LOD Group", icon='RADIOBUT_ON').node_type = NODE_LOD
+                else:
+                    row.operator("object.node_type_set", text="LOD Group", icon='RADIOBUT_OFF').node_type = NODE_LOD
+
+                # Snap Point button
+                row = layout.row()
+                if current_node_type == NODE_SNAP:
+                    row.operator("object.node_type_set", text="Snap Point", icon='RADIOBUT_ON').node_type = NODE_SNAP
+                else:
+                    row.operator("object.node_type_set", text="Snap Point", icon='RADIOBUT_OFF').node_type = NODE_SNAP
             
             # If node type is rigidbody, show additional options for rigidbody type
             if current_node_type == NODE_RIGIDBODY:

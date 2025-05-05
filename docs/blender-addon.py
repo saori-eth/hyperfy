@@ -13,6 +13,7 @@ bl_info = {
     "category": "3D View",
 }
 
+import os
 import bpy
 from bpy.types import Panel, Operator, PropertyGroup
 from bpy.props import BoolProperty, StringProperty, EnumProperty, IntProperty
@@ -214,6 +215,57 @@ class OBJECT_OT_mesh_property_toggle(Operator):
                 
         return {'FINISHED'}
 
+class OBJECT_OT_hyperfy_export(Operator):
+    """Export as GLB with custom properties enabled"""
+    bl_idname = "object.hyperfy_export"
+    bl_label = "Export GLB"
+    bl_options = {'REGISTER'}
+    
+    @classmethod
+    def poll(cls, context):
+        # Export button is always available if there's an active object
+        return context.active_object is not None
+    
+    def execute(self, context):
+        # Get the current blend file path
+        blend_filepath = bpy.data.filepath
+        
+        # If the file hasn't been saved yet, use the temp directory
+        if not blend_filepath:
+            directory = os.path.join(os.path.expanduser("~"), "Documents")
+            filename = "untitled.glb"
+        else:
+            # Use the same directory as the blend file
+            directory = os.path.dirname(blend_filepath)
+            # Use the blend filename but with .glb extension
+            filename = os.path.splitext(os.path.basename(blend_filepath))[0] + ".glb"
+        
+        filepath = os.path.join(directory, filename)
+
+        export_params = {
+            'filepath': filepath,
+            'export_format': 'GLB',
+            'export_image_format': 'WEBP',
+            'export_extras': True, # custom properties
+            'export_apply': True, # apply modifiers
+            'use_selection': False  # entire scene
+        }
+
+        try:
+            bpy.ops.export_scene.gltf(**export_params)
+        except TypeError as e:
+            # If there's an error about WebP not being found, try without it
+            if "enum \"WEBP\" not found" in str(e):
+                del export_params['export_image_format']
+                bpy.ops.export_scene.gltf(**export_params)
+            else:
+                # If it's some other error, re-raise it
+                raise e
+
+        self.report({'INFO'}, f"Exported to {filepath}")
+
+        return {'FINISHED'}
+
 class VIEW3D_PT_hyperfy_panel(Panel):
     """Creates a Panel in the N-Panel"""
     bl_label = "Hyperfy"
@@ -369,6 +421,16 @@ class VIEW3D_PT_hyperfy_panel(Panel):
                 row = layout.row()
                 op = row.operator("object.mesh_property_toggle", text="Receive Shadow", icon='CHECKBOX_HLT' if receive_shadow else 'CHECKBOX_DEHLT')
                 op.property_name = "receiveShadow"
+
+            # Add a separator before the Export button
+            layout.separator()
+            layout.label(text="Export")
+            
+            # Add the Export button at the bottom of the panel
+            box = layout.box()
+            row = box.row()
+            row.scale_y = 1.5  # Make the button a bit larger
+            row.operator("object.hyperfy_export", text="Export", icon='EXPORT')
                 
         else:
             layout.label(text="No object selected")
@@ -379,6 +441,7 @@ classes = (
     OBJECT_OT_rigidbody_type_set,
     OBJECT_OT_collider_property_toggle,
     OBJECT_OT_mesh_property_toggle,
+    OBJECT_OT_hyperfy_export, 
     VIEW3D_PT_hyperfy_panel,
 )
 

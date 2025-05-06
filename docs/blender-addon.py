@@ -288,7 +288,8 @@ class OBJECT_OT_hyperfy_export_all(Operator):
             'export_image_format': 'WEBP',
             'export_extras': True, # custom properties
             'export_apply': True, # apply modifiers
-            'use_selection': False  # entire scene
+            'use_selection': False,  # entire scene
+            'use_visible': True  # only visible
         }
 
         try:
@@ -343,8 +344,18 @@ class OBJECT_OT_hyperfy_export_individual(Operator):
         # Find all root objects (objects with no parent)
         root_objects = [obj for obj in context.scene.objects if obj.parent is None]
         
+        # Counter for exported objects
+        exported_count = 0
+        # Counter for skipped objects
+        skipped_count = 0
+        
         # For each root object
         for obj in root_objects:
+            # Skip if the root object is hidden in viewport
+            if obj.hide_get():
+                skipped_count += 1
+                continue
+                
             # Store the original location
             original_location = obj.location.copy()
             
@@ -368,16 +379,19 @@ class OBJECT_OT_hyperfy_export_individual(Operator):
                 'export_image_format': 'WEBP',
                 'export_extras': True,  # custom properties
                 'export_apply': True,   # apply modifiers
-                'use_selection': True   # only selected objects
+                'use_selection': True,   # only selected objects
+                'use_visible': True  # only visible
             }
             
             try:
                 bpy.ops.export_scene.gltf(**export_params)
+                exported_count += 1
             except TypeError as e:
                 # If there's an error about WebP not being found, try without it
                 if "enum \"WEBP\" not found" in str(e):
                     del export_params['export_image_format']
                     bpy.ops.export_scene.gltf(**export_params)
+                    exported_count += 1
                 else:
                     # If it's some other error, re-raise it
                     raise e
@@ -394,7 +408,11 @@ class OBJECT_OT_hyperfy_export_individual(Operator):
         if original_active:
             context.view_layer.objects.active = original_active
         
-        self.report({'INFO'}, f"Exported {len(root_objects)} objects to {export_directory}")
+        # Report with additional info about skipped objects
+        if skipped_count > 0:
+            self.report({'INFO'}, f"Exported {exported_count} objects to {export_directory} (Skipped {skipped_count} hidden root objects)")
+        else:
+            self.report({'INFO'}, f"Exported {exported_count} objects to {export_directory}")
         
         return {'FINISHED'}
 

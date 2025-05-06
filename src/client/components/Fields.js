@@ -10,6 +10,7 @@ import { CurvePreview } from './CurvePreview'
 import { Portal } from './Portal'
 import { CurvePane } from './CurvePane'
 import { isArray } from 'lodash-es'
+import { downloadFile } from '../../core/extras/downloadFile'
 
 export function FieldText({ label, hint, placeholder, value, onChange }) {
   const { setHint } = useContext(HintContext)

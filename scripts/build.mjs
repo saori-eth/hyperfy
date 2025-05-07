@@ -127,7 +127,7 @@ let spawn
               spawn?.kill('SIGTERM')
               spawn = fork(path.join(rootDir, 'build/index.js'))
             } else {
-              process.exit(1)
+              process.exit(0)
             }
           })
         },

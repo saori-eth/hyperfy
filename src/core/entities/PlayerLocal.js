@@ -18,7 +18,7 @@ const SCALE_IDENTITY = new THREE.Vector3(1, 1, 1)
 const POINTER_LOOK_SPEED = 0.1
 const PAN_LOOK_SPEED = 0.4
 const ZOOM_SPEED = 2
-const MIN_ZOOM = 2
+const MIN_ZOOM = 1
 const MAX_ZOOM = 8
 const STICK_MAX_DISTANCE = 50
 const DEFAULT_CAM_HEIGHT = 1.2
@@ -141,7 +141,7 @@ export class PlayerLocal extends Entity {
     bindRotations(this.cam.quaternion, this.cam.rotation)
     this.cam.quaternion.copy(this.base.quaternion)
     this.cam.rotation.x += -15 * DEG2RAD
-    this.cam.zoom = 2
+    this.cam.zoom = 1.5
 
     if (this.world.loader?.preloader) {
       await this.world.loader.preloader

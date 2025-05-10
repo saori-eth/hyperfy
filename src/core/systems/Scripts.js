@@ -5,6 +5,8 @@ import { DEG2RAD, RAD2DEG } from '../extras/general'
 import { clamp, num, uuid } from '../utils'
 import { LerpVector3 } from '../extras/LerpVector3'
 import { LerpQuaternion } from '../extras/LerpQuaternion'
+import { Curve } from '../extras/Curve'
+import { prng } from '../extras/prng'
 
 /**
  * Script System
@@ -36,6 +38,7 @@ export class Scripts extends System {
       harden: undefined,
       lockdown: undefined,
       num,
+      prng,
       clamp,
       // Layers,
       Object3D: THREE.Object3D,
@@ -46,7 +49,7 @@ export class Scripts extends System {
       LerpVector3,
       LerpQuaternion,
       // Material: Material,
-      // Curve: Curve,
+      Curve,
       // Gradient: Gradient,
       DEG2RAD,
       RAD2DEG,

@@ -13,7 +13,7 @@ RUN npm install
 COPY . .
 COPY .env.example .env
 
-RUN npm run build || exit 0
+RUN npm run build
 
 ARG COMMIT_HASH=local
 ENV COMMIT_HASH=${COMMIT_HASH:-local}

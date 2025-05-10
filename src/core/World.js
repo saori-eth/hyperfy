@@ -2,6 +2,7 @@ import * as THREE from './extras/three'
 import EventEmitter from 'eventemitter3'
 
 import { Settings } from './systems/Settings'
+import { Collections } from './systems/Collections'
 import { Apps } from './systems/Apps'
 import { Anchors } from './systems/Anchors'
 import { Events } from './systems/Events'
@@ -24,6 +25,7 @@ export class World extends EventEmitter {
     this.systems = []
     this.networkRate = 1 / 8 // 8Hz
     this.assetsUrl = null
+    this.assetsDir = null
     this.hot = new Set()
 
     this.rig = new THREE.Object3D()
@@ -33,6 +35,7 @@ export class World extends EventEmitter {
     this.rig.add(this.camera)
 
     this.register('settings', Settings)
+    this.register('collections', Collections)
     this.register('apps', Apps)
     this.register('anchors', Anchors)
     this.register('events', Events)
@@ -53,6 +56,7 @@ export class World extends EventEmitter {
 
   async init(options) {
     this.storage = options.storage
+    this.assetsDir = options.assetsDir
     for (const system of this.systems) {
       await system.init(options)
     }
@@ -204,8 +208,14 @@ export class World extends EventEmitter {
       return url
     }
     if (url.startsWith('asset://')) {
-      if (!this.assetsUrl) console.error('resolveURL: no assetsUrl defined')
-      return url.replace('asset:/', this.assetsUrl)
+      if (this.assetsUrl) {
+        return url.replace('asset:/', this.assetsUrl)
+      } else if (this.assetsDir) {
+        return url.replace('asset:/', this.assetsDir)
+      } else {
+        console.error('resolveURL: no assetsUrl or assetsDir defined')
+        return url
+      }
     }
     if (url.match(/^https?:\/\//i)) {
       return url

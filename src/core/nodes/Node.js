@@ -204,8 +204,12 @@ export class Node {
 
   clean() {
     if (!this.isDirty) return
+    let top = this
+    while (top.parent && top.parent.isDirty) {
+      top = top.parent
+    }
     let didTransform
-    this.traverse(node => {
+    top.traverse(node => {
       if (node.isTransformed) {
         didTransform = true
       }

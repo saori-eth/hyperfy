@@ -20,6 +20,8 @@ let actionIds = 0
  *
  */
 
+const isBrowser = typeof window !== 'undefined'
+
 const controlTypes = {
   // key: createButton,
   mouseLeft: createButton,
@@ -193,6 +195,7 @@ export class ClientControls extends System {
   }
 
   async init({ viewport }) {
+    if (!isBrowser) return
     this.viewport = viewport
     this.screen.width = this.viewport.offsetWidth
     this.screen.height = this.viewport.offsetHeight
@@ -206,7 +209,7 @@ export class ClientControls extends System {
     this.viewport.addEventListener('touchend', this.onTouchEnd)
     this.viewport.addEventListener('touchcancel', this.onTouchEnd)
     this.viewport.addEventListener('pointerup', this.onPointerUp)
-    this.viewport.addEventListener('wheel', this.onScroll, { passive: false }) // prettier-ignore
+    this.viewport.addEventListener('wheel', this.onScroll, { passive: false })
     document.body.addEventListener('contextmenu', this.onContextMenu)
     window.addEventListener('resize', this.onResize)
     window.addEventListener('blur', this.onBlur)
@@ -322,6 +325,35 @@ export class ClientControls extends System {
         }
       }
     } else {
+      this.buttonsDown.delete(prop)
+      for (const control of this.controls) {
+        const button = control.entries[prop]
+        if (button?.$button && button.down) {
+          button.down = false
+          button.released = true
+          button.onRelease?.()
+        }
+      }
+    }
+  }
+
+  simulateButton(prop, pressed) {
+    if (pressed) {
+      if (this.buttonsDown.has(prop)) return
+      this.buttonsDown.add(prop)
+      for (const control of this.controls) {
+        const button = control.entries[prop]
+        if (button?.$button) {
+          button.pressed = true
+          button.down = true
+          const capture = button.onPress?.()
+          if (capture || button.capture) break
+        }
+        const capture = control.onButtonPress?.(prop, text)
+        if (capture) break
+      }
+    } else {
+      if (!this.buttonsDown.has(prop)) return
       this.buttonsDown.delete(prop)
       for (const control of this.controls) {
         const button = control.entries[prop]
@@ -580,6 +612,24 @@ export class ClientControls extends System {
 
   isInputFocused() {
     return document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA'
+  }
+
+  destroy() {
+    if (!isBrowser) return
+    window.removeEventListener('keydown', this.onKeyDown)
+    window.removeEventListener('keyup', this.onKeyUp)
+    document.removeEventListener('pointerlockchange', this.onPointerLockChange)
+    this.viewport.removeEventListener('pointerdown', this.onPointerDown)
+    window.removeEventListener('pointermove', this.onPointerMove)
+    this.viewport.removeEventListener('touchstart', this.onTouchStart)
+    this.viewport.removeEventListener('touchmove', this.onTouchMove)
+    this.viewport.removeEventListener('touchend', this.onTouchEnd)
+    this.viewport.removeEventListener('touchcancel', this.onTouchEnd)
+    this.viewport.removeEventListener('pointerup', this.onPointerUp)
+    this.viewport.removeEventListener('wheel', this.onScroll, { passive: false })
+    document.body.removeEventListener('contextmenu', this.onContextMenu)
+    window.removeEventListener('resize', this.onResize)
+    window.removeEventListener('blur', this.onBlur)
   }
 }
 

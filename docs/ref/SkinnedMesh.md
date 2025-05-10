@@ -41,6 +41,6 @@ If a previous animation was playing it will stop/fade.
 
 Stops any playing animation. Fade defaults to `0.15`
 
-### `.getBoneTransform(boneName)`: Matrix4
+### `.getBone(boneName)`: Bone
 
-Returns a matrix of the bone transform in world space.
+Returns a bone with properties `position`, `quaternion`, `rotation`, `scale` and `matrixWorld`.

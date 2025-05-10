@@ -159,12 +159,17 @@ export class SkinnedMesh extends Node {
     this.action = null
   }
 
-  getBoneTransform(name) {
+  readBone(name) {
     if (!this.obj) return null
     if (!this.bones) {
       this.bones = {}
-      this.obj.traverse(child => {
-        if (child.isBone) this.bones[child.name] = child
+      this.obj.traverse(item => {
+        if (item.isBone) {
+          this.bones[item.name] = {
+            raw: item,
+            proxy: null,
+          }
+        }
       })
     }
     const bone = this.bones[name]
@@ -172,10 +177,42 @@ export class SkinnedMesh extends Node {
       console.warn(`[skinnedmesh] bone not found: ${name}`)
       return null
     }
+    return bone
+  }
+
+  getBone(name) {
+    const bone = this.readBone(name)
+    if (!bone) return null
+    if (!bone.proxy) {
+      const self = this
+      bone.proxy = {
+        position: bone.raw.position,
+        quaternion: bone.raw.quaternion,
+        rotation: bone.raw.rotation,
+        scale: bone.raw.scale,
+        get matrixWorld() {
+          if (self.isDirty) self.clean()
+          bone.raw.updateMatrixWorld(true)
+          return bone.raw.matrixWorld
+        },
+        set matrixWorld(mat) {
+          bone.raw.matrixAutoUpdate = false
+          bone.raw.matrixWorldAutoUpdate = false
+          bone.raw.matrixWorld.copy(mat)
+        },
+      }
+    }
+    return bone.proxy
+  }
+
+  // deprecated: use getBone(name).matrixWorld
+  getBoneTransform(name) {
+    const bone = this.readBone(name)
+    if (!bone) return null
     // combine the skinned mesh's world matrix with the bone's world matrix
     // return m1.multiplyMatrices(this.matrixWorld, bone.matrixWorld)
-    bone.updateMatrixWorld(true)
-    return m1.copy(bone.matrixWorld)
+    bone.raw.updateMatrixWorld(true)
+    return m1.copy(bone.raw.matrixWorld)
   }
 
   getProxy() {
@@ -202,6 +239,9 @@ export class SkinnedMesh extends Node {
         },
         stop(opts) {
           self.stop(opts)
+        },
+        getBone(name) {
+          return self.getBone(name)
         },
         getBoneTransform(name) {
           return self.getBoneTransform(name)

@@ -36,4 +36,8 @@ export class Events extends System {
       }
     }
   }
+
+  destroy() {
+    this.listeners = {}
+  }
 }

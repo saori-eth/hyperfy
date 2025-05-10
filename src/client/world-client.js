@@ -5,7 +5,6 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { css } from '@firebolt-dev/css'
 
 import { createClientWorld } from '../core/createClientWorld'
-import { loadPhysX } from './loadPhysX'
 import { CoreUI } from './components/CoreUI'
 
 export { System } from '../core/systems/System'
@@ -33,7 +32,7 @@ export function Client({ wsUrl, onSetup }) {
         wsUrl = wsUrl()
         if (wsUrl instanceof Promise) wsUrl = await wsUrl
       }
-      const config = { viewport, ui, wsUrl, loadPhysX, baseEnvironment }
+      const config = { viewport, ui, wsUrl, baseEnvironment }
       onSetup?.(world, config)
       world.init(config)
     }

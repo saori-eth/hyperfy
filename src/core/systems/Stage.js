@@ -199,6 +199,13 @@ export class Stage extends System {
         raw.emissiveIntensity = value
         raw.needsUpdate = true
       },
+      get fog() {
+        return raw.fog
+      },
+      set fog(value) {
+        raw.fog = value
+        raw.needsUpdate = true
+      },
       // TODO: not yet
       // clone() {
       //   return self.createMaterial(options).proxy
@@ -237,6 +244,10 @@ export class Stage extends System {
     this.raycastHits.length = 0
     this.octree.raycast(this.raycaster, this.raycastHits)
     return this.raycastHits
+  }
+
+  destroy() {
+    this.models.clear()
   }
 }
 

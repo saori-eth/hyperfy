@@ -18,7 +18,7 @@ const SCALE_IDENTITY = new THREE.Vector3(1, 1, 1)
 const POINTER_LOOK_SPEED = 0.1
 const PAN_LOOK_SPEED = 0.4
 const ZOOM_SPEED = 2
-const MIN_ZOOM = 2
+const MIN_ZOOM = 1
 const MAX_ZOOM = 8
 const STICK_MAX_DISTANCE = 50
 const DEFAULT_CAM_HEIGHT = 1.2
@@ -46,10 +46,6 @@ export class PlayerLocal extends Entity {
   }
 
   async init() {
-    if (this.world.loader.preloader) {
-      await this.world.loader.preloader
-    }
-
     this.mass = 1
     this.gravity = 20
     this.effectiveGravity = this.gravity * this.mass
@@ -137,8 +133,6 @@ export class PlayerLocal extends Entity {
 
     this.camHeight = DEFAULT_CAM_HEIGHT
 
-    this.applyAvatar()
-
     this.cam = {}
     this.cam.position = new THREE.Vector3().copy(this.base.position)
     this.cam.position.y += this.camHeight
@@ -147,12 +141,18 @@ export class PlayerLocal extends Entity {
     bindRotations(this.cam.quaternion, this.cam.rotation)
     this.cam.quaternion.copy(this.base.quaternion)
     this.cam.rotation.x += -15 * DEG2RAD
-    this.cam.zoom = 2
+    this.cam.zoom = 1.5
 
+    if (this.world.loader?.preloader) {
+      await this.world.loader.preloader
+    }
+
+    this.applyAvatar()
     this.initCapsule()
     this.initControl()
 
     this.world.setHot(this, true)
+    this.world.emit('ready', true)
   }
 
   getAvatarUrl() {
@@ -592,7 +592,7 @@ export class PlayerLocal extends Entity {
       // ground/air jump
       const shouldJump =
         this.grounded && !this.jumping && this.jumpDown && !this.data.effect?.snare && !this.data.effect?.freeze
-      const shouldAirJump = !this.grounded && !this.airJumped && this.jumpPressed && !this.world.builder.enabled
+      const shouldAirJump = !this.grounded && !this.airJumped && this.jumpPressed && !this.world.builder?.enabled
       if (shouldJump || shouldAirJump) {
         // calc velocity needed to reach jump height
         let jumpVelocity = Math.sqrt(2 * this.effectiveGravity * this.jumpHeight)
@@ -644,13 +644,13 @@ export class PlayerLocal extends Entity {
       this.capsule.setAngularVelocity(zeroAngular.toPxVec3())
 
       // if not in build mode, cancel flying
-      if (!this.world.builder.enabled) {
+      if (!this.world.builder?.enabled) {
         this.toggleFlying()
       }
     }
 
     // double jump in build, mode toggle flying
-    if (this.jumpPressed && this.world.builder.enabled) {
+    if (this.jumpPressed && this.world.builder?.enabled) {
       if (this.world.time - this.lastJumpAt < 0.4) {
         this.toggleFlying()
       }
@@ -662,7 +662,7 @@ export class PlayerLocal extends Entity {
   }
 
   update(delta) {
-    const isXR = this.world.xr.session
+    const isXR = this.world.xr?.session
     const freeze = this.data.effect?.freeze
     const anchor = this.getAnchorMatrix()
 
@@ -829,7 +829,7 @@ export class PlayerLocal extends Entity {
           id: this.data.id,
           p: this.base.position.clone(),
           q: this.base.quaternion.clone(),
-          e: this.emote,
+          e: null,
         }
       }
       const data = {
@@ -867,7 +867,7 @@ export class PlayerLocal extends Entity {
   }
 
   lateUpdate(delta) {
-    const isXR = this.world.xr.session
+    const isXR = this.world.xr?.session
     const anchor = this.getAnchorMatrix()
     // if we're anchored, force into that pose
     if (anchor) {
@@ -889,7 +889,7 @@ export class PlayerLocal extends Entity {
       const right = v2.crossVectors(forward, UP).normalize()
       this.cam.position.add(right.multiplyScalar(0.3))
     }
-    if (this.world.xr.session) {
+    if (this.world.xr?.session) {
       // in vr snap camera
       this.control.camera.position.copy(this.cam.position)
       this.control.camera.quaternion.copy(this.cam.quaternion)
@@ -961,6 +961,11 @@ export class PlayerLocal extends Entity {
       this.pushForce = force.clone()
       this.pushForceInit = false
     }
+  }
+
+  setName(name) {
+    this.modify({ name })
+    this.world.network.send('entityModified', { id: this.data.id, name })
   }
 
   setSessionAvatar(avatar) {

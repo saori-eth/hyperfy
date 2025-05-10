@@ -1,3 +1,7 @@
+import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
+
 class LocalStorage {
   get(key, defaultValue = null) {
     const data = localStorage.getItem(key)
@@ -27,10 +31,59 @@ class LocalStorage {
   }
 }
 
+class NodeStorage {
+  constructor() {
+    const dirname = path.dirname(fileURLToPath(import.meta.url))
+    const rootDir = path.join(dirname, '../')
+    this.file = path.join(rootDir, 'localstorage.json')
+    try {
+      const data = fs.readFileSync(this.file, 'utf8')
+      this.data = JSON.parse(data)
+    } catch (err) {
+      this.data = {}
+    }
+  }
+
+  save() {
+    try {
+      fs.writeFileSync(this.file, JSON.stringify(this.data, null, 2), 'utf8')
+    } catch (err) {
+      console.error('error writing to storage file:', err)
+    }
+  }
+
+  get(key, defaultValue = null) {
+    const value = this.data[key]
+    if (value === undefined) return defaultValue
+    return value || defaultValue
+  }
+
+  set(key, value) {
+    if (value === undefined || value === null) {
+      delete this.data[key]
+    } else {
+      this.data[key] = value
+    }
+    this.save()
+  }
+
+  remove(key) {
+    delete this.data[key]
+    this.save()
+  }
+}
+
 const isBrowser = typeof window !== 'undefined'
+const isNode = typeof process !== 'undefined' && process.versions && process.versions.node
 
-if (!isBrowser) throw new Error('storage not available on the server')
+let storage
 
-// TODO: use a MemoryStorage fallback for browser environments that do not allow LocalStorage, eg safari private
+if (isBrowser) {
+  storage = new LocalStorage() // todo: some browser environments (eg safari incognito) have no local storage so we need a MemoryStorage fallback
+} else if (isNode) {
+  storage = new NodeStorage()
+} else {
+  console.warn('no storage')
+}
 
-export const storage = new LocalStorage()
+export { storage }

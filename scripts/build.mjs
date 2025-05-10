@@ -11,7 +11,8 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 const rootDir = path.join(dirname, '../')
 const buildDir = path.join(rootDir, 'build')
 
-await fs.emptyDir(buildDir)
+// await fs.emptyDir(buildDir)
+await fs.emptyDir(path.join(buildDir, 'public'))
 
 /**
  * Build Client
@@ -31,13 +32,13 @@ const clientHtmlDest = path.join(rootDir, 'build/public/index.html')
     format: 'esm',
     bundle: true,
     treeShaking: true,
-    minify: false,
+    minify: !dev,
     sourcemap: true,
     metafile: true,
     jsx: 'automatic',
     jsxImportSource: '@firebolt-dev/jsx',
     define: {
-      // 'process.env.NODE_ENV': '"development"',
+      'process.env.NODE_ENV': dev ? '"development"' : '"production"',
     },
     loader: {
       '.js': 'jsx',
@@ -53,6 +54,10 @@ const clientHtmlDest = path.join(rootDir, 'build/public/index.html')
           build.onEnd(async result => {
             // copy over public files
             await fs.copy(clientPublicDir, clientBuildDir)
+            // copy physx wasm to public
+            const physxWasmSrc = path.join(rootDir, 'src/core/physx-js-webidl.wasm')
+            const physxWasmDest = path.join(rootDir, 'build/public/physx-js-webidl.wasm')
+            await fs.copy(physxWasmSrc, physxWasmDest)
             // find js output files
             const metafile = result.metafile
             const outputFiles = Object.keys(metafile.outputs)
@@ -78,6 +83,8 @@ const clientHtmlDest = path.join(rootDir, 'build/public/index.html')
   } else {
     await clientCtx.rebuild()
   }
+  const buildResult = await clientCtx.rebuild()
+  fs.writeFileSync(path.join(buildDir, 'meta.json'), JSON.stringify(buildResult.metafile, null, 2))
 }
 
 /**
@@ -106,8 +113,12 @@ let spawn
         name: 'server-finalize-plugin',
         setup(build) {
           build.onEnd(async result => {
+            // copy over physx js
+            const physxIdlSrc = path.join(rootDir, 'src/core/physx-js-webidl.js')
+            const physxIdlDest = path.join(rootDir, 'build/physx-js-webidl.js')
+            await fs.copy(physxIdlSrc, physxIdlDest)
             // copy over physx wasm
-            const physxWasmSrc = path.join(rootDir, 'src/server/physx/physx-js-webidl.wasm')
+            const physxWasmSrc = path.join(rootDir, 'src/core/physx-js-webidl.wasm')
             const physxWasmDest = path.join(rootDir, 'build/physx-js-webidl.wasm')
             await fs.copy(physxWasmSrc, physxWasmDest)
             // start the server or stop here
@@ -116,7 +127,7 @@ let spawn
               spawn?.kill('SIGTERM')
               spawn = fork(path.join(rootDir, 'build/index.js'))
             } else {
-              process.exit(1)
+              process.exit(0)
             }
           })
         },

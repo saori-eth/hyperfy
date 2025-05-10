@@ -39,6 +39,8 @@ const getOffscreenContext = () => {
   return offscreenContext
 }
 
+const isBrowser = typeof window !== 'undefined'
+
 export class UIText extends Node {
   constructor(data = {}) {
     super(data)
@@ -108,7 +110,7 @@ export class UIText extends Node {
   }
 
   mount() {
-    if (this.ctx.world.network.isServer) return
+    if (!isBrowser) return
     this.ui = this.parent?.ui
     if (!this.ui) return console.error('uitext: must be child of ui node')
     this.yogaNode = Yoga.Node.create()

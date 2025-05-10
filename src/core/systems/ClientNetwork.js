@@ -24,9 +24,12 @@ export class ClientNetwork extends System {
     this.queue = []
   }
 
-  init({ wsUrl }) {
+  init({ wsUrl, name, avatar }) {
     const authToken = storage.get('authToken')
-    this.ws = new WebSocket(`${wsUrl}?authToken=${authToken}`)
+    let url = `${wsUrl}?authToken=${authToken}`
+    if (name) url += `&name=${encodeURIComponent(name)}`
+    if (avatar) url += `&avatar=${encodeURIComponent(avatar)}`
+    this.ws = new WebSocket(url)
     this.ws.binaryType = 'arraybuffer'
     this.ws.addEventListener('message', this.onPacket)
     this.ws.addEventListener('close', this.onClose)
@@ -98,7 +101,7 @@ export class ClientNetwork extends System {
     // preload environment model and avatar
     if (data.settings.model) {
       this.world.loader.preload('model', data.settings.model.url)
-    } else {
+    } else if (this.world.environment.base) {
       this.world.loader.preload('model', this.world.environment.base.model)
     }
     if (data.settings.avatar) {
@@ -133,11 +136,12 @@ export class ClientNetwork extends System {
     }
     this.world.loader.execPreload()
 
+    this.world.collections.deserialize(data.collections)
     this.world.settings.deserialize(data.settings)
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)
-    this.world.livekit.deserialize(data.livekit)
+    this.world.livekit?.deserialize(data.livekit)
     storage.set('authToken', data.authToken)
   }
 
@@ -211,5 +215,16 @@ export class ClientNetwork extends System {
     })
     this.world.emit('disconnect', code || true)
     console.log('disconnect', code)
+  }
+
+  destroy() {
+    if (this.ws) {
+      this.ws.removeEventListener('message', this.onPacket)
+      this.ws.removeEventListener('close', this.onClose)
+      if (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING) {
+        this.ws.close()
+      }
+      this.ws = null
+    }
   }
 }

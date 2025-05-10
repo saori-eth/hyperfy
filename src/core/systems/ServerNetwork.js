@@ -214,7 +214,7 @@ export class ServerNetwork extends System {
     return this.world.settings.public || this.isAdmin(player)
   }
 
-  async onConnection(ws, authToken) {
+  async onConnection(ws, params) {
     try {
       // check player limit
       const playerLimit = this.world.settings.playerLimit
@@ -224,6 +224,11 @@ export class ServerNetwork extends System {
         ws.disconnect()
         return
       }
+
+      // check connection params
+      let authToken = params.authToken
+      let name = params.name
+      let avatar = params.avatar
 
       // get or create user
       let user
@@ -277,9 +282,10 @@ export class ServerNetwork extends System {
           quaternion: this.spawn.quaternion.slice(),
           owner: socket.id, // deprecated, same as userId
           userId: user.id, // deprecated, same as userId
-          name: user.name,
+          name: name || user.name,
           health: HEALTH_MAX,
           avatar: user.avatar || this.world.settings.avatar?.url || 'asset://avatar.vrm',
+          sessionAvatar: avatar || null,
           roles: user.roles,
         },
         true
@@ -292,6 +298,7 @@ export class ServerNetwork extends System {
         assetsUrl: process.env.PUBLIC_ASSETS_URL,
         apiUrl: process.env.PUBLIC_API_URL,
         maxUploadSize: process.env.PUBLIC_MAX_UPLOAD_SIZE,
+        collections: this.world.collections.serialize(),
         settings: this.world.settings.serialize(),
         chat: this.world.chat.serialize(),
         blueprints: this.world.blueprints.serialize(),

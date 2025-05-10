@@ -13,6 +13,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## [v0.12.0]
+
+### Added
+- core: add toggle to completely disable an app but keep it in the world
+- core: add scale gizmo (3)
+- core: add shift to scale in build mode
+- core: add ui v3
+- core: add initial app collection
+- core: node-client support for running the client in a nodejs environment
+- apps: experimental app.keepActive=true to keep apps executing while being moved
+- apps: add audio.setPlaybackRate to control pitch
+- apps: add image node
+- apps: add `pivot` option to video node
+- apps: add video.onLoad, video.loading, video.time, video.duration properties
+- apps: inject `prng` utility
+- apps: add material.fog option to allow meshes to opt-out of being effected by fog (eg skyboxes)
+- apps: add skinnedmesh.getBone(name) with ability to read AND write bone transforms
+- apps: add lod.scaleAware property (enabled by default)
+- misc: simple blender addon
+
+### Changed
+- core: improve audio smoothing, less crackle
+- core: cache and reuse physics materials, reduces memory usage
+- core: reinstate production builds, shave off ~5MB of bundle size
+- core: move stats to top right of screen
+- apps: support bigStep option on number props (shift + up/down in input)
+
+### Fixed
+- core: correct video color space
+- core: prevent chat opening up when hitting enter in an app prop input
+- core: fix edge case where colliders cannot be generated for some meshes
+- core: fix shift-click file props to download not working
+- core: fix ctrl+R to reload the page duplicating objects when in build mode
+- core: remove docker exit 0 hack and correctly exit during builds
+- apps: fix initial lod not being set correctly when cloning
+
 ## [v0.11.0]
 
 ### Added
@@ -35,7 +71,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: when anchored, player capsule physics are now disabled
 - core: fix audio not unlocks on meta quest 3
 - core: decrease default shadow setting on mobile from high to medium
-- 
 
 ### Fixed
 - core: fix environment model not loading/simulating on server
@@ -351,7 +386,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Basic project structure
 - Core functionality from original project
 
-[Unreleased]: https://github.com/hyperfy-xyz/hyperfy/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/hyperfy-xyz/hyperfy/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/hyperfy-xyz/hyperfy/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/hyperfy-xyz/hyperfy/compare/v0.10.0...v0.11.0
 [0.10.0]: https://github.com/hyperfy-xyz/hyperfy/compare/v0.9.0...v0.10.0
 [0.9.0]: https://github.com/hyperfy-xyz/hyperfy/compare/v0.8.1...v0.9.0

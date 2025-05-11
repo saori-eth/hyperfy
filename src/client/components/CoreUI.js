@@ -20,24 +20,7 @@ import { ChevronDoubleUpIcon, HandIcon } from './Icons'
 import { Sidebar } from './Sidebar'
 
 export function CoreUI({ world }) {
-  const [ref, width, height] = useElemSize()
-  return (
-    <div
-      ref={ref}
-      css={css`
-        position: absolute;
-        inset: 0;
-        overflow: hidden;
-      `}
-    >
-      {width > 0 && <Content world={world} width={width} height={height} />}
-    </div>
-  )
-}
-
-function Content({ world, width, height }) {
   const ref = useRef()
-  const small = width < 600
   const [ready, setReady] = useState(false)
   const [player, setPlayer] = useState(() => world.entities.player)
   const [ui, setUI] = useState(world.ui.state)
@@ -103,7 +86,7 @@ function Content({ world, width, height }) {
       css={css`
         position: absolute;
         inset: 0;
-        display: ${ui.visible ? 'block' : 'none'};
+        overflow: hidden;
       `}
     >
       {disconnected && <Disconnected />}

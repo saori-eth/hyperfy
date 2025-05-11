@@ -1,5 +1,7 @@
+import { isBoolean } from 'lodash-es'
 import { ControlPriorities } from '../extras/ControlPriorities'
 import { System } from './System'
+import { thickness } from 'three/src/nodes/TSL.js'
 
 const appPanes = ['app', 'script', 'nodes', 'meta']
 
@@ -61,6 +63,13 @@ export class ClientUI extends System {
         this.lastAppPane = pane
       }
     }
+    this.broadcast()
+  }
+
+  toggleVisible(value) {
+    value = isBoolean(value) ? value : !this.state.visible
+    if (this.state.visible === value) return
+    this.state.visible = value
     this.broadcast()
   }
 

@@ -515,6 +515,14 @@ function Prefs({ world, hidden }) {
           trueLabel='Visible'
           falseLabel='Hidden'
         />
+        {!isTouch && (
+          <FieldBtn
+            label='Hide Interface'
+            note='Z'
+            hint='Hide the user interface. Press Z to re-enable.'
+            onClick={() => world.ui.toggleVisible()}
+          />
+        )}
         <Group label='Graphics' />
         <FieldSwitch
           label='Resolution'

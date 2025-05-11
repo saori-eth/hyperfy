@@ -174,7 +174,7 @@ export class PlayerLocal extends Entity {
           this.nametag.active = true
         }
         this.avatarUrl = avatarUrl
-        this.camHeight = this.avatar.height * 0.95
+        this.camHeight = this.avatar.height * 0.9
       })
       .catch(err => {
         console.error(err)

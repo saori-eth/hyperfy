@@ -13,6 +13,13 @@ export function Client({ wsUrl, onSetup }) {
   const viewportRef = useRef()
   const uiRef = useRef()
   const world = useMemo(() => createClientWorld(), [])
+  const [ui, setUI] = useState(world.ui.state)
+  useEffect(() => {
+    world.on('ui', setUI)
+    return () => {
+      world.off('ui', setUI)
+    }
+  }, [])
   useEffect(() => {
     const init = async () => {
       const viewport = viewportRef.current
@@ -57,6 +64,7 @@ export function Client({ wsUrl, onSetup }) {
           inset: 0;
           pointer-events: none;
           user-select: none;
+          display: ${ui.visible ? 'block' : 'none'};
         }
       `}
     >

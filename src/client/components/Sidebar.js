@@ -592,6 +592,7 @@ function World({ world, hidden }) {
   const { isAdmin } = usePermissions(world)
   const [title, setTitle] = useState(world.settings.title)
   const [desc, setDesc] = useState(world.settings.desc)
+  const [image, setImage] = useState(world.settings.image)
   const [model, setModel] = useState(world.settings.model)
   const [avatar, setAvatar] = useState(world.settings.avatar)
   const [playerLimit, setPlayerLimit] = useState(world.settings.playerLimit)
@@ -600,6 +601,7 @@ function World({ world, hidden }) {
     const onChange = changes => {
       if (changes.title) setTitle(changes.title.value)
       if (changes.desc) setDesc(changes.desc.value)
+      if (changes.image) setImage(changes.image.value)
       if (changes.model) setModel(changes.model.value)
       if (changes.avatar) setAvatar(changes.avatar.value)
       if (changes.playerLimit) setPlayerLimit(changes.playerLimit.value)
@@ -659,8 +661,16 @@ function World({ world, hidden }) {
             onChange={value => world.settings.set('desc', value, true)}
           />
           <FieldFile
-            label='Environment'
-            hint='Change the global environment model'
+            label='Image'
+            hint='Change the image of the world. This is shown when loading into or sharing links to this world.'
+            kind='image'
+            value={image}
+            onChange={value => world.settings.set('image', value, true)}
+            world={world}
+          />
+          <FieldFile
+            label='Scene'
+            hint='Change the root scene model'
             kind='model'
             value={model}
             onChange={value => world.settings.set('model', value, true)}

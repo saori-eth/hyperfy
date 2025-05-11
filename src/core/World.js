@@ -201,17 +201,17 @@ export class World extends EventEmitter {
     }
   }
 
-  resolveURL(url) {
+  resolveURL(url, allowLocal) {
     if (!url) return url
     url = url.trim()
     if (url.startsWith('blob')) {
       return url
     }
     if (url.startsWith('asset://')) {
-      if (this.assetsUrl) {
-        return url.replace('asset:/', this.assetsUrl)
-      } else if (this.assetsDir) {
+      if (this.assetsDir && allowLocal) {
         return url.replace('asset:/', this.assetsDir)
+      } else if (this.assetsUrl) {
+        return url.replace('asset:/', this.assetsUrl)
       } else {
         console.error('resolveURL: no assetsUrl or assetsDir defined')
         return url

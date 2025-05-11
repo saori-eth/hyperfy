@@ -44,6 +44,7 @@ const storage = new Storage(path.join(worldDir, '/storage.json'))
 
 // create world
 const world = createServerWorld()
+world.assetsUrl = process.env.PUBLIC_ASSETS_URL
 world.collections.deserialize(collections)
 world.init({ db, storage, assetsDir })
 
@@ -54,10 +55,12 @@ fastify.register(compress)
 fastify.get('/', async (req, reply) => {
   const title = world.settings.title || 'World'
   const desc = world.settings.desc || ''
+  const image = world.resolveURL(world.settings.image?.url) || ''
   const filePath = path.join(__dirname, 'public', 'index.html')
   let html = fs.readFileSync(filePath, 'utf-8')
   html = html.replaceAll('{title}', title)
   html = html.replaceAll('{desc}', desc)
+  html = html.replaceAll('{image}', image)
   reply.type('text/html').send(html)
 })
 fastify.register(statics, {

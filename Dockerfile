@@ -1,29 +1,42 @@
-FROM node:22-alpine
-RUN apk add --no-cache curl
-
-# Set the working directory
+# Build stage
+FROM node:22-alpine AS builder
 WORKDIR /app
-# Copy package.json and package-lock.json
-COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm install
+# Copy package.json and package-lock.json to leverage layer caching
+COPY package*.json ./
+RUN npm ci --only=production
 
-# Copy the rest of the application code
+# Copy all source files and build
 COPY . .
-COPY .env.example .env
-
 RUN npm run build
 
-ARG COMMIT_HASH=local
-ENV COMMIT_HASH=${COMMIT_HASH:-local}
+# Production stage
+FROM node:22-alpine AS production
+WORKDIR /app
 
-# Expose the port the app runs on
+# Add curl for healthcheck
+RUN apk add --no-cache curl && \
+    adduser -S nodeuser -u 1001
+
+# Copy only necessary files from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/build ./build
+COPY --from=builder /app/package*.json ./
+
+# Set build argument and environment variable
+ARG COMMIT_HASH=local
+ENV COMMIT_HASH=${COMMIT_HASH:-local} \
+    NODE_ENV=production
+
+# Switch to non-root user
+USER nodeuser
+
+# Expose the port
 EXPOSE 3000
 
-# Healthcheck using curl
+# Healthcheck
 HEALTHCHECK --interval=2s --timeout=10s --start-period=5s --retries=5 \
   CMD curl -f http://localhost:3000/status || exit 1
 
 # Start the application
-CMD [ "npm", "run", "start" ]
+CMD ["npm", "run", "start"]

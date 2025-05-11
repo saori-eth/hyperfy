@@ -29,9 +29,6 @@ ARG COMMIT_HASH=local
 ENV COMMIT_HASH=${COMMIT_HASH:-local} \
     NODE_ENV=production
 
-# Switch to non-root user
-USER nodeuser
-
 # Expose the port
 EXPOSE 3000
 

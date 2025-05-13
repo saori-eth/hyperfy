@@ -4,7 +4,7 @@ WORKDIR /app
 
 # Copy package.json and package-lock.json to leverage layer caching
 COPY package.json package-lock.json ./
-RUN npm install --only=production
+RUN npm install
 
 # Copy all source files and build
 COPY . .

@@ -464,7 +464,7 @@ export function FieldFile({ world, label, hint, kind: kindName, value, onChange 
     const file = e.target.files[0]
     if (!file) return
     // check ext
-    const ext = file.name.split('.')[1]
+    const ext = file.name.split('.').pop().toLowerCase()
     if (!kind.exts.includes(ext)) {
       return console.error(`attempted invalid file extension for ${kindName}: ${ext}`)
     }

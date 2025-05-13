@@ -252,7 +252,7 @@ function AppPaneMain({ world, app, blueprint, canEdit }) {
     setFileInputKey(n => n + 1)
     const file = e.target.files[0]
     if (!file) return
-    const ext = file.name.split('.').pop()
+    const ext = file.name.split('.').pop().toLowerCase()
     if (!allowedModels.includes(ext)) return
     // immutable hash the file
     const hash = await hashFile(file)

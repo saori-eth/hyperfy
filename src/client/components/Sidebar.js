@@ -966,7 +966,7 @@ function App({ world, hidden }) {
   }
   const changeModel = async file => {
     if (!file) return
-    const ext = file.name.split('.').pop()
+    const ext = file.name.split('.').pop().toLowerCase()
     if (!allowedModels.includes(ext)) return
     // immutable hash the file
     const hash = await hashFile(file)

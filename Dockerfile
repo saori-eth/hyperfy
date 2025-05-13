@@ -3,8 +3,8 @@ FROM node:22.11.0-alpine AS builder
 WORKDIR /app
 
 # Copy package.json and package-lock.json to leverage layer caching
-COPY package*.json ./
-RUN npm ci --only=production
+COPY package.json package-lock.json ./
+RUN npm install --only=production
 
 # Copy all source files and build
 COPY . .

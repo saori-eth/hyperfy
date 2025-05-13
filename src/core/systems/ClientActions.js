@@ -42,7 +42,7 @@ export class ClientActions extends System {
   update(delta) {
     const cameraPos = this.world.rig.position
 
-    this.btnDown = this.control.keyE.down || this.control.touchB.down
+    this.btnDown = this.control.keyE.down || this.control.touchB.down || this.control.xrRightBtn2.down || this.control.xrLeftBtn2.down
 
     // clear current action if its no longer in distance
     if (this.current.node) {

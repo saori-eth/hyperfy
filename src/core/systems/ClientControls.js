@@ -32,9 +32,11 @@ const controlTypes = {
   screen: createScreen,
   camera: createCamera,
   xrLeftStick: createVector,
+  xrLeftTrigger: createButton,
   xrLeftBtn1: createButton,
   xrLeftBtn2: createButton,
   xrRightStick: createVector,
+  xrRightTrigger: createButton,
   xrRightBtn1: createButton,
   xrRightBtn2: createButton,
   touchA: createButton,
@@ -90,6 +92,19 @@ export class ClientControls extends System {
               control.entries.xrLeftStick.value.z = src.gamepad.axes[3]
               if (control.entries.xrLeftStick.capture) break
             }
+            if (control.entries.xrLeftTrigger) {
+              const button = control.entries.xrLeftTrigger
+              const down = src.gamepad.buttons[0].pressed
+              if (down && !button.down) {
+                button.pressed = true
+                button.onPress?.()
+              }
+              if (!down && button.down) {
+                button.released = true
+                button.onRelease?.()
+              }
+              button.down = down
+            }
             if (control.entries.xrLeftBtn1) {
               const button = control.entries.xrLeftBtn1
               const down = src.gamepad.buttons[4].pressed
@@ -125,6 +140,19 @@ export class ClientControls extends System {
               control.entries.xrRightStick.value.x = src.gamepad.axes[2]
               control.entries.xrRightStick.value.z = src.gamepad.axes[3]
               if (control.entries.xrRightStick.capture) break
+            }
+            if (control.entries.xrRightTrigger) {
+              const button = control.entries.xrRightTrigger
+              const down = src.gamepad.buttons[0].pressed
+              if (down && !button.down) {
+                button.pressed = true
+                button.onPress?.()
+              }
+              if (!down && button.down) {
+                button.released = true
+                button.onRelease?.()
+              }
+              button.down = down
             }
             if (control.entries.xrRightBtn1) {
               const button = control.entries.xrRightBtn1

@@ -308,10 +308,10 @@ function setupSplatmap(mesh) {
    *   reconstruct them here.
    */
   const original = mesh.material
-  original.specularIntensityMap.colorSpace = THREE.SRGBColorSpace
-  original.transmissionMap.colorSpace = THREE.SRGBColorSpace
-  original.emissiveMap.colorSpace = THREE.SRGBColorSpace
-  original.normalMap.colorSpace = THREE.SRGBColorSpace
+  if (original.specularIntensityMap) original.specularIntensityMap.colorSpace = THREE.SRGBColorSpace
+  if (original.transmissionMap) original.transmissionMap.colorSpace = THREE.SRGBColorSpace
+  if (original.emissiveMap) original.emissiveMap.colorSpace = THREE.SRGBColorSpace
+  if (original.normalMap) original.normalMap.colorSpace = THREE.SRGBColorSpace
   const uniforms = {
     splatTex: { value: original.map },
     rTex: { value: original.specularIntensityMap },

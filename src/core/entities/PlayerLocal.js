@@ -758,7 +758,7 @@ export class PlayerLocal extends Entity {
     // determine if we're "running"
     if (this.stick || isXR) {
       // touch/xr joysticks at full extent
-      this.running = this.moving && this.moveDir.length() > 0.5
+      this.running = this.moving && this.moveDir.length() > 0.9
     } else {
       // or keyboard shift key
       this.running = this.moving && (this.control.shiftLeft.down || this.control.shiftRight.down)

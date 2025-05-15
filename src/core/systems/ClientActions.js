@@ -112,8 +112,8 @@ function createAction(world) {
     const pillWidth = 6 + 4 + 24 + 4 + 6 + 9 + text.width + 13
     const left = (widthPx - pillWidth) / 2
     board.clear()
-    board.drawBox(left, 0, pillWidth, heightPx, heightPx / 2, '#000000')
-    board.drawPie(left + 6, 6, 16, 100, '#484848') // grey
+    board.drawBox(left, 0, pillWidth, heightPx, heightPx / 2, 'rgba(11, 10, 21, 0.97)')
+    board.drawPie(left + 6, 6, 16, 100, '#5d6077') // grey
     board.drawPie(left + 6, 6, 16, ratio * 100, '#ffffff') // white
     board.drawCircle(left + 10, 10, 12, '#000000') // inner
     if (!isTouch) board.drawText(left + 16, 14, 'E', '#ffffff', 18, 400) // E

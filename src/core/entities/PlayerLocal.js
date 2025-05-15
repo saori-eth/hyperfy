@@ -669,7 +669,18 @@ export class PlayerLocal extends Entity {
     // update cam look direction
     if (isXR) {
       // in xr clear camera rotation (handled internally)
-      this.cam.rotation.set(0, 0, 0)
+      // in xr we only track turn here, which is added to the xr camera later on
+      this.cam.rotation.x = 0
+      this.cam.rotation.z = 0
+      if (this.control.xrRightStick.value.x === 0 && this.didSnapTurn) {
+        this.didSnapTurn = false
+      } else if (this.control.xrRightStick.value.x > 0 && !this.didSnapTurn) {
+        this.cam.rotation.y -= 45 * DEG2RAD
+        this.didSnapTurn = true
+      } else if (this.control.xrRightStick.value.x < 0 && !this.didSnapTurn) {
+        this.cam.rotation.y += 45 * DEG2RAD
+        this.didSnapTurn = true
+      }
     } else if (this.control.pointer.locked) {
       // or pointer lock, rotate camera with pointer movement
       this.cam.rotation.x += -this.control.pointer.delta.y * POINTER_LOOK_SPEED * delta
@@ -768,6 +779,7 @@ export class PlayerLocal extends Entity {
     // rotate direction to face camera Y direction
     if (isXR) {
       e1.copy(this.world.xr.camera.rotation).reorder('YXZ')
+      e1.y += this.cam.rotation.y
       const yQuaternion = q1.setFromAxisAngle(UP, e1.y)
       this.moveDir.applyQuaternion(yQuaternion)
     } else {

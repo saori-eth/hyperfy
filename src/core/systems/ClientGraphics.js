@@ -144,18 +144,6 @@ export class ClientGraphics extends System {
     this.worldToScreenFactor = (Math.tan(fovRadians / 2) * 2) / rendererHeight
   }
 
-  scaleUI(object3d, heightPx, pxToMeters) {
-    const camera = this.world.camera
-    const vFov = (camera.fov * Math.PI) / 180 // Convert vertical FOV from degrees to radians
-    const screenHeight = this.height // Get the actual screen height in pixels
-    const distance = object3d.position.distanceTo(v1.setFromMatrixPosition(camera.matrixWorld)) // Calculate distance from camera to object
-    const heightAtDistance = 2 * Math.tan(vFov / 2) * distance // Calculate the visible height at the distance of the object
-    const worldUnitsPerPixel = heightAtDistance / screenHeight // Calculate world units per screen pixel vertically
-    const desiredWorldHeight = heightPx * worldUnitsPerPixel // Desired world height for 'height' pixels
-    const scale = desiredWorldHeight / (heightPx * pxToMeters) // Calculate the scaling factor based on the original height in meters
-    object3d.scale.setScalar(scale)
-  }
-
   onPrefsChange = changes => {
     // pixel ratio
     if (changes.dpr) {

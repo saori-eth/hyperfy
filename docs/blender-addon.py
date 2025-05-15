@@ -30,6 +30,137 @@ TYPE_STATIC = 'static'
 TYPE_KINEMATIC = 'kinematic'
 TYPE_DYNAMIC = 'dynamic'
 
+class SplatmapProcessor:
+    """Helper class to handle splatmap export processing"""
+    
+    @staticmethod
+    def find_splatmap_objects():
+        """Find all mesh objects with splatmap=true"""
+        return [obj for obj in bpy.context.scene.objects 
+            if obj.type == 'MESH' and "exp_splatmap" in obj and obj["exp_splatmap"] == True and not obj.hide_get()]
+    
+    @staticmethod
+    def process_splatmap_object(obj):
+        """Process a single splatmap object for export"""
+        # Ensure object has only one material
+        if len(obj.data.materials) > 1:
+            return False, f"Splatmap object '{obj.name}' has more than one material"
+        
+        if len(obj.data.materials) == 0:
+            return False, f"Splatmap object '{obj.name}' has no materials"
+        
+        original_material = obj.data.materials[0]
+        
+        # Clone the mesh object
+        clone = obj.copy()
+        clone.data = obj.data.copy()
+        clone.name = f"{obj.name}_splatmap_clone"
+        
+        # Link clone to the scene
+        bpy.context.collection.objects.link(clone)
+        
+        # Create new principled BSDF material
+        new_material = bpy.data.materials.new(name=f"{original_material.name}_splatmap_converted")
+        new_material.use_nodes = True
+        
+        # Clear default nodes
+        new_material.node_tree.nodes.clear()
+        
+        # Add principled BSDF
+        principled = new_material.node_tree.nodes.new(type='ShaderNodeBsdfPrincipled')
+        output = new_material.node_tree.nodes.new(type='ShaderNodeOutputMaterial')
+        
+        # Connect principled to output
+        new_material.node_tree.links.new(principled.outputs['BSDF'], output.inputs['Surface'])
+        
+        # Find and copy required image nodes from original material
+        if original_material.use_nodes:
+            image_nodes = {}
+            mapping_scales = {}
+            
+            for node in original_material.node_tree.nodes:
+                if node.type == 'TEX_IMAGE' and node.label in ['SPLAT', 'RED', 'GREEN', 'BLUE', 'ALPHA']:
+                    image_nodes[node.label] = node
+                    
+                    # Check if this image node has a mapping node connected to it
+                    for input_socket in node.inputs:
+                        if input_socket.is_linked:
+                            for link in input_socket.links:
+                                if link.from_node.type == 'MAPPING':
+                                    mapping_node = link.from_node
+                                    # Get the scale values (X, Y, Z)
+                                    scale_x = mapping_node.inputs['Scale'].default_value[0]
+                                    scale_y = mapping_node.inputs['Scale'].default_value[1]
+                                    scale_z = mapping_node.inputs['Scale'].default_value[2]
+                                    # Calculate average scale
+                                    avg_scale = (scale_x + scale_y + scale_z) / 3.0
+                                    mapping_scales[node.label] = avg_scale
+                                    break
+            
+            # Add and connect image nodes to principled BSDF
+            connections = {
+                'SPLAT': 'Base Color',
+                'RED': 'Specular IOR Level',
+                'GREEN': 'Emission Color',
+                'BLUE': 'Normal',
+                'ALPHA': 'Transmission Weight'
+            }
+            
+            for label, socket_name in connections.items():
+                if label in image_nodes:
+                    # Copy the image node
+                    new_image_node = new_material.node_tree.nodes.new(type='ShaderNodeTexImage')
+                    new_image_node.image = image_nodes[label].image
+                    new_image_node.label = label
+                    
+                    # Special handling for normal map
+                    if label == 'BLUE' and socket_name == 'Normal':
+                        # Add normal map node for proper normal mapping
+                        normal_map = new_material.node_tree.nodes.new(type='ShaderNodeNormalMap')
+                        new_material.node_tree.links.new(new_image_node.outputs['Color'], normal_map.inputs['Color'])
+                        new_material.node_tree.links.new(normal_map.outputs['Normal'], principled.inputs['Normal'])
+                    else:
+                        # Direct connection for other inputs
+                        new_material.node_tree.links.new(new_image_node.outputs['Color'], principled.inputs[socket_name])
+        
+        # Replace material on clone
+        clone.data.materials[0] = new_material
+        
+        # Add scale values as custom properties on the mesh object
+        for label, scale in mapping_scales.items():
+            property_name = f"{label.lower()}_scale"
+            clone[property_name] = scale
+        
+        # Hide original object
+        obj.hide_set(True)
+        
+        return True, clone
+    
+    @staticmethod
+    def cleanup_splatmap_clone(clone_data):
+        """Clean up after export by removing clones and restoring originals"""
+        clone, original_obj = clone_data
+        
+        # Remove clone's material first
+        if clone.data.materials and clone.data.materials[0]:
+            material_to_remove = clone.data.materials[0]
+            # Remove the material from all material slots
+            clone.data.materials.clear()
+            # Remove the material from Blender data
+            bpy.data.materials.remove(material_to_remove)
+        
+        # Remove clone's mesh data
+        mesh_to_remove = clone.data
+        
+        # Remove clone object
+        bpy.data.objects.remove(clone)
+        
+        # Remove mesh data
+        bpy.data.meshes.remove(mesh_to_remove)
+        
+        # Unhide original
+        original_obj.hide_set(False)
+
 class OBJECT_OT_node_type_set(Operator):
     """Set Node Type Property"""
     bl_idname = "object.node_type_set"
@@ -255,6 +386,40 @@ class OBJECT_OT_lod_property_toggle(Operator):
                 
         return {'FINISHED'}
 
+class OBJECT_OT_splatmap_toggle(Operator):
+    """Toggle Splatmap Property"""
+    bl_idname = "object.splatmap_toggle"
+    bl_label = "Toggle Splatmap"
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    @classmethod
+    def poll(cls, context):
+        obj = context.active_object
+        return obj is not None and obj.type == 'MESH'
+    
+    def execute(self, context):
+        obj = context.active_object
+        
+        # If property exists and is true, remove it (revert to default false)
+        if "exp_splatmap" in obj:
+            if obj["exp_splatmap"] == True:
+                del obj["exp_splatmap"]
+            else:
+                # If set to false, toggle to true
+                obj["exp_splatmap"] = True
+        else:
+            # Property doesn't exist (default is false), set it to true
+            obj["exp_splatmap"] = True
+        
+        # Notify Blender that the object has been updated
+        obj.update_tag(refresh={'OBJECT'})
+        
+        # Force update of the UI
+        for area in context.screen.areas:
+            area.tag_redraw()
+                
+        return {'FINISHED'}
+
 class OBJECT_OT_hyperfy_export_all(Operator):
     """Export entire scene as GLB with custom properties enabled and webp textures"""
     bl_idname = "object.hyperfy_export_all"
@@ -282,28 +447,47 @@ class OBJECT_OT_hyperfy_export_all(Operator):
         
         filepath = os.path.join(directory, filename)
 
-        export_params = {
-            'filepath': filepath,
-            'export_format': 'GLB',
-            'export_image_format': 'WEBP',
-            'export_extras': True, # custom properties
-            'export_apply': True, # apply modifiers
-            'use_selection': False,  # entire scene
-            'use_visible': True  # only visible
-        }
-
+        # Process splatmap objects
+        splatmap_objects = SplatmapProcessor.find_splatmap_objects()
+        splatmap_clones = []
+        
         try:
-            bpy.ops.export_scene.gltf(**export_params)
-        except TypeError as e:
-            # If there's an error about WebP not being found, try without it
-            if "enum \"WEBP\" not found" in str(e):
-                del export_params['export_image_format']
-                bpy.ops.export_scene.gltf(**export_params)
-            else:
-                # If it's some other error, re-raise it
-                raise e
+            # Process each splatmap object
+            for splatmap_obj in splatmap_objects:
+                success, result = SplatmapProcessor.process_splatmap_object(splatmap_obj)
+                if not success:
+                    self.report({'ERROR'}, result)
+                    return {'CANCELLED'}
+                splatmap_clones.append((result, splatmap_obj))
+            
+            # Perform the export
+            export_params = {
+                'filepath': filepath,
+                'export_format': 'GLB',
+                'export_image_format': 'WEBP',
+                'export_extras': True, # custom properties
+                'export_apply': True, # apply modifiers
+                'use_selection': False,  # entire scene
+                'use_visible': True  # only visible
+            }
 
-        self.report({'INFO'}, f"Exported to {filepath}")
+            try:
+                bpy.ops.export_scene.gltf(**export_params)
+            except TypeError as e:
+                # If there's an error about WebP not being found, try without it
+                if "enum \"WEBP\" not found" in str(e):
+                    del export_params['export_image_format']
+                    bpy.ops.export_scene.gltf(**export_params)
+                else:
+                    # If it's some other error, re-raise it
+                    raise e
+
+            self.report({'INFO'}, f"Exported to {filepath}")
+            
+        finally:
+            # Cleanup splatmap clones
+            for clone_data in splatmap_clones:
+                SplatmapProcessor.cleanup_splatmap_clone(clone_data)
 
         return {'FINISHED'}
 
@@ -370,31 +554,57 @@ class OBJECT_OT_hyperfy_export_individual(Operator):
             # Set as active object
             context.view_layer.objects.active = obj
             
-            # Define export path
-            filepath = os.path.join(export_directory, f"{obj.name}.glb")
-            
-            export_params = {
-                'filepath': filepath,
-                'export_format': 'GLB',
-                'export_image_format': 'WEBP',
-                'export_extras': True,  # custom properties
-                'export_apply': True,   # apply modifiers
-                'use_selection': True,   # only selected objects
-                'use_visible': True  # only visible
-            }
+            # Process splatmap objects in selection
+            splatmap_objects_in_selection = []
+            splatmap_clones = []
+            for selected_obj in context.selected_objects:
+                if selected_obj.type == 'MESH' and "exp_splatmap" in selected_obj and selected_obj["exp_splatmap"] == True:
+                    splatmap_objects_in_selection.append(selected_obj)
             
             try:
-                bpy.ops.export_scene.gltf(**export_params)
-                exported_count += 1
-            except TypeError as e:
-                # If there's an error about WebP not being found, try without it
-                if "enum \"WEBP\" not found" in str(e):
-                    del export_params['export_image_format']
+                # Process splatmap objects
+                for splatmap_obj in splatmap_objects_in_selection:
+                    success, result = SplatmapProcessor.process_splatmap_object(splatmap_obj)
+                    if not success:
+                        self.report({'ERROR'}, result)
+                        continue
+                    splatmap_clones.append((result, splatmap_obj))
+                    # Add clone to selection, remove original from selection
+                    splatmap_obj.select_set(False)
+                    result.select_set(True)
+                
+                # Define export path
+                filepath = os.path.join(export_directory, f"{obj.name}.glb")
+                
+                export_params = {
+                    'filepath': filepath,
+                    'export_format': 'GLB',
+                    'export_image_format': 'WEBP',
+                    'export_extras': True,  # custom properties
+                    'export_apply': True,   # apply modifiers
+                    'use_selection': True,   # only selected objects
+                    'use_visible': True  # only visible
+                }
+                
+                try:
                     bpy.ops.export_scene.gltf(**export_params)
                     exported_count += 1
-                else:
-                    # If it's some other error, re-raise it
-                    raise e
+                except TypeError as e:
+                    # If there's an error about WebP not being found, try without it
+                    if "enum \"WEBP\" not found" in str(e):
+                        del export_params['export_image_format']
+                        bpy.ops.export_scene.gltf(**export_params)
+                        exported_count += 1
+                    else:
+                        # If it's some other error, re-raise it
+                        raise e
+                
+            finally:
+                # Cleanup splatmap clones
+                for clone_data in splatmap_clones:
+                    SplatmapProcessor.cleanup_splatmap_clone(clone_data)
+                    # Restore original selection state
+                    clone_data[1].select_set(True)
             
             # Move object back to original position
             obj.location = original_location
@@ -565,7 +775,7 @@ class VIEW3D_PT_hyperfy_panel(Panel):
                 layout.label(text="LOD")
                 layout.prop(obj, "hyperfy_max_distance")
             
-            # If object is a mesh, show mesh options regardless of node type
+            # If object is a mesh and not a node type, show mesh options
             if obj.type == 'MESH' and current_node_type == NODE_NONE:
                 # Add a separator
                 layout.separator()
@@ -583,11 +793,16 @@ class VIEW3D_PT_hyperfy_panel(Panel):
                 row = layout.row()
                 op = row.operator("object.mesh_property_toggle", text="Cast Shadow", icon='CHECKBOX_HLT' if cast_shadow else 'CHECKBOX_DEHLT')
                 op.property_name = "castShadow"
-                
+               
                 # Receive Shadow checkbox
                 row = layout.row()
                 op = row.operator("object.mesh_property_toggle", text="Receive Shadow", icon='CHECKBOX_HLT' if receive_shadow else 'CHECKBOX_DEHLT')
                 op.property_name = "receiveShadow"
+                
+                # Add Splatmap checkbox
+                # is_splatmap = "exp_splatmap" in obj and obj["exp_splatmap"] == True
+                # row = layout.row()
+                # op = row.operator("object.splatmap_toggle", text="Splatmap (Experimental)", icon='CHECKBOX_HLT' if is_splatmap else 'CHECKBOX_DEHLT')
 
             # Add a separator before the Export button
             layout.separator()
@@ -608,7 +823,7 @@ class VIEW3D_PT_hyperfy_panel(Panel):
             
             # "Individual" button on the right
             col2.operator("object.hyperfy_export_individual", text="Individual", icon='FILE_TICK')
-                
+               
         else:
             layout.label(text="No object selected")
 
@@ -619,6 +834,7 @@ classes = (
     OBJECT_OT_collider_property_toggle,
     OBJECT_OT_mesh_property_toggle,
     OBJECT_OT_lod_property_toggle,
+    OBJECT_OT_splatmap_toggle,
     OBJECT_OT_hyperfy_export_all, 
     OBJECT_OT_hyperfy_export_individual, 
     VIEW3D_PT_hyperfy_panel,
@@ -641,7 +857,7 @@ def set_max_distance(self, value):
         area.tag_redraw()
 
 def register():
-    # register our “proxy” property on all Objects
+    # register our "proxy" property on all Objects
     bpy.types.Object.hyperfy_max_distance = IntProperty(
         name="Max Distance",
         description="Maximum LOD distance (0 = ignored by lod group)",

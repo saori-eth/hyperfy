@@ -246,11 +246,22 @@ export class ClientControls extends System {
   bind(options = {}) {
     const self = this
     const entries = {}
+    let reticleSupressor
     const control = {
       options,
       entries,
       actions: null,
       api: {
+        hideReticle(value = true) {
+          if (reticleSupressor && value) return
+          if (!reticleSupressor && !value) return
+          if (reticleSupressor) {
+            reticleSupressor?.()
+            reticleSupressor = null
+          } else {
+            reticleSupressor = self.world.ui.suppressReticle()
+          }
+        },
         setActions(value) {
           if (value !== null && !Array.isArray(value)) {
             throw new Error('[control] actions must be null or array')
@@ -264,6 +275,7 @@ export class ClientControls extends System {
           self.buildActions()
         },
         release: () => {
+          reticleSupressor?.()
           const idx = this.controls.indexOf(control)
           if (idx === -1) return
           this.controls.splice(idx, 1)

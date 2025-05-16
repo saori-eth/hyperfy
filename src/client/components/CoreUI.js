@@ -90,7 +90,7 @@ export function CoreUI({ world }) {
       `}
     >
       {disconnected && <Disconnected />}
-      <Reticle world={world} />
+      {!ui.reticleSuppressors && <Reticle world={world} />}
       {<Toast world={world} />}
       {ready && <ActionsBlock world={world} />}
       {ready && <Sidebar world={world} ui={ui} />}

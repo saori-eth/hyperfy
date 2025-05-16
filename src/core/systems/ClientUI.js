@@ -13,6 +13,7 @@ export class ClientUI extends System {
       active: false,
       app: null,
       pane: null,
+      reticleSuppressors: 0,
     }
     this.lastAppPane = 'app'
     this.control = null
@@ -77,6 +78,18 @@ export class ClientUI extends System {
     this.state.app = app
     this.state.pane = app ? this.lastAppPane : null
     this.broadcast()
+  }
+
+  suppressReticle() {
+    this.state.reticleSuppressors++
+    let released
+    this.broadcast()
+    return () => {
+      if (released) return
+      this.state.reticleSuppressors--
+      this.broadcast()
+      released = true
+    }
   }
 
   broadcast() {

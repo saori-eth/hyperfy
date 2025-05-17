@@ -137,7 +137,7 @@ function createAction(world) {
 
   return {
     start(_node) {
-      if (node) console.error('erm node already set')
+      // if (node) console.error('erm node already set')
       node = _node
       world.actions.btnDown = false
       node.progress = 0

@@ -167,6 +167,7 @@ export class PlayerLocal extends Entity {
       .then(src => {
         if (this.avatar) this.avatar.deactivate()
         this.avatar = src.toNodes().get('avatar')
+        this.avatar.disableRateCheck() // max fps for local player
         this.base.add(this.avatar)
         this.nametag.position.y = this.avatar.getHeadToHeight() + 0.2
         this.bubble.position.y = this.avatar.getHeadToHeight() + 0.2

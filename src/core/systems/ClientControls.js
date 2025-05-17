@@ -240,6 +240,7 @@ export class ClientControls extends System {
     this.viewport.addEventListener('wheel', this.onScroll, { passive: false })
     document.body.addEventListener('contextmenu', this.onContextMenu)
     window.addEventListener('resize', this.onResize)
+    window.addEventListener('focus', this.onFocus)
     window.addEventListener('blur', this.onBlur)
   }
 
@@ -642,6 +643,10 @@ export class ClientControls extends System {
     this.screen.height = this.viewport.offsetHeight
   }
 
+  onFocus = () => {
+    this.releaseAllButtons()
+  }
+
   onBlur = () => {
     this.releaseAllButtons()
   }
@@ -669,6 +674,7 @@ export class ClientControls extends System {
     this.viewport.removeEventListener('wheel', this.onScroll, { passive: false })
     document.body.removeEventListener('contextmenu', this.onContextMenu)
     window.removeEventListener('resize', this.onResize)
+    window.removeEventListener('focus', this.onFocus)
     window.removeEventListener('blur', this.onBlur)
   }
 }

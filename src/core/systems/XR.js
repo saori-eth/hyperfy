@@ -35,6 +35,12 @@ export class XR extends System {
     const session = await navigator.xr?.requestSession('immersive-vr', {
       requiredFeatures: ['local-floor'],
     })
+    try {
+      session.updateTargetFrameRate(72)
+    } catch (err) {
+      console.error(err)
+      console.error('xr session.updateTargetFrameRate(72) failed')
+    }
     this.world.entities.player.avatar.unmount()
     this.world.graphics.renderer.xr.setSession(session)
     session.addEventListener('end', this.onSessionEnd)

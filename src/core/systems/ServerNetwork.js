@@ -383,6 +383,25 @@ export class ServerNetwork extends System {
         this.world.chat.clear(true)
       }
     }
+    if (cmd === 'server') {
+      const op = arg1
+      if (op === 'stats') {
+        function send(body) {
+          socket.send('chatAdded', {
+            id: uuid(),
+            from: null,
+            fromId: null,
+            body,
+            createdAt: moment().toISOString(),
+          })
+        }
+        const stats = await this.world.monitor.getStats()
+        send(`CPU: ${stats.currentCPU.toFixed(3)}%`)
+        send(
+          `Memory: ${stats.currentMemory} / ${stats.maxMemory} MB (${((stats.currentMemory / stats.maxMemory) * 100).toFixed(1)}%)`
+        )
+      }
+    }
     // emit event for all except admin
     if (cmd !== 'admin') {
       this.world.events.emit('command', { playerId, args })

@@ -31,6 +31,7 @@ export class ClientStats extends System {
 
   start() {
     this.world.prefs.on('change', this.onPrefsChange)
+    this.world.on('ui', this.onUIState)
     this.world.on('ready', this.onReady)
   }
 
@@ -139,6 +140,16 @@ export class ClientStats extends System {
   onPrefsChange = changes => {
     if (changes.stats) {
       this.toggle(changes.stats.value)
+    }
+  }
+
+  onUIState = state => {
+    if (this.active && !state.visible) {
+      this.uiHidden = true
+      this.toggle(false)
+    } else if (this.uiHidden && state.visible) {
+      this.uiHidden = null
+      this.toggle(true)
     }
   }
 

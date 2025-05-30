@@ -192,7 +192,10 @@ export class ClientEnvironment extends System {
   }
 
   lateUpdate(delta) {
-    this.sky.matrixWorld.copyPosition(this.world.rig.matrixWorld)
+    this.sky.position.x = this.world.rig.position.x
+    this.sky.position.z = this.world.rig.position.z
+    this.sky.matrixWorld.setPosition(this.sky.position)
+    // this.sky.matrixWorld.copyPosition(this.world.rig.matrixWorld)
   }
 
   buildCSM() {

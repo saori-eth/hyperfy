@@ -81,7 +81,7 @@ export function createVRMFactory(glb, setupMaterial) {
   skeleton.update()
 
   // get height
-  let height = 1 // minimum
+  let height = 0.5 // minimum
   for (const mesh of skinnedMeshes) {
     if (!mesh.boundingBox) mesh.computeBoundingBox()
     if (height < mesh.boundingBox.max.y) {
@@ -164,22 +164,26 @@ export function createVRMFactory(glb, setupMaterial) {
     let elapsed = 0
     let rate = 0
     let rateCheckedAt = 999
+    let rateCheck = true
     const update = delta => {
-      // periodically calculate update rate based on distance to camera
-      rateCheckedAt += delta
-      if (rateCheckedAt >= DIST_CHECK_RATE) {
-        const vrmPos = v1.setFromMatrixPosition(vrm.scene.matrix)
-        const camPos = v2.setFromMatrixPosition(hooks.camera.matrixWorld) // prettier-ignore
-        const distance = vrmPos.distanceTo(camPos)
-        const clampedDistance = Math.max(distance - DIST_MIN, 0)
-        const normalizedDistance = Math.min(clampedDistance / (DIST_MAX - DIST_MIN), 1) // prettier-ignore
-        rate = DIST_MAX_RATE + normalizedDistance * (DIST_MIN_RATE - DIST_MAX_RATE) // prettier-ignore
-        // console.log('distance', distance)
-        // console.log('rate per second', 1 / rate)
-        rateCheckedAt = 0
-      }
       elapsed += delta
-      const should = elapsed >= rate
+      let should = true
+      if (rateCheck) {
+        // periodically calculate update rate based on distance to camera
+        rateCheckedAt += delta
+        if (rateCheckedAt >= DIST_CHECK_RATE) {
+          const vrmPos = v1.setFromMatrixPosition(vrm.scene.matrix)
+          const camPos = v2.setFromMatrixPosition(hooks.camera.matrixWorld) // prettier-ignore
+          const distance = vrmPos.distanceTo(camPos)
+          const clampedDistance = Math.max(distance - DIST_MIN, 0)
+          const normalizedDistance = Math.min(clampedDistance / (DIST_MAX - DIST_MIN), 1) // prettier-ignore
+          rate = DIST_MAX_RATE + normalizedDistance * (DIST_MIN_RATE - DIST_MAX_RATE) // prettier-ignore
+          // console.log('distance', distance)
+          // console.log('rate per second', 1 / rate)
+          rateCheckedAt = 0
+        }
+        should = elapsed >= rate
+      }
       if (should) {
         mixer.update(elapsed)
         skeleton.bones.forEach(bone => bone.updateMatrixWorld())
@@ -188,7 +192,6 @@ export function createVRMFactory(glb, setupMaterial) {
         elapsed = 0
       } else {
         skeleton.update = noop
-        elapsed += delta
       }
     }
     // world.updater.add(update)
@@ -287,6 +290,9 @@ export function createVRMFactory(glb, setupMaterial) {
       move(_matrix) {
         matrix.copy(_matrix)
         hooks.octree?.move(sItem)
+      },
+      disableRateCheck() {
+        rateCheck = false
       },
       destroy() {
         hooks.scene.remove(vrm.scene)

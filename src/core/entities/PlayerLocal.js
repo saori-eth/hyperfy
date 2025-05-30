@@ -167,6 +167,7 @@ export class PlayerLocal extends Entity {
       .then(src => {
         if (this.avatar) this.avatar.deactivate()
         this.avatar = src.toNodes().get('avatar')
+        this.avatar.disableRateCheck() // max fps for local player
         this.base.add(this.avatar)
         this.nametag.position.y = this.avatar.getHeadToHeight() + 0.2
         this.bubble.position.y = this.avatar.getHeadToHeight() + 0.2
@@ -174,7 +175,7 @@ export class PlayerLocal extends Entity {
           this.nametag.active = true
         }
         this.avatarUrl = avatarUrl
-        this.camHeight = this.avatar.height * 0.95
+        this.camHeight = this.avatar.height * 0.9
       })
       .catch(err => {
         console.error(err)
@@ -669,7 +670,18 @@ export class PlayerLocal extends Entity {
     // update cam look direction
     if (isXR) {
       // in xr clear camera rotation (handled internally)
-      this.cam.rotation.set(0, 0, 0)
+      // in xr we only track turn here, which is added to the xr camera later on
+      this.cam.rotation.x = 0
+      this.cam.rotation.z = 0
+      if (this.control.xrRightStick.value.x === 0 && this.didSnapTurn) {
+        this.didSnapTurn = false
+      } else if (this.control.xrRightStick.value.x > 0 && !this.didSnapTurn) {
+        this.cam.rotation.y -= 45 * DEG2RAD
+        this.didSnapTurn = true
+      } else if (this.control.xrRightStick.value.x < 0 && !this.didSnapTurn) {
+        this.cam.rotation.y += 45 * DEG2RAD
+        this.didSnapTurn = true
+      }
     } else if (this.control.pointer.locked) {
       // or pointer lock, rotate camera with pointer movement
       this.cam.rotation.x += -this.control.pointer.delta.y * POINTER_LOOK_SPEED * delta
@@ -747,7 +759,7 @@ export class PlayerLocal extends Entity {
     // determine if we're "running"
     if (this.stick || isXR) {
       // touch/xr joysticks at full extent
-      this.running = this.moving && this.moveDir.length() > 0.5
+      this.running = this.moving && this.moveDir.length() > 0.9
     } else {
       // or keyboard shift key
       this.running = this.moving && (this.control.shiftLeft.down || this.control.shiftRight.down)
@@ -768,6 +780,7 @@ export class PlayerLocal extends Entity {
     // rotate direction to face camera Y direction
     if (isXR) {
       e1.copy(this.world.xr.camera.rotation).reorder('YXZ')
+      e1.y += this.cam.rotation.y
       const yQuaternion = q1.setFromAxisAngle(UP, e1.y)
       this.moveDir.applyQuaternion(yQuaternion)
     } else {

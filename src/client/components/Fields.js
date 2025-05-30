@@ -464,7 +464,7 @@ export function FieldFile({ world, label, hint, kind: kindName, value, onChange 
     const file = e.target.files[0]
     if (!file) return
     // check ext
-    const ext = file.name.split('.')[1]
+    const ext = file.name.split('.').pop().toLowerCase()
     if (!kind.exts.includes(ext)) {
       return console.error(`attempted invalid file extension for ${kindName}: ${ext}`)
     }
@@ -999,7 +999,7 @@ export function FieldCurve({ label, hint, x, xRange, y, yMin, yMax, value, onCha
   )
 }
 
-export function FieldBtn({ label, hint, nav, onClick }) {
+export function FieldBtn({ label, note, hint, nav, onClick }) {
   const { setHint } = useContext(HintContext)
   return (
     <div
@@ -1017,6 +1017,10 @@ export function FieldBtn({ label, hint, nav, onClick }) {
           font-size: 0.9375rem;
           color: rgba(255, 255, 255, 0.6);
         }
+        .fieldbtn-note {
+          font-size: 0.9375rem;
+          color: rgba(255, 255, 255, 0.4);
+        }
         &:hover {
           cursor: pointer;
           background: rgba(255, 255, 255, 0.03);
@@ -1027,6 +1031,7 @@ export function FieldBtn({ label, hint, nav, onClick }) {
       onClick={onClick}
     >
       <div className='fieldbtn-label'>{label}</div>
+      {note && <div className='fieldbtn-note'>{note}</div>}
       {nav && <ChevronRightIcon size='1.5rem' />}
     </div>
   )

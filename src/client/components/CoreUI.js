@@ -1,6 +1,6 @@
 import { css } from '@firebolt-dev/css'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { LoaderIcon, MessageSquareTextIcon } from 'lucide-react'
+import { LoaderIcon, MessageSquareTextIcon, RefreshCwIcon } from 'lucide-react'
 import moment from 'moment'
 
 // import { CodeEditor } from './CodeEditor'
@@ -20,24 +20,7 @@ import { ChevronDoubleUpIcon, HandIcon } from './Icons'
 import { Sidebar } from './Sidebar'
 
 export function CoreUI({ world }) {
-  const [ref, width, height] = useElemSize()
-  return (
-    <div
-      ref={ref}
-      css={css`
-        position: absolute;
-        inset: 0;
-        overflow: hidden;
-      `}
-    >
-      {width > 0 && <Content world={world} width={width} height={height} />}
-    </div>
-  )
-}
-
-function Content({ world, width, height }) {
   const ref = useRef()
-  const small = width < 600
   const [ready, setReady] = useState(false)
   const [player, setPlayer] = useState(() => world.entities.player)
   const [ui, setUI] = useState(world.ui.state)
@@ -103,11 +86,11 @@ function Content({ world, width, height }) {
       css={css`
         position: absolute;
         inset: 0;
-        display: ${ui.visible ? 'block' : 'none'};
+        overflow: hidden;
       `}
     >
       {disconnected && <Disconnected />}
-      <Reticle world={world} />
+      {!ui.reticleSuppressors && <Reticle world={world} />}
       {<Toast world={world} />}
       {ready && <ActionsBlock world={world} />}
       {ready && <Sidebar world={world} ui={ui} />}
@@ -118,7 +101,7 @@ function Content({ world, width, height }) {
       )} */}
       {avatar && <AvatarPane key={avatar.hash} world={world} info={avatar} />}
       {/* {apps && <AppsPane world={world} close={() => world.ui.toggleApps()} />} */}
-      {!ready && <LoadingOverlay />}
+      {!ready && <LoadingOverlay world={world} />}
       {kicked && <KickedOverlay code={kicked} />}
       {ready && isTouch && <TouchBtns world={world} />}
       <div id='core-ui-portal' />
@@ -652,31 +635,66 @@ function Disconnected() {
   //   }
   // }, [])
   return (
-    <div
-      css={css`
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        backdrop-filter: grayscale(100%);
-        pointer-events: none;
-        z-index: 9999;
-        animation: fadeIn 3s forwards;
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
+    <>
+      <div
+        css={css`
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          backdrop-filter: grayscale(100%);
+          pointer-events: none;
+          z-index: 9999;
+          animation: fadeIn 3s forwards;
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+            }
+            to {
+              opacity: 1;
+            }
           }
-          to {
-            opacity: 1;
+        `}
+      />
+      <div
+        css={css`
+          pointer-events: auto;
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          background: rgba(11, 10, 21, 0.85);
+          border: 0.0625rem solid #2a2b39;
+          backdrop-filter: blur(5px);
+          border-radius: 1rem;
+          height: 2.75rem;
+          padding: 0 1rem;
+          transform: translate(-50%, -50%);
+          display: flex;
+          align-items: center;
+          cursor: pointer;
+          > span {
+            margin-left: 0.4rem;
           }
-        }
-      `}
-    />
+        `}
+        onClick={() => window.location.reload()}
+      >
+        <RefreshCwIcon size='1.1rem' />
+        <span>Reconnect</span>
+      </div>
+    </>
   )
 }
 
-function LoadingOverlay() {
+function LoadingOverlay({ world }) {
+  const [progress, setProgress] = useState(0)
+  const { title, desc, image } = world.settings
+  useEffect(() => {
+    world.on('progress', setProgress)
+    return () => {
+      world.off('progress', setProgress)
+    }
+  }, [])
   return (
     <div
       css={css`
@@ -684,23 +702,78 @@ function LoadingOverlay() {
         inset: 0;
         background: black;
         display: flex;
-        align-items: center;
-        justify-content: center;
         pointer-events: auto;
-        @keyframes spin {
-          from {
-            transform: rotate(0deg);
+        @keyframes pulse {
+          0% {
+            transform: scale(1);
           }
-          to {
-            transform: rotate(360deg);
+          50% {
+            transform: scale(1.05);
+          }
+          100% {
+            transform: scale(1);
           }
         }
-        svg {
-          animation: spin 1s linear infinite;
+        .loading-image {
+          position: absolute;
+          inset: 0;
+          background-position: center;
+          background-size: cover;
+          background-repeat: no-repeat;
+          background-image: ${image ? `url(${world.resolveURL(image.url)})` : 'none'};
+          animation: pulse 5s ease-in-out infinite;
+        }
+        .loading-shade {
+          position: absolute;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.4);
+          backdrop-filter: blur(15px);
+        }
+        .loading-info {
+          position: absolute;
+          bottom: 50px;
+          left: 50px;
+          right: 50px;
+          max-width: 28rem;
+        }
+        .loading-title {
+          font-size: 2.4rem;
+          line-height: 1.2;
+          font-weight: 600;
+          margin: 0 0 0.5rem;
+        }
+        .loading-desc {
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 1rem;
+          margin: 0 0 20px;
+        }
+        .loading-track {
+          height: 5px;
+          border-radius: 3px;
+          background: rgba(255, 255, 255, 0.1);
+          position: relative;
+        }
+        .loading-bar {
+          position: absolute;
+          top: 0;
+          left: 0;
+          bottom: 0;
+          width: ${progress}%;
+          background: white;
+          border-radius: 3px;
+          transition: width 0.2s ease-out;
         }
       `}
     >
-      <LoaderIcon size={30} />
+      <div className='loading-image' />
+      <div className='loading-shade' />
+      <div className='loading-info'>
+        {title && <div className='loading-title'>{title}</div>}
+        {desc && <div className='loading-desc'>{desc}</div>}
+        <div className='loading-track'>
+          <div className='loading-bar' />
+        </div>
+      </div>
     </div>
   )
 }

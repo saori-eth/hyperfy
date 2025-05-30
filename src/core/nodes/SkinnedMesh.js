@@ -30,9 +30,15 @@ export class SkinnedMesh extends Node {
     this.actions = {}
     this.bones = null
     this.animNames = []
+    this.boneHandles = {}
   }
 
   mount() {
+    this.clips = {}
+    this.actions = {}
+    this.bones = null
+    this.animNames = []
+
     this.obj = SkeletonUtils.clone(this._object3d)
     this.obj.matrixWorld.copy(this.matrixWorld)
     this.obj.matrixAutoUpdate = false
@@ -163,12 +169,9 @@ export class SkinnedMesh extends Node {
     if (!this.obj) return null
     if (!this.bones) {
       this.bones = {}
-      this.obj.traverse(item => {
-        if (item.isBone) {
-          this.bones[item.name] = {
-            raw: item,
-            proxy: null,
-          }
+      this.obj.traverse(obj => {
+        if (obj.isBone) {
+          this.bones[obj.name] = obj
         }
       })
     }
@@ -181,28 +184,40 @@ export class SkinnedMesh extends Node {
   }
 
   getBone(name) {
-    const bone = this.readBone(name)
-    if (!bone) return null
-    if (!bone.proxy) {
+    let handle = this.boneHandles[name]
+    if (!handle) {
       const self = this
-      bone.proxy = {
-        position: bone.raw.position,
-        quaternion: bone.raw.quaternion,
-        rotation: bone.raw.rotation,
-        scale: bone.raw.scale,
+      handle = {
+        get position() {
+          return self.readBone(name)?.position
+        },
+        get quaternion() {
+          return self.readBone(name)?.quaternion
+        },
+        get rotation() {
+          return self.readBone(name)?.rotation
+        },
+        get scale() {
+          return self.readBone(name)?.scale
+        },
         get matrixWorld() {
+          const bone = self.readBone(name)
+          if (!bone) return null
           if (self.isDirty) self.clean()
-          bone.raw.updateMatrixWorld(true)
-          return bone.raw.matrixWorld
+          bone.updateMatrixWorld(true)
+          return bone.matrixWorld
         },
         set matrixWorld(mat) {
-          bone.raw.matrixAutoUpdate = false
-          bone.raw.matrixWorldAutoUpdate = false
-          bone.raw.matrixWorld.copy(mat)
+          const bone = self.readBone(name)
+          if (!bone) return
+          bone.matrixAutoUpdate = false
+          bone.matrixWorldAutoUpdate = false
+          bone.matrixWorld.copy(mat)
         },
       }
+      this.boneHandles[name] = handle
     }
-    return bone.proxy
+    return handle
   }
 
   // deprecated: use getBone(name).matrixWorld
@@ -211,8 +226,8 @@ export class SkinnedMesh extends Node {
     if (!bone) return null
     // combine the skinned mesh's world matrix with the bone's world matrix
     // return m1.multiplyMatrices(this.matrixWorld, bone.matrixWorld)
-    bone.raw.updateMatrixWorld(true)
-    return m1.copy(bone.raw.matrixWorld)
+    bone.updateMatrixWorld(true)
+    return m1.copy(bone.matrixWorld)
   }
 
   getProxy() {

@@ -60,10 +60,19 @@ export class ClientLoader extends System {
   }
 
   execPreload() {
-    const promises = this.preloadItems.map(item => this.load(item.type, item.url))
+    let loadedItems = 0
+    let totalItems = this.preloadItems.length
+    let progress = 0
+    const promises = this.preloadItems.map(item => {
+      return this.load(item.type, item.url).then(() => {
+        loadedItems++
+        progress = (loadedItems / totalItems) * 100
+        this.world.emit('progress', progress)
+      })
+    })
     this.preloader = Promise.allSettled(promises).then(() => {
       this.preloader = null
-      this.world.emit('ready', true)
+      // this.world.emit('ready', true)
     })
   }
 

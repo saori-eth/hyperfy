@@ -36,6 +36,10 @@ export class Avatar extends Node {
     if (this.factory) {
       this.instance = this.factory.create(this.matrixWorld, this.hooks, this)
       this.instance.setEmote(this._emote)
+      if (this._disableRateCheck) {
+        this.instance.disableRateCheck()
+        this._disableRateCheck = null
+      }
       this.ctx.world?.setHot(this.instance, true)
       this.onLoad?.()
     }
@@ -109,6 +113,14 @@ export class Avatar extends Node {
 
   getBoneTransform(boneName) {
     return this.instance?.getBoneTransform(boneName)
+  }
+
+  disableRateCheck() {
+    if (this.instance) {
+      this.instance.disableRateCheck()
+    } else {
+      this._disableRateCheck = true
+    }
   }
 
   setEmote(url) {

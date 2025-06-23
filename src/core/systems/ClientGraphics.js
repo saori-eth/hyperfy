@@ -106,7 +106,7 @@ export class ClientGraphics extends System {
     })
     this.bloomEnabled = this.world.prefs.bloom
     this.smaa = new SMAAEffect({
-      preset: SMAAPreset.HIGH,
+      preset: SMAAPreset.ULTRA,
     })
     this.tonemapping = new ToneMappingEffect({
       mode: ToneMappingMode.ACES_FILMIC,

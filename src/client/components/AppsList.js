@@ -76,6 +76,17 @@ export function AppsList({ world, query, perf, refresh, setRefresh }) {
     newItems = orderBy(newItems, sort, asc ? 'asc' : 'desc')
     return newItems
   }, [items, sort, asc, query])
+  useEffect(() => {
+    function onChange() {
+      setRefresh(n => n + 1)
+    }
+    world.entities.on('added', onChange)
+    world.entities.on('removed', onChange)
+    return () => {
+      world.entities.off('added', onChange)
+      world.entities.off('removed', onChange)
+    }
+  }, [])
   const reorder = key => {
     if (sort === key) {
       setAsc(!asc)

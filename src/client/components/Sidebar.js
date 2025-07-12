@@ -3,6 +3,8 @@ import { MenuIcon, MicIcon, MicOffIcon, SettingsIcon, VRIcon } from './Icons'
 import {
   BookTextIcon,
   BoxIcon,
+  ChevronDownIcon,
+  ChevronsUpDownIcon,
   CirclePlusIcon,
   CodeIcon,
   DownloadIcon,
@@ -605,7 +607,6 @@ function World({ world, hidden }) {
   const [title, setTitle] = useState(world.settings.title)
   const [desc, setDesc] = useState(world.settings.desc)
   const [image, setImage] = useState(world.settings.image)
-  const [model, setModel] = useState(world.settings.model)
   const [avatar, setAvatar] = useState(world.settings.avatar)
   const [playerLimit, setPlayerLimit] = useState(world.settings.playerLimit)
   const [ao, setAO] = useState(world.settings.ao)
@@ -615,7 +616,6 @@ function World({ world, hidden }) {
       if (changes.title) setTitle(changes.title.value)
       if (changes.desc) setDesc(changes.desc.value)
       if (changes.image) setImage(changes.image.value)
-      if (changes.model) setModel(changes.model.value)
       if (changes.avatar) setAvatar(changes.avatar.value)
       if (changes.playerLimit) setPlayerLimit(changes.playerLimit.value)
       if (changes.ao) setAO(changes.ao.value)
@@ -680,14 +680,6 @@ function World({ world, hidden }) {
             kind='image'
             value={image}
             onChange={value => world.settings.set('image', value, true)}
-            world={world}
-          />
-          <FieldFile
-            label='Scene'
-            hint='Change the root scene model'
-            kind='model'
-            value={model}
-            onChange={value => world.settings.set('model', value, true)}
             world={world}
           />
           <FieldFile
@@ -1075,17 +1067,31 @@ function App({ world, hidden }) {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #5d6077;
-            &:hover {
+            color: #6f7289;
+            &:hover:not(.disabled) {
               cursor: pointer;
             }
             &.active {
               color: white;
             }
+            &.disabled {
+              color: #434556;
+            }
+          }
+          .app-transforms {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+          }
+          .app-transforms-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.4rem;
+            &:hover {
+              cursor: pointer;
+            }
           }
           .app-content {
             flex: 1;
-            padding: 0.5rem 0;
             overflow-y: auto;
           }
         `}
@@ -1111,63 +1117,66 @@ function App({ world, hidden }) {
               </div>
             </AppModelBtn>
           )}
-          <div
-            className='app-btn'
-            onClick={() => {
-              world.ui.setApp(null)
-              app.destroy(true)
-            }}
-            onPointerEnter={() => setHint('Delete this app')}
-            onPointerLeave={() => setHint(null)}
-          >
-            <Trash2Icon size='1.125rem' />
-          </div>
+          {!blueprint.scene && (
+            <div
+              className='app-btn'
+              onClick={() => {
+                world.ui.setApp(null)
+                app.destroy(true)
+              }}
+              onPointerEnter={() => setHint('Delete this app')}
+              onPointerLeave={() => setHint(null)}
+            >
+              <Trash2Icon size='1.125rem' />
+            </div>
+          )}
         </div>
-        <div className='app-toggles'>
-          <div
-            className={cls('app-toggle', { active: blueprint.disabled })}
-            onClick={() => toggleKey('disabled')}
-            onPointerEnter={() => setHint('Disable this app so that it is no longer active in the world.')}
-            onPointerLeave={() => setHint(null)}
-          >
-            <OctagonXIcon size='1.125rem' />
-            {/* {blueprint.disabled ? <SquareIcon size='1.125rem' /> : <SquareCheckBigIcon size='1.125rem' />} */}
+        {!blueprint.scene && (
+          <div className='app-toggles'>
+            <div
+              className={cls('app-toggle', { active: blueprint.disabled })}
+              onClick={() => toggleKey('disabled')}
+              onPointerEnter={() => setHint('Disable this app so that it is no longer active in the world.')}
+              onPointerLeave={() => setHint(null)}
+            >
+              <OctagonXIcon size='1.125rem' />
+              {/* {blueprint.disabled ? <SquareIcon size='1.125rem' /> : <SquareCheckBigIcon size='1.125rem' />} */}
+            </div>
+            <div
+              className={cls('app-toggle', { active: pinned })}
+              onClick={() => togglePinned()}
+              onPointerEnter={() => setHint("Pin this app so it can't accidentally be moved.")}
+              onPointerLeave={() => setHint(null)}
+            >
+              <PinIcon size='1.125rem' />
+            </div>
+            <div
+              className={cls('app-toggle', { active: blueprint.preload })}
+              onClick={() => toggleKey('preload')}
+              onPointerEnter={() => setHint('Preload this app before entering the world.')}
+              onPointerLeave={() => setHint(null)}
+            >
+              <LoaderPinwheelIcon size='1.125rem' />
+            </div>
+            <div
+              className={cls('app-toggle', { active: blueprint.unique })}
+              onClick={() => toggleKey('unique')}
+              onPointerEnter={() => setHint('Make this app unique so that new duplicates are not linked to this one.')}
+              onPointerLeave={() => setHint(null)}
+            >
+              <SparkleIcon size='1.125rem' />
+            </div>
           </div>
-          <div
-            className={cls('app-toggle', { active: pinned })}
-            onClick={togglePinned}
-            onPointerEnter={() => setHint("Pin this app so it can't accidentally be moved.")}
-            onPointerLeave={() => setHint(null)}
-          >
-            <PinIcon size='1.125rem' />
-          </div>
-          <div
-            className={cls('app-toggle', { active: blueprint.preload })}
-            onClick={() => toggleKey('preload')}
-            onPointerEnter={() => setHint('Preload this app before entering the world.')}
-            onPointerLeave={() => setHint(null)}
-          >
-            <LoaderPinwheelIcon size='1.125rem' />
-          </div>
-          <div
-            className={cls('app-toggle', { active: blueprint.unique })}
-            onClick={() => toggleKey('unique')}
-            onPointerEnter={() => setHint('Make this app unique so that new duplicates are not linked to this one.')}
-            onPointerLeave={() => setHint(null)}
-          >
-            <SparkleIcon size='1.125rem' />
-          </div>
-          <div
-            className={cls('app-toggle', { active: transforms })}
-            onClick={() => setTransforms(!transforms)}
-            onPointerEnter={() => setHint('Show and hide transform fields for fine grained control.')}
-            onPointerLeave={() => setHint(null)}
-          >
-            <Move3DIcon size='1.125rem' />
-          </div>
-        </div>
+        )}
         <div className='app-content noscrollbar'>
-          {transforms && <AppTransformFields app={app} />}
+          {!blueprint.scene && (
+            <div className='app-transforms'>
+              <div className='app-transforms-btn' onClick={() => setTransforms(!transforms)}>
+                <ChevronsUpDownIcon size='1rem' />
+              </div>
+              {transforms && <AppTransformFields app={app} />}
+            </div>
+          )}
           <AppFields world={world} app={app} blueprint={blueprint} />
         </div>
       </div>
@@ -1227,12 +1236,6 @@ function AppTransformFields({ app }) {
             scale: value,
           })
         }}
-      />
-      <div
-        css={css`
-          margin: 0.5rem 0;
-          border-top: 1px solid rgba(255, 255, 255, 0.03);
-        `}
       />
     </>
   )

@@ -252,7 +252,7 @@ export class ClientBuilder extends System {
         !this.gizmoActive
       ) {
         const entity = this.getEntityAtReticle()
-        if (entity?.isApp) this.select(entity)
+        if (entity?.isApp && !entity.data.pinned && !entity.blueprint.scene) this.select(entity)
         else this.select(null)
       }
     }

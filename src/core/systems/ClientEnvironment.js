@@ -43,12 +43,23 @@ const csmLevels = {
 // fix fog distance calc
 // see: https://github.com/mrdoob/three.js/issues/14601
 // future: https://www.youtube.com/watch?v=k1zGz55EqfU
-// THREE.ShaderChunk.fog_vertex = `
-// #ifdef USE_FOG
-// 	// vFogDepth = - mvPosition.z;
-//   vFogDepth = length(mvPosition);
-// #endif
-// `
+THREE.ShaderChunk.fog_vertex = `
+#ifdef USE_FOG
+
+  // original
+  // vFogDepth = - mvPosition.z;
+
+  // radial distance
+  vFogDepth = length( mvPosition );
+
+  // cylindrical (ignore altitude)
+  // vFogDepth = length( mvPosition.xz );
+
+  // height-based (eg ground fog)
+  // vFogDepth = abs( mvPosition.y );
+
+#endif
+`
 
 /**
  * Environment System

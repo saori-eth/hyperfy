@@ -949,16 +949,17 @@ function ActionIcon({ icon: Icon }) {
 }
 
 function Reticle({ world }) {
-  const [visible, setVisible] = useState(world.controls.pointer.locked)
+  const [pointerLocked, setPointerLocked] = useState(world.controls.pointer.locked)
   const [buildMode, setBuildMode] = useState(world.builder.enabled)
   useEffect(() => {
-    world.on('pointer-lock', setVisible)
+    world.on('pointer-lock', setPointerLocked)
     world.on('build-mode', setBuildMode)
     return () => {
-      world.off('pointer-lock', setVisible)
+      world.off('pointer-lock', setPointerLocked)
       world.off('build-mode', setBuildMode)
     }
   }, [])
+  const visible = isTouch ? true : pointerLocked
   if (!visible) return null
   return (
     <div
@@ -971,11 +972,13 @@ function Reticle({ world }) {
         justify-content: center;
         font-size: 1rem;
         .reticle-item {
-          width: 1.25rem;
-          height: 1.25rem;
+          width: 0.25rem;
+          height: 0.25rem;
           border-radius: 0.625rem;
-          border: 0.125rem solid ${buildMode ? '#ff4d4d' : 'white'};
-          mix-blend-mode: ${buildMode ? 'normal' : 'difference'};
+          /* border: 0.125rem solid ${buildMode ? '#ff4d4d' : 'white'}; */
+          background: ${buildMode ? '#ff4d4d' : 'white'};
+          border: 0.5px solid rgba(0, 0, 0, 0.3);
+          /* mix-blend-mode: ${buildMode ? 'normal' : 'difference'}; */
         }
       `}
     >

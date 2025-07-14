@@ -1,6 +1,6 @@
 import { css } from '@firebolt-dev/css'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { LoaderIcon, MessageSquareTextIcon, RefreshCwIcon } from 'lucide-react'
+import { ChevronUpIcon, LoaderIcon, MessageSquareTextIcon, RefreshCwIcon } from 'lucide-react'
 import moment from 'moment'
 
 // import { CodeEditor } from './CodeEditor'
@@ -107,6 +107,7 @@ export function CoreUI({ world }) {
       {!ready && <LoadingOverlay world={world} />}
       {kicked && <KickedOverlay code={kicked} />}
       {ready && isTouch && <TouchBtns world={world} />}
+      {ready && isTouch && <TouchStick world={world} />}
       {confirm && <Confirm options={confirm} />}
       <div id='core-ui-portal' />
     </div>
@@ -1075,7 +1076,7 @@ function TouchBtns({ world }) {
         .touchbtns-btn {
           pointer-events: auto;
           position: absolute;
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          /* border: 1px solid rgba(255, 255, 255, 0.1); */
           background: rgba(0, 0, 0, 0.3);
           border-radius: 10rem;
           display: flex;
@@ -1124,6 +1125,109 @@ function TouchBtns({ world }) {
       >
         <ChevronDoubleUpIcon size='1.5rem' />
       </div>
+    </div>
+  )
+}
+
+function TouchStick({ world }) {
+  const outerRef = useRef()
+  const innerRef = useRef()
+  useEffect(() => {
+    const outer = outerRef.current
+    const inner = innerRef.current
+    function onStick(stick) {
+      if (stick) {
+        outer.style.left = `${stick.center.x}px`
+        outer.style.top = `${stick.center.y}px`
+        inner.style.left = `${stick.touch.position.x}px`
+        inner.style.top = `${stick.touch.position.y}px`
+      } else {
+        if (window.innerWidth < 500) {
+          // portrait
+          outer.style.left = `100px`
+          outer.style.top = `calc(100vh - 100px)`
+          inner.style.left = `100px`
+          inner.style.top = `calc(100vh - 100px)`
+        } else {
+          // landscape
+          outer.style.left = `150px`
+          outer.style.top = `calc(100vh - 130px)`
+          inner.style.left = `150px`
+          inner.style.top = `calc(100vh - 130px)`
+        }
+      }
+    }
+    onStick(null)
+    world.on('stick', onStick)
+    return () => {
+      world.off('stick', onStick)
+    }
+  }, [])
+  return (
+    <div
+      className='stick'
+      css={css`
+        .stick-outer {
+          position: absolute;
+          width: 100px;
+          height: 100px;
+          border-radius: 100px;
+          background: rgba(0, 0, 0, 0.3);
+          transform: translate(-50%, -50%);
+        }
+        .stick-caret {
+          position: absolute;
+          width: 20px;
+          height: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          &.n {
+            top: 0;
+            left: 50%;
+            transform: translate(-50%, 0);
+          }
+          &.e {
+            top: 50%;
+            right: 0;
+            transform: translate(0, -50%) rotate(90deg);
+          }
+          &.s {
+            left: 50%;
+            bottom: 0;
+            transform: translate(-50%, 0) rotate(180deg);
+          }
+          &.w {
+            top: 50%;
+            left: 0;
+            transform: translate(0, -50%) rotate(-90deg);
+          }
+        }
+        .stick-inner {
+          position: absolute;
+          width: 50px;
+          height: 50px;
+          border-radius: 50px;
+          background: white;
+          transform: translate(-50%, -50%);
+        }
+      `}
+    >
+      <div className='stick-outer' ref={outerRef}>
+        {/* <div className='stick-caret n'>
+          <ChevronUpIcon size={16} />
+        </div>
+        <div className='stick-caret e'>
+          <ChevronUpIcon size={16} />
+        </div>
+        <div className='stick-caret s'>
+          <ChevronUpIcon size={16} />
+        </div>
+        <div className='stick-caret w'>
+          <ChevronUpIcon size={16} />
+        </div> */}
+      </div>
+      <div className='stick-inner' ref={innerRef} />
     </div>
   )
 }

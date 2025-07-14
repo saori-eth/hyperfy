@@ -20,7 +20,8 @@ const PAN_LOOK_SPEED = 0.4
 const ZOOM_SPEED = 2
 const MIN_ZOOM = 1
 const MAX_ZOOM = 8
-const STICK_MAX_DISTANCE = 50
+const STICK_OUTER_SIZE = 100
+const STICK_INNER_SIZE = 50
 const DEFAULT_CAM_HEIGHT = 1.2
 
 const v1 = new THREE.Vector3()
@@ -271,6 +272,7 @@ export class PlayerLocal extends Entity {
       onTouchEnd: touch => {
         if (this.stick?.touch === touch) {
           this.stick = null
+          this.world.emit('stick', null)
         }
         if (this.pan === touch) {
           this.pan = null
@@ -726,14 +728,18 @@ export class PlayerLocal extends Entity {
       const dx = centerX - touchX
       const dy = centerY - touchY
       const distance = Math.sqrt(dx * dx + dy * dy)
-      if (distance > STICK_MAX_DISTANCE) {
-        this.stick.center.x = touchX + (STICK_MAX_DISTANCE * dx) / distance
-        this.stick.center.y = touchY + (STICK_MAX_DISTANCE * dy) / distance
+      const outerRadius = STICK_OUTER_SIZE / 2
+      const innerRadius = STICK_INNER_SIZE / 2
+      const moveRadius = outerRadius - innerRadius
+      if (distance > moveRadius) {
+        this.stick.center.x = touchX + (moveRadius * dx) / distance
+        this.stick.center.y = touchY + (moveRadius * dy) / distance
       }
-      const stickX = (touchX - this.stick.center.x) / STICK_MAX_DISTANCE
-      const stickY = (touchY - this.stick.center.y) / STICK_MAX_DISTANCE
+      const stickX = (touchX - this.stick.center.x) / moveRadius
+      const stickY = (touchY - this.stick.center.y) / moveRadius
       this.moveDir.x = stickX
       this.moveDir.z = stickY
+      this.world.emit('stick', this.stick)
     } else {
       // otherwise use keyboard
       if (this.control.keyW.down || this.control.arrowUp.down) this.moveDir.z -= 1

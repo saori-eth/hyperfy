@@ -18,7 +18,7 @@ const SCALE_IDENTITY = new THREE.Vector3(1, 1, 1)
 const POINTER_LOOK_SPEED = 0.1
 const PAN_LOOK_SPEED = 0.4
 const ZOOM_SPEED = 2
-const MIN_ZOOM = 1
+const MIN_ZOOM = 0
 const MAX_ZOOM = 8
 const STICK_OUTER_RADIUS = 50
 const STICK_INNER_RADIUS = 25
@@ -76,6 +76,8 @@ export class PlayerLocal extends Entity {
     this.moveDir = new THREE.Vector3()
     this.moveDirRaw = new THREE.Vector3()
     this.moving = false
+
+    this.firstPerson = false
 
     this.lastJumpAt = 0
     this.flying = false
@@ -708,6 +710,16 @@ export class PlayerLocal extends Entity {
       this.cam.zoom = clamp(this.cam.zoom, MIN_ZOOM, MAX_ZOOM)
     }
 
+    if (this.cam.zoom < 1 && !this.firstPerson) {
+      this.cam.zoom = 0
+      this.firstPerson = true
+      this.avatar.active = false
+    } else if (this.cam.zoom > 0 && this.firstPerson) {
+      this.cam.zoom = 1
+      this.firstPerson = false
+      this.avatar.active = true
+    }
+
     // watch jump presses to either fly or air-jump
     this.jumpDown = isXR ? this.control.xrRightBtn1.down : this.control.space.down || this.control.touchA.down
     if (isXR ? this.control.xrRightBtn1.pressed : this.control.space.pressed || this.control.touchA.pressed) {
@@ -939,10 +951,12 @@ export class PlayerLocal extends Entity {
     } else {
       // and vertically at our vrm model height
       this.cam.position.y += this.camHeight
-      // and slightly to the right over the avatars shoulder, when not in XR
-      const forward = v1.copy(FORWARD).applyQuaternion(this.cam.quaternion)
-      const right = v2.crossVectors(forward, UP).normalize()
-      this.cam.position.add(right.multiplyScalar(0.3))
+      // and slightly to the right over the avatars shoulder, when not first person / xr
+      if (!this.firstPerson) {
+        const forward = v1.copy(FORWARD).applyQuaternion(this.cam.quaternion)
+        const right = v2.crossVectors(forward, UP).normalize()
+        this.cam.position.add(right.multiplyScalar(0.3))
+      }
     }
     if (this.world.xr?.session) {
       // in vr snap camera

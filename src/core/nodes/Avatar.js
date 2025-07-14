@@ -38,7 +38,7 @@ export class Avatar extends Node {
       this.instance.setEmote(this._emote)
       if (this._disableRateCheck) {
         this.instance.disableRateCheck()
-        this._disableRateCheck = null
+        // this._disableRateCheck = null
       }
       this.ctx.world?.setHot(this.instance, true)
       this.onLoad?.()

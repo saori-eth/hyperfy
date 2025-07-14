@@ -1,7 +1,13 @@
 export const Emotes = {
   IDLE: 'asset://emote-idle.glb',
   WALK: 'asset://emote-walk.glb?s=1.5',
+  WALK_LEFT: 'asset://emote-walk-left.glb',
+  WALK_RIGHT: 'asset://emote-walk-right.glb',
+  WALK_BACK: 'asset://emote-walk-back.glb',
   RUN: 'asset://emote-run.glb?s=1.5',
+  RUN_LEFT: 'asset://emote-run-left.glb',
+  RUN_RIGHT: 'asset://emote-run-right.glb',
+  RUN_BACK: 'asset://emote-run-back.glb',
   FLOAT: 'asset://emote-float.glb',
   FALL: 'asset://emote-fall.glb',
   FLIP: 'asset://emote-flip.glb?s=1.5',

@@ -1142,18 +1142,19 @@ function TouchStick({ world }) {
         inner.style.left = `${stick.touch.position.x}px`
         inner.style.top = `${stick.touch.position.y}px`
       } else {
-        if (window.innerWidth < 500) {
+        const radius = 50 // matches PlayerLocal.js STICK_OUTER_RADIUS
+        if (window.innerWidth < window.innerHeight) {
           // portrait
-          outer.style.left = `100px`
-          outer.style.top = `calc(100dvh - 100px)`
-          inner.style.left = `100px`
-          inner.style.top = `calc(100dvh - 100px)`
+          outer.style.left = `calc(env(safe-area-inset-left) + ${radius}px + 50px)`
+          outer.style.top = `calc(100dvh - env(safe-area-inset-bottom) - ${radius}px - 50px)`
+          inner.style.left = `calc(env(safe-area-inset-left) + ${radius}px + 50px)`
+          inner.style.top = `calc(100dvh - env(safe-area-inset-bottom) - ${radius}px - 50px)`
         } else {
           // landscape
-          outer.style.left = `150px`
-          outer.style.top = `calc(100dvh - 130px)`
-          inner.style.left = `150px`
-          inner.style.top = `calc(100dvh - 130px)`
+          outer.style.left = `calc(env(safe-area-inset-left) + ${radius}px + 90px)`
+          outer.style.top = `calc(100dvh - env(safe-area-inset-bottom) - ${radius}px - 50px)`
+          inner.style.left = `calc(env(safe-area-inset-left) + ${radius}px + 90px)`
+          inner.style.top = `calc(100dvh - env(safe-area-inset-bottom) - ${radius}px - 50px)`
         }
       }
     }

@@ -20,8 +20,8 @@ const PAN_LOOK_SPEED = 0.4
 const ZOOM_SPEED = 2
 const MIN_ZOOM = 1
 const MAX_ZOOM = 8
-const STICK_OUTER_SIZE = 100
-const STICK_INNER_SIZE = 50
+const STICK_OUTER_RADIUS = 50
+const STICK_INNER_RADIUS = 25
 const DEFAULT_CAM_HEIGHT = 1.2
 
 const v1 = new THREE.Vector3()
@@ -728,9 +728,7 @@ export class PlayerLocal extends Entity {
       const dx = centerX - touchX
       const dy = centerY - touchY
       const distance = Math.sqrt(dx * dx + dy * dy)
-      const outerRadius = STICK_OUTER_SIZE / 2
-      const innerRadius = STICK_INNER_SIZE / 2
-      const moveRadius = outerRadius - innerRadius
+      const moveRadius = STICK_OUTER_RADIUS - STICK_INNER_RADIUS
       if (distance > moveRadius) {
         this.stick.center.x = touchX + (moveRadius * dx) / distance
         this.stick.center.y = touchY + (moveRadius * dy) / distance

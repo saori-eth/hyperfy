@@ -833,6 +833,10 @@ export class PlayerLocal extends Entity {
         // back + right
         y += 45 * DEG2RAD
       }
+      // effects can force turn
+      if (this.data.effect?.turn) {
+        y = 0
+      }
       e1.set(0, y, 0)
       q1.setFromEuler(e1)
       const alpha = 1 - Math.pow(0.00000001, delta)

@@ -1,8 +1,8 @@
 export const Emotes = {
   IDLE: 'asset://emote-idle.glb',
   WALK: 'asset://emote-walk.glb?s=1.5',
-  WALK_LEFT: 'asset://emote-walk-left.glb',
-  WALK_RIGHT: 'asset://emote-walk-right.glb',
+  WALK_LEFT: 'asset://emote-walk-left.glb?s=1.2',
+  WALK_RIGHT: 'asset://emote-walk-right.glb?s=1.2',
   WALK_BACK: 'asset://emote-walk-back.glb?s=1.5',
   RUN: 'asset://emote-run.glb?s=1.5',
   RUN_LEFT: 'asset://emote-run-left.glb',

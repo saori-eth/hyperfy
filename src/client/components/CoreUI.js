@@ -1145,15 +1145,15 @@ function TouchStick({ world }) {
         if (window.innerWidth < 500) {
           // portrait
           outer.style.left = `100px`
-          outer.style.top = `calc(100vh - 100px)`
+          outer.style.top = `calc(100dvh - 100px)`
           inner.style.left = `100px`
-          inner.style.top = `calc(100vh - 100px)`
+          inner.style.top = `calc(100dvh - 100px)`
         } else {
           // landscape
           outer.style.left = `150px`
-          outer.style.top = `calc(100vh - 130px)`
+          outer.style.top = `calc(100dvh - 130px)`
           inner.style.left = `150px`
-          inner.style.top = `calc(100vh - 130px)`
+          inner.style.top = `calc(100dvh - 130px)`
         }
       }
     }

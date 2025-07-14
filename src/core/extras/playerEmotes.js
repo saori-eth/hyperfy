@@ -3,15 +3,29 @@ export const Emotes = {
   WALK: 'asset://emote-walk.glb?s=1.5',
   WALK_LEFT: 'asset://emote-walk-left.glb',
   WALK_RIGHT: 'asset://emote-walk-right.glb',
-  WALK_BACK: 'asset://emote-walk-back.glb',
+  WALK_BACK: 'asset://emote-walk-back.glb?s=1.5',
   RUN: 'asset://emote-run.glb?s=1.5',
   RUN_LEFT: 'asset://emote-run-left.glb',
   RUN_RIGHT: 'asset://emote-run-right.glb',
-  RUN_BACK: 'asset://emote-run-back.glb',
+  RUN_BACK: 'asset://emote-run-back.glb?s=1.2',
   FLOAT: 'asset://emote-float.glb',
   FALL: 'asset://emote-fall.glb',
   FLIP: 'asset://emote-flip.glb?s=1.5',
   TALK: 'asset://emote-talk.glb',
 }
 
-export const emoteUrls = [Emotes.IDLE, Emotes.WALK, Emotes.RUN, Emotes.FLOAT, Emotes.FALL, Emotes.FLIP, Emotes.TALK]
+export const emoteUrls = [
+  Emotes.IDLE,
+  Emotes.WALK,
+  Emotes.WALK_LEFT,
+  Emotes.WALK_RIGHT,
+  Emotes.WALK_BACK,
+  Emotes.RUN,
+  Emotes.RUN_LEFT,
+  Emotes.RUN_RIGHT,
+  Emotes.RUN_BACK,
+  Emotes.FLOAT,
+  Emotes.FALL,
+  Emotes.FLIP,
+  Emotes.TALK,
+]

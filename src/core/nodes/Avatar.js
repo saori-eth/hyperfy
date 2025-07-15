@@ -1,10 +1,11 @@
-import { isString } from 'lodash-es'
+import { isBoolean, isString } from 'lodash-es'
 import { Node } from './Node'
 import * as THREE from 'three'
 
 const defaults = {
   src: null,
   emote: null,
+  visible: true,
   onLoad: null,
 }
 
@@ -15,6 +16,7 @@ export class Avatar extends Node {
 
     this.src = data.src
     this.emote = data.emote
+    this.visible = data.visible
     this.onLoad = data.onLoad
 
     this.factory = data.factory
@@ -36,6 +38,7 @@ export class Avatar extends Node {
     if (this.factory) {
       this.instance = this.factory.create(this.matrixWorld, this.hooks, this)
       this.instance.setEmote(this._emote)
+      this.instance.setVisible(this._visible)
       if (this._disableRateCheck) {
         this.instance.disableRateCheck()
         // this._disableRateCheck = null
@@ -95,6 +98,19 @@ export class Avatar extends Node {
     this.instance?.setEmote(value)
   }
 
+  get visible() {
+    return this._visible
+  }
+
+  set visible(value = defaults.visible) {
+    if (!isBoolean(value)) {
+      throw new Error('[avatar] visible not a boolean')
+    }
+    if (this._visible === value) return
+    this._visible = value
+    this.instance?.setVisible(value)
+  }
+
   get onLoad() {
     return this._onLoad
   }
@@ -137,6 +153,7 @@ export class Avatar extends Node {
     super.copy(source, recursive)
     this._src = source._src
     this._emote = source._emote
+    this._visible = source._visible
     this._onLoad = source._onLoad
 
     this.factory = source.factory
@@ -159,6 +176,12 @@ export class Avatar extends Node {
         },
         set emote(value) {
           self.emote = value
+        },
+        get visible() {
+          return self.visible
+        },
+        set visible(value) {
+          self.visible = value
         },
         get onLoad() {
           return self.onLoad

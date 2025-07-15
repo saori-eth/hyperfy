@@ -287,6 +287,11 @@ export function createVRMFactory(glb, setupMaterial) {
       setFirstPerson,
       update,
       getBoneTransform,
+      setVisible(visible) {
+        vrm.scene.traverse(o => {
+          o.visible = visible
+        })
+      },
       move(_matrix) {
         matrix.copy(_matrix)
         hooks.octree?.move(sItem)

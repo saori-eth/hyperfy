@@ -710,14 +710,24 @@ export class PlayerLocal extends Entity {
       this.cam.zoom = clamp(this.cam.zoom, MIN_ZOOM, MAX_ZOOM)
     }
 
+    // force zoom in xr to trigger first person (below)
+    if (isXR && !this.xrActive) {
+      this.cam.zoom = 0
+      this.xrActive = true
+    } else if (!isXR && this.xrActive) {
+      this.cam.zoom = 1
+      this.xrActive = false
+    }
+
+    // transition in and out of first person
     if (this.cam.zoom < 1 && !this.firstPerson) {
       this.cam.zoom = 0
       this.firstPerson = true
-      this.avatar.active = false
+      this.avatar.visible = false
     } else if (this.cam.zoom > 0 && this.firstPerson) {
       this.cam.zoom = 1
       this.firstPerson = false
-      this.avatar.active = true
+      this.avatar.visible = true
     }
 
     // watch jump presses to either fly or air-jump
@@ -798,9 +808,6 @@ export class PlayerLocal extends Entity {
     this.moveDirRaw.copy(this.moveDir)
 
     // get un-rotated move direction in degrees
-    const moveRad = Math.atan2(this.moveDirRaw.x, -this.moveDirRaw.z)
-    let moveDeg = moveRad * RAD2DEG
-    if (moveDeg < 0) moveDeg += 360
     // Octant ranges (8 directions)
     // Forward:         337.5° to 22.5° (or -22.5° to 22.5°)
     // Forward-Right:   22.5° to 67.5°
@@ -810,6 +817,9 @@ export class PlayerLocal extends Entity {
     // Backward-Left:   202.5° to 247.5°
     // Left:            247.5° to 292.5°
     // Forward-Left:    292.5° to 337.5°
+    const moveRad = Math.atan2(this.moveDirRaw.x, -this.moveDirRaw.z)
+    let moveDeg = moveRad * RAD2DEG
+    if (moveDeg < 0) moveDeg += 360
 
     // rotate direction to face camera Y direction
     if (isXR) {
@@ -822,34 +832,40 @@ export class PlayerLocal extends Entity {
       this.moveDir.applyQuaternion(yQuaternion)
     }
 
-    // when moving, continually slerp to face camera direction
-    if (this.moving) {
-      let y = 0
-      if (isXR) {
-        e1.copy(this.world.xr.camera.rotation).reorder('YXZ')
-        y = e1.y
-      } else {
-        y = this.cam.rotation.y
-      }
+    // get initial facing angle matching camera
+    let rotY = 0
+    let applyRotY
+    if (isXR) {
+      e1.copy(this.world.xr.camera.rotation).reorder('YXZ')
+      rotY = e1.y + this.cam.rotation.y
+    } else {
+      rotY = this.cam.rotation.y
+    }
+
+    if (this.data.effect?.turn) {
+      // effects can force turn
+      applyRotY = true
+    } else if (this.moving || this.firstPerson) {
       // diagonals offset faced direction
+      applyRotY = true
       if (moveDeg < 337.5 && moveDeg > 292.5) {
         // fwd + left
-        y += 45 * DEG2RAD
+        rotY += 45 * DEG2RAD
       } else if (moveDeg > 22.5 && moveDeg < 67.5) {
         // fwd + right
-        y -= 45 * DEG2RAD
+        rotY -= 45 * DEG2RAD
       } else if (moveDeg > 202.5 && moveDeg < 247.5) {
         // back + left
-        y -= 45 * DEG2RAD
+        rotY -= 45 * DEG2RAD
       } else if (moveDeg > 112.5 && moveDeg < 157.5) {
         // back + right
-        y += 45 * DEG2RAD
+        rotY += 45 * DEG2RAD
       }
-      // effects can force turn
-      if (this.data.effect?.turn) {
-        y = 0
-      }
-      e1.set(0, y, 0)
+    }
+
+    // when moving, or in first person or effect.turn, continually slerp to face that angle
+    if (applyRotY) {
+      e1.set(0, rotY, 0)
       q1.setFromEuler(e1)
       const alpha = 1 - Math.pow(0.00000001, delta)
       this.base.quaternion.slerp(q1, alpha)

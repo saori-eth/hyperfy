@@ -116,7 +116,7 @@ export function Sidebar({ world, ui }) {
         `}
       >
         <div className='sidebar-sections'>
-          <Section active={mainSectionPanes.includes(activePane)} bottom>
+          <Section active={activePane} bottom>
             <Btn
               active={activePane === 'prefs'}
               suspended={ui.pane === 'prefs' && !activePane}
@@ -158,7 +158,7 @@ export function Sidebar({ world, ui }) {
             )}
           </Section>
           {isBuilder && (
-            <Section active={worldSectionPanes.includes(activePane)} top bottom>
+            <Section active={activePane} top bottom>
               <Btn
                 active={activePane === 'world'}
                 suspended={ui.pane === 'world' && !activePane}
@@ -190,7 +190,7 @@ export function Sidebar({ world, ui }) {
             </Section>
           )}
           {ui.app && (
-            <Section active={appSectionPanes.includes(activePane)} top bottom>
+            <Section active={activePane} top bottom>
               <Btn
                 active={activePane === 'app'}
                 suspended={ui.pane === 'app' && !activePane}
@@ -240,13 +240,15 @@ function Section({ active, top, bottom, children }) {
     <div
       className={cls('sidebar-section', { active, top, bottom })}
       css={css`
-        background: rgba(11, 10, 21, 0.85);
-        border: 0.0625rem solid #2a2b39;
-        backdrop-filter: blur(5px);
-        border-radius: 1rem;
+        background: rgba(11, 10, 21, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 2rem;
         padding: 0.6875rem 0;
         pointer-events: auto;
         position: relative;
+        &.active {
+          background: rgba(11, 10, 21, 0.9);
+        }
       `}
     >
       {children}
@@ -264,7 +266,7 @@ function Btn({ disabled, suspended, active, children, ...props }) {
         display: flex;
         align-items: center;
         justify-content: center;
-        color: rgba(255, 255, 255, 0.8);
+        color: white;
         position: relative;
         .sidebar-btn-dot {
           display: none;
@@ -289,11 +291,11 @@ function Btn({ disabled, suspended, active, children, ...props }) {
         &.suspended {
           .sidebar-btn-dot {
             display: block;
-            background: #ba6540;
+            /* background: rgb(26, 151, 241); */
           }
         }
         &.disabled {
-          color: #5d6077;
+          color: rgba(255, 255, 255, 0.3);
         }
       `}
       {...props}
@@ -475,10 +477,9 @@ function Prefs({ world, hidden }) {
         className='prefs noscrollbar'
         css={css`
           overflow-y: auto;
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
-          backdrop-filter: blur(5px);
-          border-radius: 1rem;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 1.375rem;
           padding: 0.6rem 0;
         `}
       >
@@ -631,10 +632,9 @@ function World({ world, hidden }) {
       <div
         className='world'
         css={css`
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
-          backdrop-filter: blur(5px);
-          border-radius: 1rem;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 1.375rem;
           display: flex;
           flex-direction: column;
           min-height: 12rem;
@@ -756,10 +756,9 @@ function Apps({ world, hidden }) {
       <div
         className='apps'
         css={css`
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
-          backdrop-filter: blur(5px);
-          border-radius: 1rem;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 1.375rem;
           flex: 1;
           display: flex;
           flex-direction: column;
@@ -873,10 +872,9 @@ function Add({ world, hidden }) {
       <div
         className='add'
         css={css`
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
-          backdrop-filter: blur(5px);
-          border-radius: 1rem;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 1.375rem;
           display: flex;
           flex-direction: column;
           min-height: 17rem;
@@ -1019,10 +1017,9 @@ function App({ world, hidden }) {
       <div
         className='app'
         css={css`
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
-          backdrop-filter: blur(5px);
-          border-radius: 1rem;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 1.375rem;
           display: flex;
           flex-direction: column;
           min-height: 1rem;
@@ -1463,10 +1460,9 @@ function Script({ world, hidden }) {
       css={css`
         pointer-events: auto;
         align-self: stretch;
-        background: rgba(11, 10, 21, 0.85);
-        border: 0.0625rem solid #2a2b39;
-        backdrop-filter: blur(5px);
-        border-radius: 1rem;
+        background: rgba(11, 10, 21, 0.9);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 1.375rem;
         display: flex;
         flex-direction: column;
         align-items: stretch;
@@ -1531,10 +1527,9 @@ function Nodes({ world, hidden }) {
         className='nodes'
         css={css`
           flex: 1;
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
-          backdrop-filter: blur(5px);
-          border-radius: 1rem;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 1.375rem;
           min-height: 23.7rem;
           display: flex;
           flex-direction: column;
@@ -1585,10 +1580,9 @@ function Meta({ world, hidden }) {
         className='meta'
         css={css`
           flex: 1;
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
-          backdrop-filter: blur(5px);
-          border-radius: 1rem;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 1.375rem;
           display: flex;
           flex-direction: column;
           min-height: 1rem;

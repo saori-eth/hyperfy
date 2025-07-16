@@ -127,7 +127,9 @@ export function Sidebar({ world, ui }) {
             {isTouch && (
               <Btn
                 onClick={() => {
-                  world.emit('sidebar-chat-toggle')
+                  setTimeout(() => {
+                    world.emit('sidebar-chat-toggle')
+                  }, 100)
                 }}
               >
                 <MessageSquareTextIcon size='1.25rem' />

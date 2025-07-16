@@ -1,6 +1,6 @@
 import { css } from '@firebolt-dev/css'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronUpIcon, LoaderIcon, MessageSquareTextIcon, RefreshCwIcon } from 'lucide-react'
+import { ChevronUpIcon, LoaderIcon, MessageSquareTextIcon, RefreshCwIcon, SendHorizonalIcon } from 'lucide-react'
 import moment from 'moment'
 
 // import { CodeEditor } from './CodeEditor'
@@ -334,7 +334,7 @@ function Chat({ world }) {
   const [active, setActive] = useState(false)
   useEffect(() => {
     const onToggle = () => {
-      setActive(!active)
+      setActive(value => !value)
     }
     world.on('sidebar-chat-toggle', onToggle)
     return () => {
@@ -418,11 +418,10 @@ function Chat({ world }) {
         }
         .mainchat-entry {
           height: 2.875rem;
-          padding: 0 0.8rem;
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
-          border-radius: 1rem;
-          backdrop-filter: blur(5px);
+          padding: 0 1rem;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 2rem;
           display: flex;
           align-items: center;
 
@@ -435,6 +434,14 @@ function Chat({ world }) {
             font-size: 0.9375rem;
             line-height: 1;
           }
+        }
+        .mainchat-send {
+          width: 2.875rem;
+          height: 2.875rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          margin-right: -0.6rem;
         }
         &.active {
           pointer-events: auto;
@@ -483,6 +490,11 @@ function Chat({ world }) {
             }
           }}
         />
+        {isTouch && (
+          <div className='mainchat-send' onClick={e => send(e)}>
+            <SendHorizonalIcon size='1.125rem' />
+          </div>
+        )}
       </label>
     </div>
   )

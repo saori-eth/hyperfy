@@ -8,6 +8,8 @@ import { Layers } from '../extras/Layers'
 import { ControlPriorities } from '../extras/ControlPriorities'
 import { warn } from '../extras/warn'
 
+const isBrowser = typeof window !== 'undefined'
+
 const internalEvents = [
   'fixedUpdate',
   'updated',
@@ -212,6 +214,28 @@ export class Apps extends System {
             reject(err)
           }
         })
+      },
+      getQueryParam(entity, key) {
+        if (!isBrowser) {
+          console.error('getQueryParam() must be called in the browser')
+          return null
+        }
+        const urlParams = new URLSearchParams(window.location.search)
+        return urlParams.get(key)
+      },
+      setQueryParam(entity, key, value) {
+        if (!isBrowser) {
+          console.error('getQueryParam() must be called in the browser')
+          return null
+        }
+        const urlParams = new URLSearchParams(window.location.search)
+        if (value) {
+          urlParams.set(key, value)
+        } else {
+          urlParams.delete(key)
+        }
+        const newUrl = window.location.pathname + '?' + urlParams.toString()
+        window.history.replaceState({}, '', newUrl)
       },
     }
   }

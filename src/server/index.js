@@ -37,7 +37,7 @@ await fs.copy(path.join(rootDir, 'src/world/collections'), path.join(collections
 const collections = await initCollections({ collectionsDir, assetsDir })
 
 // init db
-const db = await getDB(path.join(worldDir, '/db.sqlite'))
+const db = await getDB(worldDir)
 
 // init storage
 const storage = new Storage(path.join(worldDir, '/storage.json'))
@@ -87,7 +87,7 @@ fastify.register(statics, {
 })
 fastify.register(multipart, {
   limits: {
-    fileSize: 100 * 1024 * 1024, // 100MB
+    fileSize: 200 * 1024 * 1024, // 200MB
   },
 })
 fastify.register(ws)

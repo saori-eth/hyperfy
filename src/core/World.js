@@ -28,6 +28,11 @@ export class World extends EventEmitter {
     this.assetsDir = null
     this.hot = new Set()
 
+    // reticle
+    this.reticle = {
+      css: '',
+    }
+
     this.rig = new THREE.Object3D()
     // NOTE: camera near is slightly smaller than spherecast. far is slightly more than skybox.
     // this gives us minimal z-fighting without needing logarithmic depth buffers

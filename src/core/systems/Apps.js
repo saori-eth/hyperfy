@@ -52,9 +52,14 @@ export class Apps extends System {
       },
     }
     this.worldSetters = {
-      // ...
+      //
     }
     this.worldMethods = {
+      setReticleStyle(entity, styles) {
+        if (!world.network.isClient) return
+        world.reticle.css = styles
+        world.emit('reticle-css', styles)
+      },
       add(entity, pNode) {
         const node = getRef(pNode)
         if (!node) return

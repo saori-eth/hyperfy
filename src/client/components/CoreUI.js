@@ -962,19 +962,20 @@ function ActionIcon({ icon: Icon }) {
 }
 
 function Reticle({ world }) {
-  const [visible, setVisible] = useState(world.controls.pointer.locked)
+  const [pointerLocked, setPointerLocked] = useState(world.controls.pointer.locked)
   const [buildMode, setBuildMode] = useState(world.builder.enabled)
   const [customCss, setCustomCss] = useState(world.reticle.css)
   useEffect(() => {
-    world.on('pointer-lock', setVisible)
+    world.on('pointer-lock', setPointerLocked)
     world.on('build-mode', setBuildMode)
     world.on('reticle-css', setCustomCss)
     return () => {
-      world.off('pointer-lock', setVisible)
+      world.off('pointer-lock', setPointerLocked)
       world.off('build-mode', setBuildMode)
       world.off('reticle-css', setCustomCss)
     }
   }, [])
+  const visible = isTouch ? true : pointerLocked
   if (!visible) return null
   return (
     <div

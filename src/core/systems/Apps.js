@@ -52,7 +52,7 @@ export class Apps extends System {
       },
     }
     this.worldSetters = {
-      //
+      // ...
     }
     this.worldMethods = {
       setReticleStyle(entity, styles) {

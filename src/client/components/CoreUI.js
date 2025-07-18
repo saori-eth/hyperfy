@@ -18,6 +18,7 @@ import { ControlPriorities } from '../../core/extras/ControlPriorities'
 // import { MenuApp } from './MenuApp'
 import { ChevronDoubleUpIcon, HandIcon } from './Icons'
 import { Sidebar } from './Sidebar'
+import { sanitizeCSS } from '../utils'
 
 export function CoreUI({ world }) {
   const ref = useRef()
@@ -965,6 +966,7 @@ function Reticle({ world }) {
   const [pointerLocked, setPointerLocked] = useState(world.controls.pointer.locked)
   const [buildMode, setBuildMode] = useState(world.builder.enabled)
   const [customCss, setCustomCss] = useState(world.reticle.css)
+
   useEffect(() => {
     world.on('pointer-lock', setPointerLocked)
     world.on('build-mode', setBuildMode)
@@ -975,8 +977,12 @@ function Reticle({ world }) {
       world.off('reticle-css', setCustomCss)
     }
   }, [])
+
   const visible = isTouch ? true : pointerLocked
   if (!visible) return null
+
+  const safeCustomCss = sanitizeCSS(customCss)
+
   return (
     <div
       className='reticle'
@@ -996,7 +1002,7 @@ function Reticle({ world }) {
           border: 0.125rem solid white;
           mix-blend-mode: difference;
         }
-        ${customCss}
+        ${safeCustomCss}
       `}
     >
       <div className='reticle-item' />

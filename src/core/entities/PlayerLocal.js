@@ -901,7 +901,11 @@ export class PlayerLocal extends Entity {
     this.mode = mode
 
     // set gaze direction
-    this.gaze.copy(FORWARD).applyQuaternion(this.cam.quaternion)
+    if (isXR) {
+      this.gaze.copy(FORWARD).applyQuaternion(this.world.xr.camera.quaternion)
+    } else {
+      this.gaze.copy(FORWARD).applyQuaternion(this.cam.quaternion)
+    }
 
     // apply locomotion
     this.avatar?.instance?.setLocomotion(this.mode, this.axis, this.gaze)

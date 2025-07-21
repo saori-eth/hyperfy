@@ -139,6 +139,10 @@ export class Avatar extends Node {
     }
   }
 
+  setLocomotion(mode, axis, gazeDir) {
+    this.instance?.setLocomotion(mode, axis, gazeDir)
+  }
+
   setEmote(url) {
     // DEPRECATED: use .emote
     this.emote = url
@@ -197,6 +201,9 @@ export class Avatar extends Node {
         },
         getBoneTransform(boneName) {
           return self.getBoneTransform(boneName)
+        },
+        setLocomotion(mode, axis, gazeDir) {
+          self.setLocomotion(mode, axis, gazeDir)
         },
         setEmote(url) {
           // DEPRECATED: use .emote

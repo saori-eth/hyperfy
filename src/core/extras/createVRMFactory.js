@@ -334,108 +334,119 @@ export function createVRMFactory(glb, setupMaterial) {
       }
     }
 
-    const smoothedRotations = new Map()
-    function aimBone(boneName, parentBoneName, targetDir, delta, options = {}) {
-      // Default options
-      const {
-        aimAxis = AimAxis.NEG_Z,
-        upAxis = UpAxis.Y,
-        smoothing = 0.7, // smoothing factor (0-1)
-        weight = 1.0,
-        maintainOffset = false,
-        minAngle = -180,
-        maxAngle = 180,
-      } = options
-      const bone = findBone(boneName)
-      const parentBone = findBone(parentBoneName)
-      if (!bone || !parentBone) return console.warn('aimBone: missing bone')
-      // get or create smoothed state for this bone
-      const boneId = bone.uuid
-      if (!smoothedRotations.has(boneId)) {
-        smoothedRotations.set(boneId, {
-          current: bone.quaternion.clone(),
-          target: new THREE.Quaternion(),
-        })
-      }
-      const smoothState = smoothedRotations.get(boneId)
-      // normalize target direction
-      const normalizedDir = targetDir.clone().normalize()
-      // get parent's world matrix
-      const parentWorldMatrix = getBoneTransform(parentBoneName)
-      // extract parent's world rotation
-      const parentWorldRotation = new THREE.Quaternion()
-      parentWorldMatrix.decompose(new THREE.Vector3(), parentWorldRotation, new THREE.Vector3())
-      // convert world direction to parent's local space
-      const parentWorldRotationInverse = parentWorldRotation.clone().invert()
-      const localDir = normalizedDir.clone().applyQuaternion(parentWorldRotationInverse)
-      // store initial offset if needed
-      if (maintainOffset && !bone.userData.initialRotationOffset) {
-        bone.userData.initialRotationOffset = bone.quaternion.clone()
-      }
-      // calc rotation needed to align aimAxis with localDir
-      const currentAimDir = aimAxis.clone()
-      if (maintainOffset && bone.userData.initialRotationOffset) {
-        currentAimDir.applyQuaternion(bone.userData.initialRotationOffset)
-      }
-      // create rotation
-      const q1 = new THREE.Quaternion()
-      q1.setFromUnitVectors(aimAxis, localDir)
-      // get up direction in parent's local space
-      const worldUp = upAxis.clone()
-      const localUp = worldUp.clone().applyQuaternion(parentWorldRotationInverse)
-      // apply up axis correction
-      const rotatedUp = upAxis.clone().applyQuaternion(q1)
-      const projectedUp = localUp.clone()
-      projectedUp.sub(localDir.clone().multiplyScalar(localDir.dot(localUp)))
-      projectedUp.normalize()
-      if (projectedUp.lengthSq() > 0.001) {
-        const upCorrection = new THREE.Quaternion()
-        upCorrection.setFromUnitVectors(rotatedUp, projectedUp)
+    const aimBone = (() => {
+      const smoothedRotations = new Map()
+      const normalizedDir = new THREE.Vector3()
+      const parentWorldRotationInverse = new THREE.Quaternion()
+      const localDir = new THREE.Vector3()
+      const currentAimDir = new THREE.Vector3()
+      const rot = new THREE.Quaternion()
+      const worldUp = new THREE.Vector3()
+      const localUp = new THREE.Vector3()
+      const rotatedUp = new THREE.Vector3()
+      const projectedUp = new THREE.Vector3()
+      const upCorrection = new THREE.Quaternion()
+      const cross = new THREE.Vector3()
+      const targetRotation = new THREE.Quaternion()
+      const restToTarget = new THREE.Quaternion()
 
-        const angle = rotatedUp.angleTo(projectedUp)
-        const cross = new THREE.Vector3().crossVectors(rotatedUp, projectedUp)
-        if (cross.dot(localDir) < 0) {
-          upCorrection.setFromAxisAngle(localDir, -angle)
-        } else {
-          upCorrection.setFromAxisAngle(localDir, angle)
+      return function aimBone(boneName, parentBoneName, targetDir, delta, options = {}) {
+        // default options
+        const {
+          aimAxis = AimAxis.NEG_Z,
+          upAxis = UpAxis.Y,
+          smoothing = 0.7, // smoothing factor (0-1)
+          weight = 1.0,
+          maintainOffset = false,
+          minAngle = -180,
+          maxAngle = 180,
+        } = options
+        const bone = findBone(boneName)
+        const parentBone = findBone(parentBoneName)
+        if (!bone || !parentBone) return console.warn('aimBone: missing bone')
+        // get or create smoothed state for this bone
+        const boneId = bone.uuid
+        if (!smoothedRotations.has(boneId)) {
+          smoothedRotations.set(boneId, {
+            current: bone.quaternion.clone(),
+            target: new THREE.Quaternion(),
+          })
         }
-
-        q1.premultiply(upCorrection)
-      }
-      // apply initial offset if maintaining it
-      let targetRotation = q1
-      if (maintainOffset && bone.userData.initialRotationOffset) {
-        targetRotation = q1.clone().multiply(bone.userData.initialRotationOffset)
-      }
-      // apply angle limits
-      if (minAngle > -180 || maxAngle < 180) {
-        if (!bone.userData.restRotation) {
-          bone.userData.restRotation = bone.quaternion.clone()
+        const smoothState = smoothedRotations.get(boneId)
+        // normalize target direction
+        normalizedDir.copy(targetDir).normalize()
+        // get parent's world matrix
+        const parentWorldMatrix = getBoneTransform(parentBoneName)
+        // extract parent's world rotation
+        parentWorldMatrix.decompose(v1, parentWorldRotationInverse, v2)
+        parentWorldRotationInverse.invert()
+        // convert world direction to parent's local space
+        localDir.copy(normalizedDir).applyQuaternion(parentWorldRotationInverse)
+        // store initial offset if needed
+        if (maintainOffset && !bone.userData.initialRotationOffset) {
+          bone.userData.initialRotationOffset = bone.quaternion.clone()
         }
-        const restToTarget = bone.userData.restRotation.clone().invert().multiply(targetRotation)
-        const w = restToTarget.w
-        const angle = 2 * Math.acos(Math.min(Math.max(w, -1), 1))
-        const angleDeg = THREE.MathUtils.radToDeg(angle)
-
-        if (angleDeg > maxAngle || angleDeg < minAngle) {
-          const clampedAngleDeg = THREE.MathUtils.clamp(angleDeg, minAngle, maxAngle)
-          const clampedAngleRad = THREE.MathUtils.degToRad(clampedAngleDeg)
-          const scale = clampedAngleRad / angle
-          targetRotation = new THREE.Quaternion().slerpQuaternions(bone.userData.restRotation, targetRotation, scale)
+        // calc rotation needed to align aimAxis with localDir
+        currentAimDir.copy(aimAxis)
+        if (maintainOffset && bone.userData.initialRotationOffset) {
+          currentAimDir.applyQuaternion(bone.userData.initialRotationOffset)
         }
+        // create rotation
+        rot.setFromUnitVectors(aimAxis, localDir)
+        // get up direction in parent's local space
+        worldUp.copy(upAxis)
+        localUp.copy(worldUp).applyQuaternion(parentWorldRotationInverse)
+        // apply up axis correction
+        rotatedUp.copy(upAxis).applyQuaternion(rot)
+        projectedUp.copy(localUp)
+        projectedUp.sub(v1.copy(localDir).multiplyScalar(localDir.dot(localUp)))
+        projectedUp.normalize()
+        if (projectedUp.lengthSq() > 0.001) {
+          upCorrection.setFromUnitVectors(rotatedUp, projectedUp)
+          const angle = rotatedUp.angleTo(projectedUp)
+          cross.crossVectors(rotatedUp, projectedUp)
+          if (cross.dot(localDir) < 0) {
+            upCorrection.setFromAxisAngle(localDir, -angle)
+          } else {
+            upCorrection.setFromAxisAngle(localDir, angle)
+          }
+          rot.premultiply(upCorrection)
+        }
+        // apply initial offset if maintaining it
+        targetRotation.copy(rot)
+        if (maintainOffset && bone.userData.initialRotationOffset) {
+          targetRotation.multiply(bone.userData.initialRotationOffset)
+        }
+        // apply angle limits
+        if (minAngle > -180 || maxAngle < 180) {
+          if (!bone.userData.restRotation) {
+            bone.userData.restRotation = bone.quaternion.clone()
+          }
+          restToTarget.copy(bone.userData.restRotation).invert().multiply(targetRotation)
+          const w = restToTarget.w
+          const angle = 2 * Math.acos(Math.min(Math.max(w, -1), 1))
+          const angleDeg = THREE.MathUtils.radToDeg(angle)
+          if (angleDeg > maxAngle || angleDeg < minAngle) {
+            const clampedAngleDeg = THREE.MathUtils.clamp(angleDeg, minAngle, maxAngle)
+            const clampedAngleRad = THREE.MathUtils.degToRad(clampedAngleDeg)
+            const scale = clampedAngleRad / angle
+            q1.copy(targetRotation)
+            targetRotation.slerpQuaternions(bone.userData.restRotation, q1, scale)
+          }
+        }
+        // apply weight
+        if (weight < 1.0) {
+          targetRotation.slerp(bone.quaternion, 1.0 - weight)
+        }
+        // update smooth state target
+        smoothState.target.copy(targetRotation)
+        // smoothly interpolate from current to target
+        smoothState.current.slerp(smoothState.target, smoothing)
+        // apply smoothed rotation to bone
+        bone.quaternion.copy(smoothState.current)
+        bone.updateMatrixWorld(true)
       }
-      // apply weight
-      if (weight < 1.0) {
-        targetRotation.slerp(bone.quaternion, 1.0 - weight)
-      }
-      // update smooth state target
-      smoothState.target.copy(targetRotation)
-      // smoothly interpolate from current to target
-      smoothState.current.slerp(smoothState.target, smoothing)
-      // apply smoothed rotation to bone
-      bone.quaternion.copy(smoothState.current)
-      bone.updateMatrixWorld(true)
-    }
+    })()
 
     // position target equivalent of aimBone()
     const aimBoneDir = new THREE.Vector3()

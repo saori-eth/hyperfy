@@ -7,7 +7,6 @@ import { getRef } from '../nodes/Node'
 import { Layers } from '../extras/Layers'
 import { ControlPriorities } from '../extras/ControlPriorities'
 import { warn } from '../extras/warn'
-import { fileRemaps } from '../../client/components/Fields'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -332,11 +331,9 @@ export class Apps extends System {
         if (!isArray(entity.fields)) {
           entity.fields = []
         }
+        // apply any initial values
         const props = entity.blueprint.props
         for (const field of entity.fields) {
-          // apply file shortcuts
-          fileRemaps[field.type]?.(field)
-          // apply any initial values
           if (field.initial !== undefined && props[field.key] === undefined) {
             props[field.key] = field.initial
           }

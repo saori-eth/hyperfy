@@ -208,6 +208,8 @@ export class World extends EventEmitter {
       return url
     }
     if (url.startsWith('asset://')) {
+      let pathName = url.substring('asset://'.length)
+
       if (this.assetsDir && allowLocal) {
         const queryIndex = pathName.indexOf('?')
         if (queryIndex !== -1) {

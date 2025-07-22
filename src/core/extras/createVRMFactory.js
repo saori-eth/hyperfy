@@ -13,11 +13,12 @@ const m1 = new THREE.Matrix4()
 
 const FORWARD = new THREE.Vector3(0, 0, -1)
 
-const DIST_CHECK_RATE = 2 // once every second
 const DIST_MIN_RATE = 1 / 5 // 5 times per second
 const DIST_MAX_RATE = 1 / 60 // 40 times per second
 const DIST_MIN = 5 // <= 5m = max rate
 const DIST_MAX = 60 // >= 60m = min rate
+
+const MAX_GAZE_DISTANCE = 40
 
 const material = new THREE.MeshBasicMaterial()
 
@@ -285,27 +286,23 @@ export function createVRMFactory(glb, setupMaterial) {
 
     let elapsed = 0
     let rate = 0
-    let rateCheckedAt = 999
     let rateCheck = true
+    let distance
+
+    const updateRate = () => {
+      const vrmPos = v1.setFromMatrixPosition(vrm.scene.matrix)
+      const camPos = v2.setFromMatrixPosition(hooks.camera.matrixWorld) // prettier-ignore
+      distance = vrmPos.distanceTo(camPos)
+      const clampedDistance = Math.max(distance - DIST_MIN, 0)
+      const normalizedDistance = Math.min(clampedDistance / (DIST_MAX - DIST_MIN), 1) // prettier-ignore
+      rate = DIST_MAX_RATE + normalizedDistance * (DIST_MIN_RATE - DIST_MAX_RATE) // prettier-ignore
+      // console.log('distance', distance)
+      // console.log('rate per second', 1 / rate)
+    }
+
     const update = delta => {
       elapsed += delta
-      let should = true
-      if (rateCheck) {
-        // periodically calculate update rate based on distance to camera
-        rateCheckedAt += delta
-        if (rateCheckedAt >= DIST_CHECK_RATE) {
-          const vrmPos = v1.setFromMatrixPosition(vrm.scene.matrix)
-          const camPos = v2.setFromMatrixPosition(hooks.camera.matrixWorld) // prettier-ignore
-          const distance = vrmPos.distanceTo(camPos)
-          const clampedDistance = Math.max(distance - DIST_MIN, 0)
-          const normalizedDistance = Math.min(clampedDistance / (DIST_MAX - DIST_MIN), 1) // prettier-ignore
-          rate = DIST_MAX_RATE + normalizedDistance * (DIST_MIN_RATE - DIST_MAX_RATE) // prettier-ignore
-          // console.log('distance', distance)
-          // console.log('rate per second', 1 / rate)
-          rateCheckedAt = 0
-        }
-        should = elapsed >= rate
-      }
+      const should = rateCheck ? elapsed >= rate : true
       if (should) {
         mixer.update(elapsed)
         skeleton.bones.forEach(bone => bone.updateMatrixWorld())
@@ -313,7 +310,7 @@ export function createVRMFactory(glb, setupMaterial) {
         if (!currentEmote) {
           updateLocomotion(delta)
         }
-        if (loco.gazeDir && (currentEmote ? currentEmote.gaze : true)) {
+        if (loco.gazeDir && distance < MAX_GAZE_DISTANCE && (currentEmote ? currentEmote.gaze : true)) {
           aimBone('neck', loco.gazeDir, delta, {
             minAngle: -30,
             maxAngle: 30,
@@ -619,6 +616,7 @@ export function createVRMFactory(glb, setupMaterial) {
       setEmote,
       setFirstPerson,
       update,
+      updateRate,
       getBoneTransform,
       setLocomotion,
       setVisible(visible) {

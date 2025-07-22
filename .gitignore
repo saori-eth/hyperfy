@@ -7,3 +7,5 @@ localstorage.json
 node_modules/
 build/
 /world*
+# Don't ignore apps directory - it contains version-controlled scripts
+!/apps/

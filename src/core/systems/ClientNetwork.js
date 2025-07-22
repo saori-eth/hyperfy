@@ -108,6 +108,7 @@ export class ClientNetwork extends System {
     this.apiUrl = data.apiUrl
     this.maxUploadSize = data.maxUploadSize
     this.world.assetsUrl = data.assetsUrl
+    this.world.appsUrl = data.appsUrl
 
     // preload environment model and avatar
     // if (this.world.environment.base) {

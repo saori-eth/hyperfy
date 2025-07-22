@@ -26,16 +26,17 @@ export class AssetWatcher extends System {
   }
 
   async init(options) {
-    if (!this.world.assetsDir) {
-      console.warn('[AssetWatcher] assetsDir not configured. File watching disabled.')
+    if (!this.world.assetsDir && !this.world.appsDir) {
+      console.warn('[AssetWatcher] Neither assetsDir nor appsDir configured. File watching disabled.')
       return
     }
 
-    // Watch for changes to .js files in the assets directory
-    // We only care about files like script-*.js
-    const watchPath = path.join(this.world.assetsDir)
+    // Watch for changes to .js files in both directories
+    const watchPaths = []
+    if (this.world.assetsDir) watchPaths.push(this.world.assetsDir)
+    if (this.world.appsDir) watchPaths.push(this.world.appsDir)
 
-    this.watcher = chokidar.watch(watchPath, {
+    this.watcher = chokidar.watch(watchPaths, {
       ignored: (path, stats) => stats?.isFile() && !path.endsWith('.js'), // only watch js files
       persistent: true,
       ignoreInitial: true, // Don't fire 'add' events on startup
@@ -45,11 +46,23 @@ export class AssetWatcher extends System {
       },
     })
 
-    // console.log(`[AssetWatcher] Watching for script changes in: ${this.world.assetsDir}`)
+    console.log(`[AssetWatcher] Watching for script changes in: ${watchPaths.join(', ')}`)
 
-    // list all js files in the assets directory
-    const jsFiles = (await fs.readdir(this.world.assetsDir)).filter(file => file.endsWith('.js'))
-    // console.log(`[AssetWatcher] Found ${jsFiles.length} script files in ${this.world.assetsDir}`)
+    // list all js files in both directories
+    let jsFileCount = 0
+    if (this.world.assetsDir) {
+      try {
+        const assetsFiles = (await fs.readdir(this.world.assetsDir)).filter(file => file.endsWith('.js'))
+        jsFileCount += assetsFiles.length
+      } catch (e) {}
+    }
+    if (this.world.appsDir) {
+      try {
+        const appsFiles = (await fs.readdir(this.world.appsDir)).filter(file => file.endsWith('.js'))
+        jsFileCount += appsFiles.length
+      } catch (e) {}
+    }
+    console.log(`[AssetWatcher] Found ${jsFileCount} script files total`)
 
     this.watcher
       .on(
@@ -69,30 +82,35 @@ export class AssetWatcher extends System {
 
   handleFileChange(filePath) {
     const filename = path.basename(filePath)
-    console.log(`[AssetWatcher] File changed: ${filename}`)
+    const isInApps = this.world.appsDir && filePath.startsWith(this.world.appsDir)
+    const protocol = isInApps ? 'app://' : 'asset://'
+    
+    console.log(`[AssetWatcher] File changed: ${filename} in ${isInApps ? 'apps' : 'assets'}`)
 
     // Iterate over all blueprints to find which one uses this script
     for (const blueprint of this.world.blueprints.items.values()) {
-      // Normalize the script URL from the blueprint
-      // Example: asset://script-someId.js?v=1 -> script-someId.js
-      if (!blueprint.script || !blueprint.script.startsWith('asset://')) {
-        continue
-      }
+      if (!blueprint.script) continue
+      
+      // Check both asset:// and app:// protocols
+      const isAssetScript = blueprint.script.startsWith('asset://')
+      const isAppScript = blueprint.script.startsWith('app://')
+      
+      if (!isAssetScript && !isAppScript) continue
 
-      let blueprintScriptName = blueprint.script.substring('asset://'.length) // Remove 'asset://'
+      const scriptProtocol = isAssetScript ? 'asset://' : 'app://'
+      let blueprintScriptName = blueprint.script.substring(scriptProtocol.length)
       const queryParamIndex = blueprintScriptName.indexOf('?')
       if (queryParamIndex !== -1) {
-        blueprintScriptName = blueprintScriptName.substring(0, queryParamIndex) // Remove version query params
+        blueprintScriptName = blueprintScriptName.substring(0, queryParamIndex)
       }
 
       if (blueprintScriptName === filename) {
-        // console.log(`[AssetWatcher] Matched ${filename} to blueprint ${blueprint.id}`)
         const newVersion = (blueprint.version || 0) + 1
-        const newScriptUrlInBlueprint = `asset://${filename}?v=${newVersion}`
+        const newScriptUrlInBlueprint = `${protocol}${filename}?v=${newVersion}`
 
-        // console.log(
-        //   `[AssetWatcher] Updating blueprint ${blueprint.id} ('${blueprint.name || 'Unnamed'}') to version ${newVersion} due to change in ${filename}`,
-        // )
+        console.log(
+          `[AssetWatcher] Updating blueprint ${blueprint.id} ('${blueprint.name || 'Unnamed'}') to version ${newVersion} due to change in ${filename}`
+        )
 
         // Modify the blueprint. This will trigger app rebuilds on the server.
         this.world.blueprints.modify({
@@ -101,7 +119,6 @@ export class AssetWatcher extends System {
           script: newScriptUrlInBlueprint,
         })
 
-        // this.world.network.dirtyBlueprints.add(blueprint.id)
         // Broadcast the modification to clients
         this.world.network.send('blueprintModified', {
           id: blueprint.id,
@@ -114,7 +131,10 @@ export class AssetWatcher extends System {
 
   handleFileAdd(filePath) {
     const newFilename = path.basename(filePath)
-    console.log(`[AssetWatcher] File added: ${newFilename}`)
+    const isInApps = this.world.appsDir && filePath.startsWith(this.world.appsDir)
+    const protocol = isInApps ? 'app://' : 'asset://'
+    
+    console.log(`[AssetWatcher] File added: ${newFilename} in ${isInApps ? 'apps' : 'assets'} (full path: ${filePath})`)
 
     // Check if this is a rename operation
     if (this.recentlyUnlinkedBlueprintId && this.recentlyUnlinkedOldFilename) {
@@ -132,10 +152,10 @@ export class AssetWatcher extends System {
         this.recentlyUnlinkedOldFilename = null
 
         const newVersion = (blueprint.version || 0) + 1
-        const newScriptUrlInBlueprint = `asset://${newFilename}?v=${newVersion}` // Add version query param
+        const newScriptUrlInBlueprint = `${protocol}${newFilename}?v=${newVersion}` // Use correct protocol
 
         console.log(
-          `[AssetWatcher] Detected rename from ${oldFilename} to ${newFilename} for blueprint ${blueprintId} ('${blueprint.name || 'Unnamed'}'). Updating to version ${newVersion}.`
+          `[AssetWatcher] Detected rename from ${oldFilename} to ${newFilename} for blueprint ${blueprintId} ('${blueprint.name || 'Unnamed'}'). Updating to version ${newVersion} with protocol ${protocol}.`
         )
 
         this.world.blueprints.modify({
@@ -186,11 +206,11 @@ export class AssetWatcher extends System {
     }
 
     const newVersion = (blueprint.version || 0) + 1
-    const newScriptUrlInBlueprint = `asset://${newFilename}?v=${newVersion}` // Add version query param
+    const newScriptUrlInBlueprint = `${protocol}${newFilename}?v=${newVersion}` // Use correct protocol
 
-    // console.log(
-    //   `[AssetWatcher] Associating new script ${newFilename} with blueprint ${blueprintId} ('${blueprint.name || 'Unnamed'}'), version ${newVersion}`,
-    // )
+    console.log(
+      `[AssetWatcher] Associating new script ${newFilename} with blueprint ${blueprintId} ('${blueprint.name || 'Unnamed'}'), version ${newVersion} with protocol ${protocol}`
+    )
 
     this.world.blueprints.modify({
       id: blueprintId,
@@ -269,8 +289,8 @@ export class AssetWatcher extends System {
   }
 
   async renameScript(blueprintId, newFilename) {
-    if (!this.world.assetsDir) {
-      throw new Error('Assets directory not configured.')
+    if (!this.world.assetsDir && !this.world.appsDir) {
+      throw new Error('Neither assets nor apps directory configured.')
     }
     if (
       !newFilename ||
@@ -287,19 +307,34 @@ export class AssetWatcher extends System {
       throw new Error(`Blueprint with id ${blueprintId} not found.`)
     }
 
-    if (!blueprint.script || !blueprint.script.startsWith('asset://')) {
-      throw new Error('Blueprint does not have a manageable script to rename.')
+    if (!blueprint.script) {
+      throw new Error('Blueprint does not have a script to rename.')
     }
 
-    const oldFilenameBase = blueprint.script.substring('asset://'.length).split('?')[0]
+    // Determine current protocol and filename
+    const isAssetScript = blueprint.script.startsWith('asset://')
+    const isAppScript = blueprint.script.startsWith('app://')
+    
+    if (!isAssetScript && !isAppScript) {
+      throw new Error('Blueprint script must use asset:// or app:// protocol.')
+    }
+
+    const currentProtocol = isAssetScript ? 'asset://' : 'app://'
+    const oldFilenameBase = blueprint.script.substring(currentProtocol.length).split('?')[0]
 
     if (oldFilenameBase === newFilename) {
-      // console.log('[AssetWatcher] New filename is the same as the old one. No action taken.');
       return // No change needed
     }
 
-    const oldPath = path.join(this.world.assetsDir, oldFilenameBase)
-    const newPath = path.join(this.world.assetsDir, newFilename)
+    // For named scripts, we always move to apps directory
+    const shouldMoveToApps = this.world.appsDir && !newFilename.match(/^[a-f0-9]{32}\.js$/)
+    
+    const oldDir = isAssetScript ? this.world.assetsDir : this.world.appsDir
+    const newDir = shouldMoveToApps ? this.world.appsDir : oldDir
+    const newProtocol = shouldMoveToApps ? 'app://' : currentProtocol
+    
+    const oldPath = path.join(oldDir, oldFilenameBase)
+    const newPath = path.join(newDir, newFilename)
 
     try {
       await fs.access(oldPath) // Check if old file exists

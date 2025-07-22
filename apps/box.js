@@ -1,14 +1,14 @@
-app.configure([
-  {
-    key: 'collision',
-    type: 'toggle',
-    label: 'Collision',
-    initial: true,
-    hint: 'Forces all meshes to have collision. Disable this if your model already has embedded collision.',
-  },
-])
+// app.configure([
+//   {
+//     key: 'collision',
+//     type: 'toggle',
+//     label: 'Collision',
+//     initial: true,
+//     hint: 'Forces all meshes to have collision. Disable this if your model already has embedded collision.'
+//   },
+// ])
 
-const collision = props.collision
+// const collision = props.collision
 
 // if (collision) {
 //   const m1 = new Matrix4()

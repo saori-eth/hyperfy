@@ -141,7 +141,7 @@ fastify.post('/api/upload', async (req, reply) => {
     // For script files, use the original filename directly
     finalFilename = originalFilename.split('?')[0]
     // Named scripts go to apps/, hash-based scripts stay in assets/
-    const isHashedName = finalFilename.match(/^[a-f0-9]{32}\.js$/)
+    const isHashedName = finalFilename.match(/^[a-f0-9]{64}\.js$/)
     targetDir = !isHashedName && appsDir ? appsDir : assetsDir
   } else {
     // For other files, hash the content for the filename (existing behavior)

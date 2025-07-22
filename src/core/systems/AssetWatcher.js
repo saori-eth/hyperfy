@@ -327,7 +327,7 @@ export class AssetWatcher extends System {
     }
 
     // For named scripts, we always move to apps directory
-    const shouldMoveToApps = this.world.appsDir && !newFilename.match(/^[a-f0-9]{32}\.js$/)
+    const shouldMoveToApps = this.world.appsDir && !newFilename.match(/^[a-f0-9]{64}\.js$/)
     
     const oldDir = isAssetScript ? this.world.assetsDir : this.world.appsDir
     const newDir = shouldMoveToApps ? this.world.appsDir : oldDir

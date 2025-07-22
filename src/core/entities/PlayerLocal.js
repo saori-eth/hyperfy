@@ -280,6 +280,7 @@ export class PlayerLocal extends Entity {
         if (!this.stick && touch.position.x < this.control.screen.width / 2) {
           this.stick = {
             center: touch.position.clone(),
+            active: false,
             touch,
           }
         } else if (!this.pan) {
@@ -745,6 +746,11 @@ export class PlayerLocal extends Entity {
       this.avatar.visible = true
     }
 
+    // stick movement threshold
+    if (this.stick && !this.stick.active) {
+      this.stick.active = this.stick.center.distanceTo(this.stick.touch.position) > 3
+    }
+
     // watch jump presses to either fly or air-jump
     this.jumpDown = isXR ? this.control.xrRightBtn1.down : this.control.space.down || this.control.touchA.down
     if (isXR ? this.control.xrRightBtn1.pressed : this.control.space.pressed || this.control.touchA.pressed) {
@@ -757,7 +763,7 @@ export class PlayerLocal extends Entity {
       // in xr use controller input
       this.moveDir.x = this.control.xrLeftStick.value.x
       this.moveDir.z = this.control.xrLeftStick.value.z
-    } else if (this.stick) {
+    } else if (this.stick?.active) {
       // if we have a touch joystick use that
       const touchX = this.stick.touch.position.x
       const touchY = this.stick.touch.position.y
@@ -799,7 +805,7 @@ export class PlayerLocal extends Entity {
     }
 
     // determine if we're "running"
-    if (this.stick || isXR) {
+    if (this.stick?.active || isXR) {
       // touch/xr joysticks at full extent
       this.running = this.moving && this.moveDir.length() > 0.9
     } else {

@@ -39,6 +39,9 @@ const m1 = new THREE.Matrix4()
 const m2 = new THREE.Matrix4()
 const m3 = new THREE.Matrix4()
 
+const gazeTiltAngle = 10 * DEG2RAD
+const gazeTiltAxis = new THREE.Vector3(1, 0, 0) // X-axis for pitch
+
 // TODO: de-dup createVRMFactory.js has a copy
 const Modes = {
   IDLE: 0,
@@ -911,6 +914,11 @@ export class PlayerLocal extends Entity {
       this.gaze.copy(FORWARD).applyQuaternion(this.world.xr.camera.quaternion)
     } else {
       this.gaze.copy(FORWARD).applyQuaternion(this.cam.quaternion)
+      if (!this.firstPerson) {
+        // tilt slightly up in third person as people look from above
+        v1.copy(gazeTiltAxis).applyQuaternion(this.cam.quaternion) // tilt in cam space
+        this.gaze.applyAxisAngle(v1, gazeTiltAngle) // positive for upward tilt
+      }
     }
 
     // apply locomotion

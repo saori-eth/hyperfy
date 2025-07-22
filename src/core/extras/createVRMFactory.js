@@ -318,13 +318,13 @@ export function createVRMFactory(glb, setupMaterial) {
             minAngle: -30,
             maxAngle: 30,
             smoothing: 0.4,
-            weight: 0.5,
+            weight: 0.6,
           })
           aimBone('head', loco.gazeDir, delta, {
             minAngle: -30,
             maxAngle: 30,
             smoothing: 0.4,
-            weight: 1,
+            weight: 0.6,
           })
         }
         // tvrm.humanoid.update(elapsed)

@@ -22,6 +22,8 @@ const names = [
   'kick',
   'ping',
   'pong',
+  'scriptRenamed',
+
 ]
 
 const byName = {}

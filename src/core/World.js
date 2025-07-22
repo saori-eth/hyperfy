@@ -207,7 +207,27 @@ export class World extends EventEmitter {
     if (url.startsWith('blob:')) {
       return url
     }
+    if (url.startsWith('app://')) {
+      let pathName = url.substring('app://'.length)
+      
+      if (this.appsDir && allowLocal) {
+        const queryIndex = pathName.indexOf('?')
+        if (queryIndex !== -1) {
+          pathName = pathName.substring(0, queryIndex)
+        }
+        const baseAppsDir = this.appsDir.endsWith('/') ? this.appsDir : this.appsDir + '/'
+        return baseAppsDir + pathName
+      } else if (this.appsUrl) {
+        const baseAppsUrl = this.appsUrl.endsWith('/') ? this.appsUrl : this.appsUrl + '/'
+        return baseAppsUrl + pathName
+      } else {
+        console.error('resolveURL: no appsUrl or appsDir defined for app:// URL')
+        return url
+      }
+    }
     if (url.startsWith('asset://')) {
+      let pathName = url.substring('asset://'.length)
+
       if (this.assetsDir && allowLocal) {
         const queryIndex = pathName.indexOf('?')
         if (queryIndex !== -1) {

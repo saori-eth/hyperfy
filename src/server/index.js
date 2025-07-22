@@ -21,12 +21,14 @@ import { initCollections } from './collections'
 const rootDir = path.join(__dirname, '../')
 const worldDir = path.join(rootDir, process.env.WORLD)
 const assetsDir = path.join(worldDir, '/assets')
+const appsDir = path.join(rootDir, 'apps')
 const collectionsDir = path.join(worldDir, '/collections')
 const port = process.env.PORT
 
 // create world folders if needed
 await fs.ensureDir(worldDir)
 await fs.ensureDir(assetsDir)
+await fs.ensureDir(appsDir)
 await fs.ensureDir(collectionsDir)
 
 // copy over built-in assets and collections
@@ -45,8 +47,10 @@ const storage = new Storage(path.join(worldDir, '/storage.json'))
 // create world
 const world = createServerWorld()
 world.assetsUrl = process.env.PUBLIC_ASSETS_URL
+world.appsUrl = process.env.PUBLIC_APPS_URL || `${process.env.PUBLIC_ASSETS_URL.replace('/assets', '')}/apps`
+world.appsDir = appsDir
 world.collections.deserialize(collections)
-world.init({ db, storage, assetsDir })
+world.init({ db, storage, assetsDir, appsDir })
 
 const fastify = Fastify({ logger: { level: 'error' } })
 
@@ -85,6 +89,15 @@ fastify.register(statics, {
     res.setHeader('Expires', new Date(Date.now() + 31536000000).toUTCString()) // older browsers
   },
 })
+fastify.register(statics, {
+  root: appsDir,
+  prefix: '/apps/',
+  decorateReply: false,
+  setHeaders: res => {
+    // apps are version controlled but can change, use moderate caching
+    res.setHeader('Cache-Control', 'public, max-age=300') // 5 minutes
+  },
+})
 fastify.register(multipart, {
   limits: {
     fileSize: 200 * 1024 * 1024, // 200MB
@@ -121,18 +134,24 @@ fastify.post('/api/upload', async (req, reply) => {
   const buffer = Buffer.concat(chunks)
   // hash from buffer
   let finalFilename
+  let targetDir
   const isScriptFile = originalFilename.split('?')[0].endsWith('.js')
 
   if (isScriptFile) {
     // For script files, use the original filename directly
     finalFilename = originalFilename.split('?')[0]
+    // Named scripts go to apps/, hash-based scripts stay in assets/
+    const isHashedName = finalFilename.match(/^[a-f0-9]{64}\.js$/)
+    targetDir = !isHashedName && appsDir ? appsDir : assetsDir
   } else {
     // For other files, hash the content for the filename (existing behavior)
     const hash = await hashFile(buffer)
     finalFilename = `${hash}.${ext}`
+    targetDir = assetsDir
   }
+  
   // save to fs
-  const filePath = path.join(assetsDir, finalFilename)
+  const filePath = path.join(targetDir, finalFilename)
 
   // For script files, we always want to write/overwrite.
   // For other (hashed) files, the exists check prevents re-writing identical content.
@@ -148,9 +167,15 @@ fastify.post('/api/upload', async (req, reply) => {
 
 fastify.get('/api/upload-check', async (req, reply) => {
   const filename = req.query.filename
-  const filePath = path.join(assetsDir, filename)
-  const exists = await fs.exists(filePath)
-  return { exists }
+  
+  // Check both directories
+  const assetsPath = path.join(assetsDir, filename)
+  const appsPath = appsDir ? path.join(appsDir, filename) : null
+  
+  const existsInAssets = await fs.exists(assetsPath)
+  const existsInApps = appsPath ? await fs.exists(appsPath) : false
+  
+  return { exists: existsInAssets || existsInApps }
 })
 
 fastify.get('/health', async (request, reply) => {

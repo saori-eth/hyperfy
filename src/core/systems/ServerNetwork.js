@@ -1,4 +1,6 @@
 import moment from 'moment'
+import path from 'path'
+import fs from 'fs-extra'
 import { writePacket } from '../packets'
 import { Socket } from '../Socket'
 import { addRole, hasRole, removeRole, serializeRoles, uuid } from '../utils'
@@ -294,6 +296,7 @@ export class ServerNetwork extends System {
         id: socket.id,
         serverTime: performance.now(),
         assetsUrl: process.env.PUBLIC_ASSETS_URL,
+        appsUrl: this.world.appsUrl,
         apiUrl: process.env.PUBLIC_API_URL,
         maxUploadSize: process.env.PUBLIC_MAX_UPLOAD_SIZE,
         collections: this.world.collections.serialize(),
@@ -474,10 +477,37 @@ export class ServerNetwork extends System {
     entity?.onEvent(version, name, data, socket.id)
   }
 
-  onEntityRemoved = (socket, id) => {
+  onEntityRemoved = async (socket, id) => {
     if (!this.isBuilder(socket.player))
       return console.error('player attempted to remove entity without builder permission')
     const entity = this.world.entities.get(id)
+    
+    // Clean up app script files before removing entity
+    if (entity?.isApp && entity.blueprint?.script) {
+      const scriptUrl = entity.blueprint.script
+      
+      // Check if this script is used by any other entities
+      let scriptInUse = false
+      for (const otherEntity of this.world.entities.items.values()) {
+        if (otherEntity.data.id !== id && otherEntity.blueprint?.script === scriptUrl) {
+          scriptInUse = true
+          break
+        }
+      }
+      
+      // If script is not used by any other entity, delete the file
+      if (!scriptInUse && scriptUrl.startsWith('app://') && this.world.appsDir) {
+        const filename = scriptUrl.substring('app://'.length).split('?')[0]
+        const filePath = path.join(this.world.appsDir, filename)
+        try {
+          await fs.remove(filePath)
+          console.log(`[ServerNetwork] Deleted orphaned app script: ${filename}`)
+        } catch (err) {
+          console.error(`[ServerNetwork] Failed to delete app script ${filename}:`, err)
+        }
+      }
+    }
+    
     this.world.entities.remove(id)
     this.send('entityRemoved', id, socket.id)
     if (entity.isApp) this.dirtyApps.add(id)

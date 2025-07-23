@@ -80,3 +80,14 @@ Can only be called on a local player.
 
 Prompts the player to share their screen, and then casts it to all video nodes that have a matching `.screenId` property.
 
+### `.setVoiceLevel(level)`
+
+Overrides the players voice chat level to `disabled`, `spatial` or `global`.
+
+By default all players have the voice level defined in the world settings menu, but `.setVoiceLevel` allows apps to override it using any logic needed.
+
+Calling `player.setVoiceLevel(null)` removes the current apps override and reverting to the world setting (unless another app is overriding it).
+
+**NOTE:** Changes stack with priority, so if two apps have set a voice level, the higher priority level takes precendence. Global is the highest priority.
+
+Must be called on the server for security reasons.

@@ -195,6 +195,10 @@ export class ClientNetwork extends System {
     this.world.entities.player?.setSessionAvatar(data.avatar)
   }
 
+  onLiveKitLevel = data => {
+    this.world.livekit.setLevel(data.playerId, data.level)
+  }
+
   onPong = time => {
     this.world.stats?.onPong(time)
   }

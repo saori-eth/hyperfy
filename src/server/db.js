@@ -4,6 +4,7 @@ import fs from 'fs-extra'
 import path from 'path'
 import { uuid } from '../core/utils'
 import { importApp } from '../core/extras/appTools'
+import { defaults } from 'lodash-es'
 
 let db
 
@@ -351,6 +352,27 @@ const migrations = [
         updatedAt: now,
       }
       await db('entities').insert(entity)
+    }
+  },
+  // ensure settings exists with defaults AND default new voice setting to spatial
+  async db => {
+    const row = await db('config').where('key', 'settings').first()
+    const settings = row ? JSON.parse(row.value) : {}
+    defaults(settings, {
+      title: null,
+      desc: null,
+      image: null,
+      avatar: null,
+      voice: 'spatial',
+      public: false,
+      playerLimit: 0,
+      ao: true,
+    })
+    const value = JSON.stringify(settings)
+    if (row) {
+      await db('config').where('key', 'settings').update({ value })
+    } else {
+      await db('config').insert({ key: 'settings', value })
     }
   },
 ]

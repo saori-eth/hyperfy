@@ -140,6 +140,7 @@ export function Sidebar({ world, ui }) {
             )}
             {livekit.available && livekit.connected && (
               <Btn
+                muted={livekit.mic && livekit.level === 'disabled'}
                 onClick={() => {
                   world.livekit.setMicrophoneEnabled()
                 }}
@@ -256,10 +257,10 @@ function Section({ active, top, bottom, children }) {
   )
 }
 
-function Btn({ disabled, suspended, active, children, ...props }) {
+function Btn({ disabled, suspended, active, muted, children, ...props }) {
   return (
     <div
-      className={cls('sidebar-btn', { disabled, suspended, active })}
+      className={cls('sidebar-btn', { disabled, suspended, active, muted })}
       css={css`
         width: 2.75rem;
         height: 1.875rem;
@@ -296,6 +297,9 @@ function Btn({ disabled, suspended, active, children, ...props }) {
         }
         &.disabled {
           color: rgba(255, 255, 255, 0.3);
+        }
+        &.muted {
+          color: #ff4b4b;
         }
       `}
       {...props}
@@ -602,6 +606,11 @@ function Prefs({ world, hidden }) {
   )
 }
 
+const voiceChatOptions = [
+  { label: 'Disabled', value: 'disabled' },
+  { label: 'Spatial', value: 'spatial' },
+  { label: 'Global', value: 'global' },
+]
 function World({ world, hidden }) {
   const player = world.entities.player
   const { isAdmin } = usePermissions(world)
@@ -609,6 +618,7 @@ function World({ world, hidden }) {
   const [desc, setDesc] = useState(world.settings.desc)
   const [image, setImage] = useState(world.settings.image)
   const [avatar, setAvatar] = useState(world.settings.avatar)
+  const [voice, setVoice] = useState(world.settings.voice)
   const [playerLimit, setPlayerLimit] = useState(world.settings.playerLimit)
   const [ao, setAO] = useState(world.settings.ao)
   const [publicc, setPublic] = useState(world.settings.public)
@@ -618,6 +628,7 @@ function World({ world, hidden }) {
       if (changes.desc) setDesc(changes.desc.value)
       if (changes.image) setImage(changes.image.value)
       if (changes.avatar) setAvatar(changes.avatar.value)
+      if (changes.voice) setVoice(changes.voice.value)
       if (changes.playerLimit) setPlayerLimit(changes.playerLimit.value)
       if (changes.ao) setAO(changes.ao.value)
       if (changes.public) setPublic(changes.public.value)
@@ -689,6 +700,13 @@ function World({ world, hidden }) {
             value={avatar}
             onChange={value => world.settings.set('avatar', value, true)}
             world={world}
+          />
+          <FieldSwitch
+            label='Voice Chat'
+            hint='Set the base voice chat mode. Apps are able to modify this using custom rules.'
+            options={voiceChatOptions}
+            value={voice}
+            onChange={voice => world.settings.set('voice', voice, true)}
           />
           <FieldNumber
             label='Player Limit'

@@ -266,7 +266,7 @@ export class ServerNetwork extends System {
       }
 
       // livekit options
-      const livekit = await this.world.livekit.getPlayerOpts(user.id)
+      const livekit = await this.world.livekit.serialize(user.id)
 
       // create socket
       const socket = new Socket({ id: user.id, ws, network: this })
@@ -538,6 +538,7 @@ export class ServerNetwork extends System {
   }
 
   onDisconnect = (socket, code) => {
+    this.world.livekit.clearModifiers(socket.id)
     socket.player.destroy(true)
     this.sockets.delete(socket.id)
   }

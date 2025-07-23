@@ -9,6 +9,7 @@ export class Settings extends System {
     this.desc = null
     this.image = null
     this.avatar = null
+    this.voice = null
     this.public = null
     this.playerLimit = null
     this.ao = null
@@ -21,14 +22,16 @@ export class Settings extends System {
     this.desc = data.desc
     this.image = data.image
     this.avatar = data.avatar
+    this.voice = data.voice
     this.public = data.public
     this.playerLimit = data.playerLimit
-    this.ao = isBoolean(data.ao) ? data.ao : true // default true
+    this.ao = data.ao
     this.emit('change', {
       title: { value: this.title },
       desc: { value: this.desc },
       image: { value: this.image },
       avatar: { value: this.avatar },
+      voice: { value: this.voice },
       public: { value: this.public },
       playerLimit: { value: this.playerLimit },
       ao: { value: this.ao },
@@ -41,6 +44,7 @@ export class Settings extends System {
       title: this.title,
       image: this.image,
       avatar: this.avatar,
+      voice: this.voice,
       public: this.public,
       playerLimit: this.playerLimit,
       ao: this.ao,

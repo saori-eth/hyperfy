@@ -15,7 +15,7 @@ export function ScriptEditor({ app, onHandle }) {
   const mountRef = useRef()
   const codeRef = useRef()
   const [editor, setEditor] = useState(null)
-  const [fontSize, setFontSize] = useState(() => 14 * app.world.prefs.ui)
+  const [fontSize, setFontSize] = useState(() => 12 * app.world.prefs.ui)
   const save = async () => {
     const world = app.world
     const blueprint = app.blueprint

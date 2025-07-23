@@ -7,6 +7,7 @@ import { getRef } from '../nodes/Node'
 import { Layers } from '../extras/Layers'
 import { ControlPriorities } from '../extras/ControlPriorities'
 import { warn } from '../extras/warn'
+import { makeTrimesh } from '../extras/makeTrimesh'
 
 const isBrowser = typeof window !== 'undefined'
 
@@ -341,6 +342,9 @@ export class Apps extends System {
           }
         }
         entity.onFields?.(entity.fields)
+      },
+      makeTrimesh(entity, body) {
+        return makeTrimesh(entity.appProxy, body)
       },
     }
   }

@@ -17,6 +17,7 @@ export function ScriptEditor({ app, onHandle }) {
   const [editor, setEditor] = useState(null)
   const [isLocked, setIsLocked] = useState(false)
 
+  const [fontSize, setFontSize] = useState(() => 12 * app.world.prefs.ui)
   const save = async () => {
     setIsLocked(true)
     if (document.activeElement) {
@@ -64,6 +65,22 @@ export function ScriptEditor({ app, onHandle }) {
     onHandle({ save })
   }, [])
   useEffect(() => {
+    const onPrefsChange = changes => {
+      if (changes.ui) {
+        setFontSize(14 * changes.ui.value)
+      }
+    }
+    app.world.prefs.on('change', onPrefsChange)
+    return () => {
+      app.world.prefs.off('change', onPrefsChange)
+    }
+  }, [])
+  useEffect(() => {
+    if (editor) {
+      editor.updateOptions({ fontSize })
+    }
+  }, [editor, fontSize])
+  useEffect(() => {
     return () => {
       saveState()
       editor?.dispose()
@@ -94,6 +111,7 @@ export function ScriptEditor({ app, onHandle }) {
         automaticLayout: true,
         tabSize: 2,
         insertSpaces: true,
+        fontSize: fontSize,
       })
       if (state?.viewState) {
         editor.restoreViewState(state.viewState)

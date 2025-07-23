@@ -13,11 +13,12 @@ const m1 = new THREE.Matrix4()
 
 const FORWARD = new THREE.Vector3(0, 0, -1)
 
-const DIST_CHECK_RATE = 2 // once every second
 const DIST_MIN_RATE = 1 / 5 // 5 times per second
 const DIST_MAX_RATE = 1 / 60 // 40 times per second
 const DIST_MIN = 5 // <= 5m = max rate
 const DIST_MAX = 60 // >= 60m = min rate
+
+const MAX_GAZE_DISTANCE = 40
 
 const material = new THREE.MeshBasicMaterial()
 
@@ -285,27 +286,23 @@ export function createVRMFactory(glb, setupMaterial) {
 
     let elapsed = 0
     let rate = 0
-    let rateCheckedAt = 999
     let rateCheck = true
+    let distance
+
+    const updateRate = () => {
+      const vrmPos = v1.setFromMatrixPosition(vrm.scene.matrix)
+      const camPos = v2.setFromMatrixPosition(hooks.camera.matrixWorld) // prettier-ignore
+      distance = vrmPos.distanceTo(camPos)
+      const clampedDistance = Math.max(distance - DIST_MIN, 0)
+      const normalizedDistance = Math.min(clampedDistance / (DIST_MAX - DIST_MIN), 1) // prettier-ignore
+      rate = DIST_MAX_RATE + normalizedDistance * (DIST_MIN_RATE - DIST_MAX_RATE) // prettier-ignore
+      // console.log('distance', distance)
+      // console.log('rate per second', 1 / rate)
+    }
+
     const update = delta => {
       elapsed += delta
-      let should = true
-      if (rateCheck) {
-        // periodically calculate update rate based on distance to camera
-        rateCheckedAt += delta
-        if (rateCheckedAt >= DIST_CHECK_RATE) {
-          const vrmPos = v1.setFromMatrixPosition(vrm.scene.matrix)
-          const camPos = v2.setFromMatrixPosition(hooks.camera.matrixWorld) // prettier-ignore
-          const distance = vrmPos.distanceTo(camPos)
-          const clampedDistance = Math.max(distance - DIST_MIN, 0)
-          const normalizedDistance = Math.min(clampedDistance / (DIST_MAX - DIST_MIN), 1) // prettier-ignore
-          rate = DIST_MAX_RATE + normalizedDistance * (DIST_MIN_RATE - DIST_MAX_RATE) // prettier-ignore
-          // console.log('distance', distance)
-          // console.log('rate per second', 1 / rate)
-          rateCheckedAt = 0
-        }
-        should = elapsed >= rate
-      }
+      const should = rateCheck ? elapsed >= rate : true
       if (should) {
         mixer.update(elapsed)
         skeleton.bones.forEach(bone => bone.updateMatrixWorld())
@@ -313,18 +310,18 @@ export function createVRMFactory(glb, setupMaterial) {
         if (!currentEmote) {
           updateLocomotion(delta)
         }
-        if (loco.gazeDir && (currentEmote ? currentEmote.gaze : true)) {
-          aimBone('neck', 'upperChest', loco.gazeDir, delta, {
+        if (loco.gazeDir && distance < MAX_GAZE_DISTANCE && (currentEmote ? currentEmote.gaze : true)) {
+          aimBone('neck', loco.gazeDir, delta, {
             minAngle: -30,
             maxAngle: 30,
             smoothing: 0.4,
-            weight: 0.5,
+            weight: 0.6,
           })
-          aimBone('head', 'neck', loco.gazeDir, delta, {
+          aimBone('head', loco.gazeDir, delta, {
             minAngle: -30,
             maxAngle: 30,
             smoothing: 0.4,
-            weight: 1,
+            weight: 0.6,
           })
         }
         // tvrm.humanoid.update(elapsed)
@@ -337,6 +334,7 @@ export function createVRMFactory(glb, setupMaterial) {
     const aimBone = (() => {
       const smoothedRotations = new Map()
       const normalizedDir = new THREE.Vector3()
+      const parentWorldMatrix = new THREE.Matrix4()
       const parentWorldRotationInverse = new THREE.Quaternion()
       const localDir = new THREE.Vector3()
       const currentAimDir = new THREE.Vector3()
@@ -350,7 +348,7 @@ export function createVRMFactory(glb, setupMaterial) {
       const targetRotation = new THREE.Quaternion()
       const restToTarget = new THREE.Quaternion()
 
-      return function aimBone(boneName, parentBoneName, targetDir, delta, options = {}) {
+      return function aimBone(boneName, targetDir, delta, options = {}) {
         // default options
         const {
           aimAxis = AimAxis.NEG_Z,
@@ -362,8 +360,9 @@ export function createVRMFactory(glb, setupMaterial) {
           maxAngle = 180,
         } = options
         const bone = findBone(boneName)
-        const parentBone = findBone(parentBoneName)
-        if (!bone || !parentBone) return console.warn('aimBone: missing bone')
+        const parentBone = glb.userData.vrm.humanoid.humanBones[boneName].node.parent
+        if (!bone) return console.warn(`aimBone: missing bone (${boneName})`)
+        if (!parentBone) return console.warn(`aimBone: no parent bone`)
         // get or create smoothed state for this bone
         const boneId = bone.uuid
         if (!smoothedRotations.has(boneId)) {
@@ -376,7 +375,7 @@ export function createVRMFactory(glb, setupMaterial) {
         // normalize target direction
         normalizedDir.copy(targetDir).normalize()
         // get parent's world matrix
-        const parentWorldMatrix = getBoneTransform(parentBoneName)
+        parentWorldMatrix.multiplyMatrices(vrm.scene.matrixWorld, parentBone.matrixWorld)
         // extract parent's world rotation
         parentWorldMatrix.decompose(v1, parentWorldRotationInverse, v2)
         parentWorldRotationInverse.invert()
@@ -450,14 +449,13 @@ export function createVRMFactory(glb, setupMaterial) {
 
     // position target equivalent of aimBone()
     const aimBoneDir = new THREE.Vector3()
-    function aimBoneAt(boneName, parentBoneName, targetPos, delta, options = {}) {
+    function aimBoneAt(boneName, targetPos, delta, options = {}) {
       const bone = findBone(boneName)
-      const parentBone = findBone(parentBoneName)
-      if (!bone || !parentBone) return console.warn('aimBoneAt: missing bone')
+      if (!bone) return console.warn(`aimBone: missing bone (${boneName})`)
       const boneWorldMatrix = getBoneTransform(boneName)
       const boneWorldPos = v1.setFromMatrixPosition(boneWorldMatrix)
       aimBoneDir.subVectors(targetPos, boneWorldPos).normalize()
-      aimBone(boneName, parentBoneName, aimBoneDir, delta, options)
+      aimBone(boneName, aimBoneDir, delta, options)
     }
 
     // hooks.loader.load('emote', 'asset://rifle-aim.glb').then(emo => {
@@ -618,6 +616,7 @@ export function createVRMFactory(glb, setupMaterial) {
       setEmote,
       setFirstPerson,
       update,
+      updateRate,
       getBoneTransform,
       setLocomotion,
       setVisible(visible) {

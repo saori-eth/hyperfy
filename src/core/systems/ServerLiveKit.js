@@ -20,6 +20,7 @@ export class ServerLiveKit extends System {
     this.enabled = this.wsUrl && this.apiKey && this.apiSecret
     this.modifiers = {} // [playerId] => Set({ level })
     this.levels = {} // [playerId] => level (disabled, spatial, global)
+    this.muted = new Set()
   }
 
   async serialize(playerId) {
@@ -27,6 +28,7 @@ export class ServerLiveKit extends System {
     const data = {}
     data.wsUrl = this.wsUrl
     data.levels = this.levels
+    data.muted = this.muted
     // generate voice access token for the player
     const at = new AccessToken(this.apiKey, this.apiSecret, {
       identity: playerId,
@@ -42,6 +44,19 @@ export class ServerLiveKit extends System {
     at.addGrant(videoGrant)
     data.token = await at.toJwt()
     return data
+  }
+
+  setMuted(playerId, muted) {
+    if (muted && !this.muted.has(playerId)) {
+      this.muted.add(playerId)
+      this.world.network.send('mute', { playerId, muted })
+      return
+    }
+    if (!muted && this.muted.has(playerId)) {
+      this.muted.delete(playerId)
+      this.world.network.send('mute', { playerId, muted })
+      return
+    }
   }
 
   addModifier(playerId, level) {

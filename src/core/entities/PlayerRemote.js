@@ -3,6 +3,7 @@ import { Entity } from './Entity'
 import { createNode } from '../extras/createNode'
 import { LerpQuaternion } from '../extras/LerpQuaternion'
 import { LerpVector3 } from '../extras/LerpVector3'
+import { hasRank, Ranks } from '../extras/ranks'
 
 let capsuleGeometry
 {
@@ -17,6 +18,7 @@ export class PlayerRemote extends Entity {
   constructor(world, data, local) {
     super(world, data, local)
     this.isPlayer = true
+    this.isRemote = true
     this.init()
   }
 
@@ -110,6 +112,26 @@ export class PlayerRemote extends Entity {
     }
   }
 
+  outranks(otherPlayer) {
+    const rank = Math.max(this.data.rank, this.world.settings.effectiveRank)
+    const otherRank = Math.max(otherPlayer.data.rank, this.world.settings.effectiveRank)
+    return rank > otherRank
+  }
+
+  isAdmin() {
+    const rank = Math.max(this.data.rank, this.world.settings.effectiveRank)
+    return hasRank(rank, Ranks.ADMIN)
+  }
+
+  isBuilder() {
+    const rank = Math.max(this.data.rank, this.world.settings.effectiveRank)
+    return hasRank(rank, Ranks.BUILDER)
+  }
+
+  isMuted() {
+    return this.world.livekit.isMuted(this.data.id)
+  }
+
   update(delta) {
     const anchor = this.getAnchorMatrix()
     if (!anchor) {
@@ -150,6 +172,7 @@ export class PlayerRemote extends Entity {
 
   setSpeaking(speaking) {
     if (this.speaking === speaking) return
+    if (speaking && this.isMuted()) return
     this.speaking = speaking
     const name = this.data.name
     this.nametag.label = speaking ? `» ${name} «` : name
@@ -189,6 +212,7 @@ export class PlayerRemote extends Entity {
     if (data.hasOwnProperty('name')) {
       this.data.name = data.name
       this.nametag.label = data.name
+      this.world.emit('name', { playerId: this.data.id, name: this.data.name })
     }
     if (data.hasOwnProperty('health')) {
       this.data.health = data.health
@@ -203,8 +227,9 @@ export class PlayerRemote extends Entity {
       this.data.sessionAvatar = data.sessionAvatar
       avatarChanged = true
     }
-    if (data.hasOwnProperty('roles')) {
-      this.data.roles = data.roles
+    if (data.hasOwnProperty('rank')) {
+      this.data.rank = data.rank
+      this.world.emit('rank', { playerId: this.data.id, rank: this.data.rank })
     }
     if (avatarChanged) {
       this.applyAvatar()

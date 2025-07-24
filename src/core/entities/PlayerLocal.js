@@ -1,5 +1,5 @@
 import { Entity } from './Entity'
-import { clamp, hasRole } from '../utils'
+import { clamp } from '../utils'
 import * as THREE from '../extras/three'
 import { Layers } from '../extras/Layers'
 import { DEG2RAD, RAD2DEG } from '../extras/general'
@@ -8,7 +8,8 @@ import { bindRotations } from '../extras/bindRotations'
 import { simpleCamLerp } from '../extras/simpleCamLerp'
 import { Emotes } from '../extras/playerEmotes'
 import { ControlPriorities } from '../extras/ControlPriorities'
-import { isNumber } from 'lodash-es'
+import { isBoolean, isNumber } from 'lodash-es'
+import { hasRank, Ranks } from '../extras/ranks'
 
 const UP = new THREE.Vector3(0, 1, 0)
 const DOWN = new THREE.Vector3(0, -1, 0)
@@ -57,6 +58,7 @@ export class PlayerLocal extends Entity {
   constructor(world, data, local) {
     super(world, data, local)
     this.isPlayer = true
+    this.isLocal = true
     this.init()
   }
 
@@ -308,10 +310,10 @@ export class PlayerLocal extends Entity {
     // this.control.setActions([{ type: 'escape', label: 'Menu' }])
   }
 
-  toggleFlying() {
-    const canFly = this.world.settings.public || hasRole(this.data.roles, 'admin')
-    if (!canFly) return
-    this.flying = !this.flying
+  toggleFlying(value) {
+    value = isBoolean(value) ? value : !this.flying
+    if (this.flying === value) return
+    this.flying = value
     if (this.flying) {
       // zero out vertical velocity when entering fly mode
       const velocity = this.capsule.getLinearVelocity()
@@ -328,6 +330,26 @@ export class PlayerLocal extends Entity {
       return this.world.anchors.get(this.data.effect.anchorId)
     }
     return null
+  }
+
+  outranks(otherPlayer) {
+    const rank = Math.max(this.data.rank, this.world.settings.effectiveRank)
+    const otherRank = Math.max(otherPlayer.data.rank, this.world.settings.effectiveRank)
+    return rank > otherRank
+  }
+
+  isAdmin() {
+    const rank = Math.max(this.data.rank, this.world.settings.effectiveRank)
+    return hasRank(rank, Ranks.ADMIN)
+  }
+
+  isBuilder() {
+    const rank = Math.max(this.data.rank, this.world.settings.effectiveRank)
+    return hasRank(rank, Ranks.BUILDER)
+  }
+
+  isMuted() {
+    return this.world.livekit.isMuted(this.data.id)
   }
 
   fixedUpdate(delta) {
@@ -1068,6 +1090,7 @@ export class PlayerLocal extends Entity {
 
   setSpeaking(speaking) {
     if (this.speaking === speaking) return
+    if (speaking && this.isMuted()) return
     this.speaking = speaking
   }
 
@@ -1116,6 +1139,7 @@ export class PlayerLocal extends Entity {
     let changed
     if (data.hasOwnProperty('name')) {
       this.data.name = data.name
+      this.world.emit('name', { playerId: this.data.id, name: this.data.name })
       changed = true
     }
     if (data.hasOwnProperty('health')) {
@@ -1142,8 +1166,9 @@ export class PlayerLocal extends Entity {
       }
       this.data.effect = data.ef
     }
-    if (data.hasOwnProperty('roles')) {
-      this.data.roles = data.roles
+    if (data.hasOwnProperty('rank')) {
+      this.data.rank = data.rank
+      this.world.emit('rank', { playerId: this.data.id, rank: this.data.rank })
       changed = true
     }
     if (avatarChanged) {

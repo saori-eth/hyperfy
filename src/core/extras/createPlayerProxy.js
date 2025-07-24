@@ -1,5 +1,5 @@
 import { getRef } from '../nodes/Node'
-import { clamp, hasRole, uuid } from '../utils'
+import { clamp, uuid } from '../utils'
 import * as THREE from './three'
 
 const HEALTH_MAX = 100
@@ -25,11 +25,13 @@ export function createPlayerProxy(entity, player) {
       return player.data.id === world.network.id
     },
     get admin() {
-      return hasRole(player.data.roles, 'admin')
+      return player.isAdmin()
+    },
+    get builder() {
+      return player.isBuilder()
     },
     get isAdmin() {
-      // deprecated, use .admin
-      return hasRole(player.data.roles, 'admin')
+      return player.isAdmin() // deprecated, use .admin
     },
     get name() {
       return player.data.name

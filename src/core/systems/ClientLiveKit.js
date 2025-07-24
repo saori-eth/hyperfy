@@ -22,6 +22,7 @@ export class ClientLiveKit extends System {
     }
     this.defaultLevel = null
     this.levels = {}
+    this.muted = new Set()
     this.voices = new Map() // playerId -> PlayerVoice
     this.screens = []
     this.screenNodes = new Set() // Video
@@ -51,8 +52,9 @@ export class ClientLiveKit extends System {
   async deserialize(opts) {
     if (!opts) return
     this.status.available = true
+    this.status.muted = opts.muted.has(this.world.network.id)
     this.levels = opts.levels
-    // console.log(opts)
+    this.muted = opts.muted
     this.room = new Room({
       webAudioMix: {
         audioContext: this.world.audio.ctx,
@@ -69,13 +71,36 @@ export class ClientLiveKit extends System {
     this.room.on(RoomEvent.TrackSubscribed, this.onTrackSubscribed)
     this.room.on(RoomEvent.TrackUnsubscribed, this.onTrackUnsubscribed)
     this.room.localParticipant.on(ParticipantEvent.IsSpeakingChanged, speaking => {
-      this.world.entities.player.setSpeaking(speaking)
+      const player = this.world.entities.player
+      this.world.livekit.emit('speaking', { playerId: player.data.id, speaking })
+      player.setSpeaking(speaking)
     })
     this.world.audio.ready(async () => {
       await this.room.connect(opts.wsUrl, opts.token)
       this.status.connected = true
       this.emit('status', this.status)
     })
+  }
+
+  setMuted(playerId, muted) {
+    if (muted && this.muted.has(playerId)) return
+    if (!muted && !this.muted.has(playerId)) return
+    if (muted) {
+      this.muted.add(playerId)
+    } else {
+      this.muted.delete(playerId)
+    }
+    const voice = this.voices.get(playerId)
+    voice?.setMuted(muted)
+    this.emit('muted', { playerId, muted })
+    if (playerId === this.world.network.id) {
+      this.status.muted = muted
+      this.emit('status', this.status)
+    }
+  }
+
+  isMuted(playerId) {
+    return this.muted.has(playerId)
   }
 
   setLevel(playerId, level) {
@@ -176,7 +201,8 @@ export class ClientLiveKit extends System {
     const world = this.world
     if (track.source === 'microphone') {
       const level = this.levels[playerId] || this.defaultLevel
-      const voice = new PlayerVoice(world, player, level, track, participant)
+      const muted = this.muted.has(playerId)
+      const voice = new PlayerVoice(world, player, level, muted, track, participant)
       this.voices.set(playerId, voice)
     }
     if (track.source === 'screen_share') {
@@ -263,13 +289,14 @@ export class ClientLiveKit extends System {
 }
 
 class PlayerVoice {
-  constructor(world, player, level, track, participant) {
+  constructor(world, player, level, muted, track, participant) {
     this.world = world
     this.player = player
+    this.level = level
+    this.muted = muted
     this.track = track
     this.participant = participant
     this.track.setAudioContext(world.audio.ctx)
-    this.level = level
     this.root = world.audio.ctx.createGain()
     this.panner = world.audio.ctx.createPanner()
     this.panner.panningModel = 'HRTF'
@@ -286,25 +313,30 @@ class PlayerVoice {
     this.root.connect(this.panner)
     this.panner.connect(this.gain)
     this.track.attach()
-    if (this.level === 'disabled') {
-      this.root.gain.value = 0
-      this.track.setWebAudioPlugins([this.root])
-    } else if (this.level === 'spatial') {
-      this.root.gain.value = 1
-      this.track.setWebAudioPlugins([this.panner])
-    } else if (this.level === 'global') {
-      this.root.gain.value = 1
-      this.track.setWebAudioPlugins([this.root])
-    }
+    this.apply()
     this.participant.on(ParticipantEvent.IsSpeakingChanged, speaking => {
+      this.world.livekit.emit('speaking', { playerId: this.player.data.id, speaking })
       this.player.setSpeaking(speaking)
     })
+  }
+
+  setMuted(muted) {
+    if (this.muted === muted) return
+    this.muted = muted
+    this.apply()
   }
 
   setLevel(level) {
     if (this.level === level) return
     this.level = level
-    if (this.level === 'disabled') {
+    this.apply()
+  }
+
+  apply() {
+    if (this.muted) {
+      this.root.gain.value = 0
+      this.track.setWebAudioPlugins([this.root])
+    } else if (this.level === 'disabled') {
       this.root.gain.value = 0
       this.track.setWebAudioPlugins([this.root])
     } else if (this.level === 'spatial') {
@@ -314,10 +346,10 @@ class PlayerVoice {
       this.root.gain.value = 1
       this.track.setWebAudioPlugins([this.root])
     }
-    console.log('set voice level to', level)
   }
 
   lateUpdate(delta) {
+    if (this.muted) return
     if (this.level !== 'spatial') return
     const audio = this.world.audio
     const matrix = this.player.base.matrixWorld
@@ -339,6 +371,7 @@ class PlayerVoice {
   }
 
   destroy() {
+    this.world.livekit.emit('speaking', { playerId: this.player.data.id, speaking: false })
     this.player.setSpeaking(false)
     this.track.detach()
   }

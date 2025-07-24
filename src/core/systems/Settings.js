@@ -1,5 +1,6 @@
 import { isBoolean } from 'lodash-es'
 import { System } from './System'
+import { Ranks } from '../extras/ranks'
 
 export class Settings extends System {
   constructor(world) {
@@ -10,11 +11,19 @@ export class Settings extends System {
     this.image = null
     this.avatar = null
     this.voice = null
-    this.public = null
+    this.rank = null
     this.playerLimit = null
     this.ao = null
 
     this.changes = null
+  }
+
+  setHasAdminCode(value) {
+    this.hasAdminCode = value
+  }
+
+  get effectiveRank() {
+    return this.hasAdminCode ? this.rank : Ranks.ADMIN
   }
 
   deserialize(data) {
@@ -23,7 +32,7 @@ export class Settings extends System {
     this.image = data.image
     this.avatar = data.avatar
     this.voice = data.voice
-    this.public = data.public
+    this.rank = data.rank
     this.playerLimit = data.playerLimit
     this.ao = data.ao
     this.emit('change', {
@@ -32,7 +41,7 @@ export class Settings extends System {
       image: { value: this.image },
       avatar: { value: this.avatar },
       voice: { value: this.voice },
-      public: { value: this.public },
+      rank: { value: this.rank },
       playerLimit: { value: this.playerLimit },
       ao: { value: this.ao },
     })
@@ -45,7 +54,7 @@ export class Settings extends System {
       image: this.image,
       avatar: this.avatar,
       voice: this.voice,
-      public: this.public,
+      rank: this.rank,
       playerLimit: this.playerLimit,
       ao: this.ao,
     }

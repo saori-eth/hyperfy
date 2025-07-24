@@ -5,6 +5,7 @@ import path from 'path'
 import { uuid } from '../core/utils'
 import { importApp } from '../core/extras/appTools'
 import { defaults } from 'lodash-es'
+import { Ranks } from '../core/extras/ranks'
 
 let db
 
@@ -374,5 +375,28 @@ const migrations = [
     } else {
       await db('config').insert({ key: 'settings', value })
     }
+  },
+  // migrate roles to rank
+  async db => {
+    // default rank setting
+    const row = await db('config').where('key', 'settings').first()
+    const settings = JSON.parse(row.value)
+    settings.rank = settings.public ? Ranks.BUILDER : Ranks.VISITOR
+    delete settings.public
+    const value = JSON.stringify(settings)
+    await db('config').where('key', 'settings').update({ value })
+    // player ranks
+    await db.schema.alterTable('users', table => {
+      table.integer('rank').notNullable().defaultTo(0)
+    })
+    const users = await db('users')
+    for (const user of users) {
+      const roles = JSON.parse(user.roles)
+      const rank = roles.includes('admin') ? 2 : roles.includes('builder') ? 1 : 0
+      await db('users').where('id', user.id).update({ rank })
+    }
+    await db.schema.alterTable('users', table => {
+      table.dropColumn('roles')
+    })
   },
 ]

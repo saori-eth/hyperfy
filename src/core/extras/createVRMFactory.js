@@ -311,6 +311,12 @@ export function createVRMFactory(glb, setupMaterial) {
           updateLocomotion(delta)
         }
         if (loco.gazeDir && distance < MAX_GAZE_DISTANCE && (currentEmote ? currentEmote.gaze : true)) {
+          // aimBone('chest', loco.gazeDir, delta, {
+          //   minAngle: -90,
+          //   maxAngle: 90,
+          //   smoothing: 0.7,
+          //   weight: 0.7,
+          // })
           aimBone('neck', loco.gazeDir, delta, {
             minAngle: -30,
             maxAngle: 30,

@@ -136,6 +136,7 @@ export class ClientNetwork extends System {
 
     this.world.collections.deserialize(data.collections)
     this.world.settings.deserialize(data.settings)
+    this.world.settings.setHasAdminCode(data.hasAdminCode)
     this.world.chat.deserialize(data.chat)
     this.world.blueprints.deserialize(data.blueprints)
     this.world.entities.deserialize(data.entities)
@@ -197,6 +198,10 @@ export class ClientNetwork extends System {
 
   onLiveKitLevel = data => {
     this.world.livekit.setLevel(data.playerId, data.level)
+  }
+
+  onMute = data => {
+    this.world.livekit.setMuted(data.playerId, data.muted)
   }
 
   onPong = time => {

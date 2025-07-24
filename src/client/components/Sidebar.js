@@ -1545,7 +1545,7 @@ function Script({ world, hidden }) {
       `}
     >
       <div className='script-head'>
-        <div className='script-title'>Script</div>
+        <div className='script-title'>Script: {app.blueprint?.name}</div>
         <div className='script-btn' onClick={() => handle?.save()}>
           <SaveIcon size='1.125rem' />
         </div>

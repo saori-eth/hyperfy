@@ -391,8 +391,8 @@ const migrations = [
     })
     const users = await db('users')
     for (const user of users) {
-      const roles = JSON.parse(user.roles)
-      const rank = roles.includes('admin') ? 2 : roles.includes('builder') ? 1 : 0
+      const roles = user.roles.split(',')
+      const rank = roles.includes('admin') ? Ranks.ADMIN : roles.includes('builder') ? Ranks.BUILDER : Ranks.VISITOR
       await db('users').where('id', user.id).update({ rank })
     }
     await db.schema.alterTable('users', table => {

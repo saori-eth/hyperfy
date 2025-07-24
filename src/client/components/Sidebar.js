@@ -1819,7 +1819,7 @@ function Players({ world, hidden }) {
                 {player.speaking && <Volume2Icon size='1rem' />}
                 {player.isMuted() && <MicOffIcon size='1rem' />}
               </div>
-              {isAdmin && player.isRemote && !player.isAdmin() && (
+              {isAdmin && player.isRemote && !player.isAdmin() && world.settings.rank < Ranks.BUILDER && (
                 <div
                   className={cls('players-btn', { dim: !player.isBuilder() })}
                   onPointerEnter={() =>

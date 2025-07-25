@@ -237,6 +237,7 @@ export class ClientControls extends System {
     this.viewport.addEventListener('pointercancel', this.onPointerUp)
     this.viewport.addEventListener('wheel', this.onScroll, { passive: false })
     document.body.addEventListener('contextmenu', this.onContextMenu)
+    this.viewport.addEventListener('touchstart', this.onTouchStart)
     window.addEventListener('resize', this.onResize)
     window.addEventListener('focus', this.onFocus)
     window.addEventListener('blur', this.onBlur)
@@ -624,6 +625,11 @@ export class ClientControls extends System {
     e.preventDefault()
   }
 
+  onTouchStart = e => {
+    if (e.isCoreUI) return
+    e.preventDefault()
+  }
+
   onResize = () => {
     this.screen.width = this.viewport.offsetWidth
     this.screen.height = this.viewport.offsetHeight
@@ -656,6 +662,7 @@ export class ClientControls extends System {
     this.viewport.removeEventListener('pointercancel', this.onPointerUp)
     this.viewport.removeEventListener('wheel', this.onScroll, { passive: false })
     document.body.removeEventListener('contextmenu', this.onContextMenu)
+    this.viewport.removeEventListener('touchstart', this.onTouchStart)
     window.removeEventListener('resize', this.onResize)
     window.removeEventListener('focus', this.onFocus)
     window.removeEventListener('blur', this.onBlur)

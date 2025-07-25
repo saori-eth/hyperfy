@@ -226,7 +226,6 @@ export class ClientControls extends System {
   async init({ viewport }) {
     if (!isBrowser) return
     this.viewport = viewport
-    this.viewport.style.touchAction = 'none' // we use a unified 'pointer' event system
     this.screen.width = this.viewport.offsetWidth
     this.screen.height = this.viewport.offsetHeight
     window.addEventListener('keydown', this.onKeyDown)

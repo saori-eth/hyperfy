@@ -1153,7 +1153,9 @@ function TouchStick({ world }) {
         outer.style.top = `${stick.center.y}px`
         inner.style.left = `${stick.touch.position.x}px`
         inner.style.top = `${stick.touch.position.y}px`
+        inner.style.opacity = 1
       } else {
+        inner.style.opacity = 0.1
         const radius = 50 // matches PlayerLocal.js STICK_OUTER_RADIUS
         if (window.innerWidth < window.innerHeight) {
           // portrait

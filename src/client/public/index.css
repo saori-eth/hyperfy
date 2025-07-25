@@ -74,8 +74,6 @@ body {
   font-style: normal;
   background-color: black;
   color: white;
-  touch-action: none;
-  -webkit-touch-callout: none;
 }
 input,
 textarea {

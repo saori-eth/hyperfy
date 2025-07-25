@@ -10,6 +10,7 @@ export class Settings extends System {
     this.desc = null
     this.image = null
     this.avatar = null
+    this.customAvatars = null
     this.voice = null
     this.rank = null
     this.playerLimit = null
@@ -31,6 +32,7 @@ export class Settings extends System {
     this.desc = data.desc
     this.image = data.image
     this.avatar = data.avatar
+    this.customAvatars = data.customAvatars
     this.voice = data.voice
     this.rank = data.rank
     this.playerLimit = data.playerLimit
@@ -40,6 +42,7 @@ export class Settings extends System {
       desc: { value: this.desc },
       image: { value: this.image },
       avatar: { value: this.avatar },
+      customAvatars: { value: this.customAvatars },
       voice: { value: this.voice },
       rank: { value: this.rank },
       playerLimit: { value: this.playerLimit },
@@ -53,6 +56,7 @@ export class Settings extends System {
       title: this.title,
       image: this.image,
       avatar: this.avatar,
+      customAvatars: this.customAvatars,
       voice: this.voice,
       rank: this.rank,
       playerLimit: this.playerLimit,

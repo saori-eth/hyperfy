@@ -399,4 +399,12 @@ const migrations = [
       table.dropColumn('roles')
     })
   },
+  // add new settings.customAvatars (defaults to false)
+  async db => {
+    const row = await db('config').where('key', 'settings').first()
+    const settings = JSON.parse(row.value)
+    settings.customAvatars = false
+    const value = JSON.stringify(settings)
+    await db('config').where('key', 'settings').update({ value })
+  },
 ]

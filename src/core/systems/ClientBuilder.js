@@ -689,18 +689,7 @@ export class ClientBuilder extends System {
   onDrop = async e => {
     e.preventDefault()
     this.dropping = false
-    // ensure we have admin/builder role
-    if (!this.canBuild()) {
-      this.world.chat.add({
-        id: uuid(),
-        from: null,
-        fromId: null,
-        body: `You don't have permission to do that.`,
-        createdAt: moment().toISOString(),
-      })
-      return
-    }
-    // handle drop
+    // extract file from drop
     let file
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
       const item = e.dataTransfer.items[0]
@@ -725,9 +714,13 @@ export class ClientBuilder extends System {
     if (!file) return
     // slight delay to ensure we get updated pointer position from window focus
     await new Promise(resolve => setTimeout(resolve, 100))
-    // ensure we in build mode
-    this.toggle(true)
-    // add it!
+    // get file type
+    const ext = file.name.split('.').pop().toLowerCase()
+    // if vrm and we are not a builder and custom avatars are not allowed, stop here
+    if (ext === 'vrm' && !this.canBuild() && !this.world.settings.customAvatars) {
+      return
+    }
+    // check file size
     const maxSize = this.world.network.maxUploadSize * 1024 * 1024
     if (file.size > maxSize) {
       this.world.chat.add({
@@ -740,8 +733,22 @@ export class ClientBuilder extends System {
       console.error(`File too large. Maximum size is ${maxSize / (1024 * 1024)}MB`)
       return
     }
+    // builder rank required for non-vrm files
+    if (ext !== 'vrm') {
+      if (!this.canBuild()) {
+        this.world.chat.add({
+          id: uuid(),
+          from: null,
+          fromId: null,
+          body: `You don't have permission to do that.`,
+          createdAt: moment().toISOString(),
+        })
+        return
+      }
+      // switch to build mode
+      this.toggle(true)
+    }
     const transform = this.getSpawnTransform()
-    const ext = file.name.split('.').pop().toLowerCase()
     if (ext === 'hyp') {
       this.addApp(file, transform)
     }
@@ -749,7 +756,8 @@ export class ClientBuilder extends System {
       this.addModel(file, transform)
     }
     if (ext === 'vrm') {
-      this.addAvatar(file, transform)
+      const canPlace = this.canBuild()
+      this.addAvatar(file, transform, canPlace)
     }
   }
 
@@ -897,7 +905,7 @@ export class ClientBuilder extends System {
     app.onUploaded()
   }
 
-  async addAvatar(file, transform) {
+  async addAvatar(file, transform, canPlace) {
     // immutable hash the file
     const hash = await hashFile(file)
     // use hash as vrm filename
@@ -910,6 +918,7 @@ export class ClientBuilder extends System {
       file,
       url,
       hash,
+      canPlace,
       onPlace: async () => {
         // close pane
         this.world.emit('avatar', null)

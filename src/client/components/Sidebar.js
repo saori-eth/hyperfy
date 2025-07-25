@@ -630,6 +630,11 @@ const voiceChatOptions = [
   { label: 'Spatial', value: 'spatial' },
   { label: 'Global', value: 'global' },
 ]
+const rankOptions = [
+  { label: 'Admins', value: 2 },
+  { label: 'Builders', value: 1 },
+  { label: 'Visitors', value: 0 },
+]
 function World({ world, hidden }) {
   const player = world.entities.player
   const { isAdmin } = useRank(world, player)
@@ -637,6 +642,7 @@ function World({ world, hidden }) {
   const [desc, setDesc] = useState(world.settings.desc)
   const [image, setImage] = useState(world.settings.image)
   const [avatar, setAvatar] = useState(world.settings.avatar)
+  const [customAvatars, setCustomAvatars] = useState(world.settings.customAvatars)
   const [voice, setVoice] = useState(world.settings.voice)
   const [playerLimit, setPlayerLimit] = useState(world.settings.playerLimit)
   const [ao, setAO] = useState(world.settings.ao)
@@ -647,6 +653,7 @@ function World({ world, hidden }) {
       if (changes.desc) setDesc(changes.desc.value)
       if (changes.image) setImage(changes.image.value)
       if (changes.avatar) setAvatar(changes.avatar.value)
+      if (changes.customAvatars) setCustomAvatars(changes.customAvatars.value)
       if (changes.voice) setVoice(changes.voice.value)
       if (changes.playerLimit) setPlayerLimit(changes.playerLimit.value)
       if (changes.ao) setAO(changes.ao.value)
@@ -720,6 +727,16 @@ function World({ world, hidden }) {
             onChange={value => world.settings.set('avatar', value, true)}
             world={world}
           />
+          {isAdmin && world.settings.hasAdminCode && (
+            <FieldToggle
+              label='Custom Avatars'
+              hint='Allow visitors to drag and drop custom VRM avatars.'
+              trueLabel='On'
+              falseLabel='Off'
+              value={customAvatars}
+              onChange={value => world.settings.set('customAvatars', value, true)}
+            />
+          )}
           <FieldSwitch
             label='Voice Chat'
             hint='Set the base voice chat mode. Apps are able to modify this using custom rules.'

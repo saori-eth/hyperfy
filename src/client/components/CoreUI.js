@@ -1261,10 +1261,10 @@ function Confirm({ options }) {
         z-index: 999;
         .confirm-dialog {
           pointer-events: auto;
-          background: rgba(11, 10, 21, 0.85);
-          border: 0.0625rem solid #2a2b39;
+          background: rgba(11, 10, 21, 0.9);
+          border: 1px solid rgba(255, 255, 255, 0.05);
+          border-radius: 1.375rem;
           backdrop-filter: blur(5px);
-          border-radius: 1rem;
           width: 18rem;
         }
         .confirm-content {

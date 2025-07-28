@@ -4,6 +4,8 @@ import { createNode } from '../extras/createNode'
 import { LerpQuaternion } from '../extras/LerpQuaternion'
 import { LerpVector3 } from '../extras/LerpVector3'
 import { hasRank, Ranks } from '../extras/ranks'
+import { BufferedLerpVector3 } from '../extras/BufferedLerpVector3'
+import { BufferedLerpQuaternion } from '../extras/BufferedLerpQuaternion'
 
 let capsuleGeometry
 {
@@ -79,8 +81,8 @@ export class PlayerRemote extends Entity {
 
     this.applyAvatar()
 
-    this.position = new LerpVector3(this.base.position, this.world.networkRate)
-    this.quaternion = new LerpQuaternion(this.base.quaternion, this.world.networkRate)
+    this.position = new BufferedLerpVector3(this.base.position, this.world.networkRate * 1.5)
+    this.quaternion = new BufferedLerpQuaternion(this.base.quaternion, this.world.networkRate * 1.5)
     this.teleport = 0
 
     this.mode = 0
@@ -185,11 +187,11 @@ export class PlayerRemote extends Entity {
     }
     if (data.hasOwnProperty('p')) {
       this.data.position = data.p
-      this.position.pushArray(data.p, this.teleport)
+      this.position.push(data.p, this.teleport)
     }
     if (data.hasOwnProperty('q')) {
       this.data.quaternion = data.q
-      this.quaternion.pushArray(data.q, this.teleport)
+      this.quaternion.push(data.q, this.teleport)
     }
     if (data.hasOwnProperty('m')) {
       this.data.mode = data.m

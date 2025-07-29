@@ -4,6 +4,8 @@
 
 Apps in Hyperfy communicate using `app.send`, `app.on`, `app.emit`, and `world.on`.
 
+`world.isServer` and `world.isClient` define where your scripts are executed.
+
 * `app.send` / `app.on`: Send/receive events within the same app.
 * `app.emit`: Server-only, sends events to other apps.
 * `world.on`: Listens for events from other apps.
@@ -12,7 +14,7 @@ Apps in Hyperfy communicate using `app.send`, `app.on`, `app.emit`, and `world.o
 
 ### App 1
 
-```ts
+```js
 if (world.isServer) {
   app.on('ping', () => {
     console.log('ping heard on server of original app');
@@ -33,7 +35,7 @@ if (world.isClient) {
 
 ### App 2
 
-```ts
+```js
 if (world.isServer) {
   world.on('cross-app-ping', () => {
     console.log('ping heard on different app');

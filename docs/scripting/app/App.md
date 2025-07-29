@@ -45,6 +45,12 @@ Sends an event across the network.
 If the caller is on the client, the event is sent to the server. The third argument `skipNetworkId` is a no-op here.
 If the caller is on the server, the event is sent to all clients, with the `skipNetworkId` argument allowing you to skip sending to one specific client.
 
+### `.emit(name, data)`
+
+**Server‑only.** Sends a custom event from this app’s **server** to **other apps in the same world**.
+Other apps receive it with `world.on(name, callback)` on their **servers**.
+Not delivered to clients and not to the emitting app.
+
 ### `.get(nodeId)`: Node
 
 Finds and returns any node with the matching ID from the model the app is using.

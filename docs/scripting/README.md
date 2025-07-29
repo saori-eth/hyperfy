@@ -32,7 +32,7 @@ The [Utils](./utils.md) documentation provides a set of miscellaneous globals av
 
 ## Networking
 
-Hypery [Networking](./Networking.md) happens inside of Apps, using methods from both the `App` and `World` APIs. You can either send events between the client and server on the same app, or send messages to external apps on the server. 
+Hyperfy [Networking](./Networking.md) happens inside of Apps, using methods from both the `App` and `World` APIs. You can either send events between the client and server on the same app, or send messages to external apps on the server. 
 
 ## Globals
 

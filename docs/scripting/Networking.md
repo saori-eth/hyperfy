@@ -1,5 +1,7 @@
 # Networking
 
+**See also:** [App API](/docs/scripting/app/App.md) · [World API](/docs/scripting/world/World.md)
+
 Apps in Hyperfy communicate using `app.send`, `app.on`, `app.emit`, and `world.on`.
 
 * `app.send` / `app.on`: Send/receive events within the same app.

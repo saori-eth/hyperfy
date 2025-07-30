@@ -47,9 +47,10 @@ If the caller is on the server, the event is sent to all clients, with the `skip
 
 ### `.emit(name, data)`
 
-**Server‑only.** Sends a custom event from this app’s **server** to **other apps in the same world**.
-Other apps receive it with `world.on(name, callback)` on their **servers**.
-Not delivered to clients and not to the emitting app.
+Emits a local event to the world that other apps can listen for (using `world.on(name, callback)`).
+Emitted events are not networked and only "local" apps (on the same client or server) can receive/listen for them.
+
+NOTE: you cannot emit built-in events such as `enter` or `leave` as these are internal and emitted when players enter or leave the world.
 
 ### `.get(nodeId)`: Node
 

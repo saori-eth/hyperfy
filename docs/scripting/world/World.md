@@ -28,10 +28,7 @@ Adds a node into world-space, maintaining its current world transform.
 
 ### `.on(event, callback)`
 
-Subscribe to **world‑level events**.
-
-* **Built‑ins:** `'enter'` and `'leave'` (fires when a player joins/exits the world).
-* **Cross‑app custom:** Listen for events **emitted by other apps’ servers** via `app.emit('<event>', payload)`.
+Subscribes to both engine events (eg when players `enter` or `leave` the world) and custom events emitted by other apps (via `app.emit()`)
 
 ### `.off(event, callback)`
 

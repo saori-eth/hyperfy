@@ -4,11 +4,14 @@
 
 Apps in Hyperfy communicate using `app.send`, `app.on`, `app.emit`, and `world.on`.
 
-`world.isServer` and `world.isClient` define where your scripts are executed.
+Apps execute their scripts in every environment, eg on the server and on every client.
 
-* `app.send` / `app.on`: Send/receive events within the same app.
-* `app.emit`: Server-only, sends events to other apps.
-* `world.on`: Listens for events from other apps.
+The `world.isServer` and `world.isClient` allows scripts to determine what environment they are running in.
+
+* `app.send`: Sends an event to other instances of the same app. When called on a server is sent to all clients, and when called on a client is sent to the server.
+* `app.on`: Listens for an event sent from an app (via `app.send`) in its counter-environment (server or clients).
+* `app.emit`: Emits an event for any app to listen to, in the same environment it was called from (either a single client or the server).
+* `world.on`: Listens for an event emitted from any app (via `app.emit`) in the same environment.
 
 ## Example
 

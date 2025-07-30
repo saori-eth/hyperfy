@@ -28,8 +28,7 @@ Adds a node into world-space, maintaining its current world transform.
 
 ### `.on(event, callback)`
 
-Subscribes to world events.
-Currently only `enter` and `leave` are available which let you know when a player enters or leaves the world.
+Subscribes to both engine events (eg when players `enter` or `leave` the world) and custom events emitted by other apps (via `app.emit()`)
 
 ### `.off(event, callback)`
 
@@ -62,3 +61,6 @@ Gets a query parameter value from the browsers url
 
 Sets a query parameter in the browsers url
 
+### `.open(url: string, newTab: ?Boolean)`
+
+Opens a link, defaults to new tab.

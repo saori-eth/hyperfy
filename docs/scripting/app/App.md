@@ -45,6 +45,13 @@ Sends an event across the network.
 If the caller is on the client, the event is sent to the server. The third argument `skipNetworkId` is a no-op here.
 If the caller is on the server, the event is sent to all clients, with the `skipNetworkId` argument allowing you to skip sending to one specific client.
 
+### `.emit(name, data)`
+
+Emits a local event to the world that other apps can listen for (using `world.on(name, callback)`).
+Emitted events are not networked and only "local" apps (on the same client or server) can receive/listen for them.
+
+NOTE: you cannot emit built-in events such as `enter` or `leave` as these are internal and emitted when players enter or leave the world.
+
 ### `.get(nodeId)`: Node
 
 Finds and returns any node with the matching ID from the model the app is using.

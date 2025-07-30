@@ -1,6 +1,7 @@
-// Test script for Prim node - tests all properties and methods
+// Test script for Prim node with instanced rendering system
+// This demonstrates the performance benefits of the new per-instance color system
 
-console.log('Starting Prim node test...')
+console.log('Starting Prim node test with instanced rendering...')
 
 // Test 1: Create prims of each kind
 console.log('\n1. Testing all prim kinds:')
@@ -49,8 +50,8 @@ setTimeout(() => {
   sizeTestSphere.size = [1.5]
 }, 2000)
 
-// Test 3: Test color property
-console.log('\n3. Testing color property:')
+// Test 3: Test color property with instanced rendering
+console.log('\n3. Testing color property with instance attributes:')
 const colorTestPrim = app.create('prim', {
   kind: 'box',
   size: [2, 2, 2],
@@ -59,19 +60,35 @@ const colorTestPrim = app.create('prim', {
 })
 app.add(colorTestPrim)
 
-// Cycle through colors
-const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff']
-let colorIndex = 0
-let colorTimer = 0
+// Create multiple prims to show instancing benefit
+console.log('- Creating 50 boxes with different colors (single draw call)')
+const instancedColorPrims = []
+for (let i = 0; i < 50; i++) {
+  const angle = (i / 50) * Math.PI * 2
+  const radius = 5
+  const hue = i / 50 * 360
+  const prim = app.create('prim', {
+    kind: 'box',
+    size: [0.5, 0.5, 0.5],
+    position: [
+      Math.cos(angle) * radius,
+      2,
+      10 + Math.sin(angle) * radius
+    ],
+    color: `hsl(${hue}, 70%, 50%)`
+  })
+  app.add(prim)
+  instancedColorPrims.push(prim)
+}
 
+// Animate colors to show dynamic updates
+let colorAnimTime = 0
 app.on('update', (dt) => {
-  colorTimer += dt
-  if (colorTimer > 1.5) {
-    colorTestPrim.color = colors[colorIndex]
-    console.log(`- Changed color to ${colors[colorIndex]}`)
-    colorIndex = (colorIndex + 1) % colors.length
-    colorTimer = 0
-  }
+  colorAnimTime += dt
+  instancedColorPrims.forEach((prim, i) => {
+    const hue = ((i / instancedColorPrims.length + colorAnimTime * 0.1) % 1) * 360
+    prim.color = `hsl(${hue}, 70%, 50%)`
+  })
 })
 
 // Test 4: Test transform properties (position, rotation, scale)
@@ -85,8 +102,10 @@ const transformPrim = app.create('prim', {
 app.add(transformPrim)
 
 // Animate transforms
-app.on('update', () => {
-  const time = Date.now() * 0.001
+let transformTime = 0
+app.on('update', (dt) => {
+  transformTime += dt
+  const time = transformTime
   
   // Position animation
   transformPrim.position.x = Math.sin(time) * 3
@@ -230,13 +249,52 @@ app.on('update', (dt) => {
   }
 })
 
+// Test 11: Performance test - many prims with instance colors
+console.log('\n11. Testing instanced rendering performance:')
+const perfTestPrims = []
+
+// Create a large grid to demonstrate instancing efficiency
+const gridSize = 20
+const spacing = 1.5
+
+for (let x = 0; x < gridSize; x++) {
+  for (let z = 0; z < gridSize; z++) {
+    const prim = app.create('prim', {
+      kind: 'sphere',
+      size: [0.4],
+      position: [
+        (x - gridSize / 2) * spacing,
+        2,
+        45 + (z - gridSize / 2) * spacing
+      ],
+      color: `hsl(${(x * gridSize + z) / (gridSize * gridSize) * 360}, 70%, 50%)`
+    })
+    app.add(prim)
+    perfTestPrims.push(prim)
+  }
+}
+
+console.log(`- Created ${perfTestPrims.length} instanced spheres`)
+console.log('- All spheres render in a single draw call thanks to instance attributes')
+
+// Animate the grid
+let gridAnimTime = 0
+app.on('update', (dt) => {
+  gridAnimTime += dt
+  perfTestPrims.forEach((prim, i) => {
+    const wave = Math.sin(gridAnimTime + i * 0.01) * 0.5
+    prim.position.y = 2 + wave
+  })
+})
+
 // Test summary
 console.log('\n=== Prim Node Test Summary ===')
 console.log('All tests initiated. Watch console for ongoing results.')
 console.log('Tests include:')
 console.log('- All primitive kinds (box, sphere, cylinder, cone, torus, plane)')
 console.log('- Size property changes')
-console.log('- Color property changes') 
+console.log('- Color property changes with instance attributes')
+console.log('- 50 boxes with animated colors (single draw call)')
 console.log('- Transform animations (position, rotation, scale)')
 console.log('- Shadow properties (castShadow, receiveShadow)')
 console.log('- Active property toggling')
@@ -244,4 +302,9 @@ console.log('- Clone method')
 console.log('- Hierarchy (parent/child relationships)')
 console.log('- Null color (default material)')
 console.log('- Kind property changes (rebuilding geometry)')
+console.log(`- Performance test: ${gridSize * gridSize} instanced spheres`)
+console.log('\n🚀 Instance Color Benefits:')
+console.log('- All primitives of the same kind share one draw call')
+console.log('- Colors can be updated without material recreation')
+console.log('- Massive performance gains for AI-generated worlds')
 console.log('\nEnd of test script.')

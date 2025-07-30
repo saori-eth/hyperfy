@@ -16,68 +16,91 @@ const defaults = {
 
 const kinds = ['box', 'sphere', 'cylinder', 'cone', 'torus', 'plane']
 
-// Geometry cache
-let geometryCache = new Map()
+// Unit geometry cache - one geometry per primitive type
+let unitGeometryCache = new Map()
 
-const getGeometry = (kind, size) => {
-  const key = `${kind}:${size.join(',')}`
-  
-  if (!geometryCache.has(key)) {
+const getUnitGeometry = (kind) => {
+  if (!unitGeometryCache.has(kind)) {
     let geometry
     
     switch (kind) {
       case 'box':
-        geometry = new THREE.BoxGeometry(size[0], size[1], size[2])
+        geometry = new THREE.BoxGeometry(1, 1, 1)
         break
       case 'sphere':
-        geometry = new THREE.SphereGeometry(size[0], 16, 12)
+        geometry = new THREE.SphereGeometry(1, 16, 12)
         break
       case 'cylinder':
-        geometry = new THREE.CylinderGeometry(size[0], size[0], size[1], 16)
+        geometry = new THREE.CylinderGeometry(1, 1, 1, 16)
         break
       case 'cone':
-        geometry = new THREE.ConeGeometry(size[0], size[1], 16)
+        geometry = new THREE.ConeGeometry(1, 1, 16)
         break
       case 'torus':
-        geometry = new THREE.TorusGeometry(size[0], size[1], 12, 16)
+        geometry = new THREE.TorusGeometry(1, 0.4, 12, 16)
         break
       case 'plane':
-        geometry = new THREE.PlaneGeometry(size[0], size[1])
+        geometry = new THREE.PlaneGeometry(1, 1)
         break
       default:
         geometry = new THREE.BoxGeometry(1, 1, 1)
     }
     
-    geometryCache.set(key, geometry)
+    unitGeometryCache.set(kind, geometry)
   }
   
-  return geometryCache.get(key)
+  return unitGeometryCache.get(kind)
 }
 
-// Material cache
-let materialCache = new Map()
+// Shared instanced material with color support
+let instanceColorMaterial = null
 
-const getMaterial = (color, material) => {
-  if (material) return material
-  
-  const key = color
-  
-  if (!materialCache.has(key)) {
-    const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(color),
+const getInstanceColorMaterial = () => {
+  if (!instanceColorMaterial) {
+    instanceColorMaterial = new THREE.MeshStandardMaterial({
       roughness: 0.8,
       metalness: 0.2,
     })
-    materialCache.set(key, mat)
+    
+    instanceColorMaterial.userData.supportsInstanceColors = true
+    
+    instanceColorMaterial.onBeforeCompile = (shader) => {
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <common>',
+        `#include <common>
+        attribute vec3 instanceColor;
+        varying vec3 vInstanceColor;`
+      )
+      
+      shader.vertexShader = shader.vertexShader.replace(
+        '#include <begin_vertex>',
+        `#include <begin_vertex>
+        vInstanceColor = instanceColor;`
+      )
+      
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <common>',
+        `#include <common>
+        varying vec3 vInstanceColor;`
+      )
+      
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <dithering_fragment>',
+        `#include <dithering_fragment>
+        gl_FragColor.rgb *= vInstanceColor;`
+      )
+    }
   }
   
-  return materialCache.get(key)
+  return instanceColorMaterial
 }
 
 export class Prim extends Node {
   constructor(data = {}) {
     super(data)
     this.name = 'prim'
+    
+    this._scaleMatrix = new THREE.Matrix4()
     
     this.kind = data.kind
     this.size = data.size
@@ -90,18 +113,26 @@ export class Prim extends Node {
   mount() {
     this.needsRebuild = false
     
-    const geometry = getGeometry(this._kind, this._size)
-    const material = getMaterial(this._color, this._material)
+    const geometry = getUnitGeometry(this._kind)
+    const material = this._material || getInstanceColorMaterial()
     
-    // Create mesh
+    // Calculate scale matrix from size
+    this._scaleMatrix.makeScale(this._size[0], this._size[1], this._size[2])
+    
+    // Combine scale with world matrix
+    const finalMatrix = new THREE.Matrix4()
+    finalMatrix.multiplyMatrices(this.matrixWorld, this._scaleMatrix)
+    
+    // Create mesh with color passed through
     this.handle = this.ctx.world.stage.insert({
       geometry,
       material,
       linked: true,
       castShadow: this._castShadow,
       receiveShadow: this._receiveShadow,
-      matrix: this.matrixWorld,
+      matrix: finalMatrix,
       node: this,
+      color: this._color, // Pass color for instance attribute
     })
   }
   
@@ -111,10 +142,14 @@ export class Prim extends Node {
       this.mount()
       return
     }
-    if (didMove) {
+    if (didMove || this._sizeChanged) {
       if (this.handle) {
-        this.handle.move(this.matrixWorld)
+        // Recalculate matrix with scale
+        const finalMatrix = new THREE.Matrix4()
+        finalMatrix.multiplyMatrices(this.matrixWorld, this._scaleMatrix)
+        this.handle.move(finalMatrix)
       }
+      this._sizeChanged = false
     }
   }
   
@@ -135,12 +170,12 @@ export class Prim extends Node {
   }
   
   applyStats(stats) {
-    const geometry = getGeometry(this._kind, this._size)
+    const geometry = getUnitGeometry(this._kind)
     if (geometry && !stats.geometries.has(geometry.uuid)) {
       stats.geometries.add(geometry.uuid)
       stats.triangles += getTrianglesFromGeometry(geometry)
     }
-    const material = getMaterial(this._color, this._material)
+    const material = this._material || getInstanceColorMaterial()
     if (material && !stats.materials.has(material.uuid)) {
       stats.materials.add(material.uuid)
       stats.textureBytes += getTextureBytesFromMaterial(material)
@@ -179,8 +214,9 @@ export class Prim extends Node {
     ]
     if (this._size && this._size[0] === normalized[0] && this._size[1] === normalized[1] && this._size[2] === normalized[2]) return
     this._size = normalized
+    this._scaleMatrix.makeScale(this._size[0], this._size[1], this._size[2])
+    this._sizeChanged = true
     if (this.handle) {
-      this.needsRebuild = true
       this.setDirty()
     }
   }
@@ -196,8 +232,13 @@ export class Prim extends Node {
     if (this._color === value) return
     this._color = value
     if (this.handle && !this._material) {
-      this.needsRebuild = true
-      this.setDirty()
+      // Update color through handle if supported
+      if (this.handle.setColor) {
+        this.handle.setColor(value)
+      } else {
+        this.needsRebuild = true
+        this.setDirty()
+      }
     }
   }
   

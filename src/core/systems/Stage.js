@@ -73,13 +73,13 @@ export class Stage extends System {
     }
   }
 
-  insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix }) {
+  insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix, color }) {
     const id = `${geometry.uuid}/${material.uuid}/${castShadow}/${receiveShadow}`
     if (!this.models.has(id)) {
       const model = new Model(this, geometry, material, castShadow, receiveShadow)
       this.models.set(id, model)
     }
-    return this.models.get(id).create(node, matrix)
+    return this.models.get(id).create(node, matrix, color)
   }
 
   insertSingle({ geometry, material, castShadow, receiveShadow, node, matrix }) {
@@ -260,6 +260,7 @@ class Model {
     this.material = material
     this.castShadow = castShadow
     this.receiveShadow = receiveShadow
+    this.supportsInstanceColors = material.raw.userData && material.raw.userData.supportsInstanceColors
 
     if (!this.geometry.boundsTree) this.geometry.computeBoundsTree()
 
@@ -281,19 +282,33 @@ class Model {
     this.iMesh.matrixWorldAutoUpdate = false
     this.iMesh.frustumCulled = false
     this.iMesh.getEntity = this.getEntity.bind(this)
-    this.items = [] // { matrix, node }
+    this.items = [] // { matrix, node, color }
     this.dirty = true
+    
+    // Initialize color buffer if supported
+    if (this.supportsInstanceColors) {
+      this.colors = new Float32Array(10 * 3)
+      this.colorAttribute = new THREE.InstancedBufferAttribute(this.colors, 3)
+      this.iMesh.geometry.setAttribute('instanceColor', this.colorAttribute)
+    }
   }
 
-  create(node, matrix) {
+  create(node, matrix, color) {
     const item = {
       idx: this.items.length,
       node,
       matrix,
+      color: color ? new THREE.Color(color) : null,
       // octree
     }
     this.items.push(item)
     this.iMesh.setMatrixAt(item.idx, item.matrix) // silently fails if too small, gets increased in clean()
+    
+    // Set color if supported
+    if (this.supportsInstanceColors && item.color) {
+      this.setColorAt(item.idx, item.color)
+    }
+    
     this.dirty = true
     const sItem = {
       matrix,
@@ -303,7 +318,8 @@ class Model {
       node,
     }
     this.stage.octree.insert(sItem)
-    return {
+    
+    const handle = {
       material: this.material.proxy,
       move: matrix => {
         this.move(item, matrix)
@@ -314,6 +330,28 @@ class Model {
         this.stage.octree.remove(sItem)
       },
     }
+    
+    // Add setColor method if supported
+    if (this.supportsInstanceColors) {
+      handle.setColor = (newColor) => {
+        item.color = item.color || new THREE.Color()
+        item.color.set(newColor)
+        this.setColorAt(item.idx, item.color)
+        this.dirty = true
+      }
+    }
+    
+    return handle
+  }
+  
+  setColorAt(index, color) {
+    if (!this.supportsInstanceColors) return
+    
+    const offset = index * 3
+    this.colors[offset] = color.r
+    this.colors[offset + 1] = color.g
+    this.colors[offset + 2] = color.b
+    this.colorAttribute.needsUpdate = true
   }
 
   move(item, matrix) {
@@ -336,6 +374,12 @@ class Model {
     } else {
       // there are other instances after this one in the buffer, swap it with the last one and pop it off the end
       this.iMesh.setMatrixAt(item.idx, last.matrix)
+      
+      // Also swap colors if supported
+      if (this.supportsInstanceColors && last.color) {
+        this.setColorAt(item.idx, last.color)
+      }
+      
       last.idx = item.idx
       this.items[item.idx] = last
       this.items.pop()
@@ -351,8 +395,23 @@ class Model {
       const newSize = count + 100
       // console.log('increase', this.mesh.name, 'from', size, 'to', newSize)
       this.iMesh.resize(newSize)
+      
+      // Resize color buffer if supported
+      if (this.supportsInstanceColors) {
+        const newColors = new Float32Array(newSize * 3)
+        newColors.set(this.colors)
+        this.colors = newColors
+        this.colorAttribute = new THREE.InstancedBufferAttribute(this.colors, 3)
+        this.iMesh.geometry.setAttribute('instanceColor', this.colorAttribute)
+      }
+      
       for (let i = size; i < count; i++) {
         this.iMesh.setMatrixAt(i, this.items[i].matrix)
+        
+        // Set colors for new items
+        if (this.supportsInstanceColors && this.items[i].color) {
+          this.setColorAt(i, this.items[i].color)
+        }
       }
     }
     this.iMesh.count = count
@@ -365,6 +424,12 @@ class Model {
       this.stage.scene.add(this.iMesh)
     }
     this.iMesh.instanceMatrix.needsUpdate = true
+    
+    // Update color attribute if supported
+    if (this.supportsInstanceColors) {
+      this.colorAttribute.needsUpdate = true
+    }
+    
     // this.iMesh.computeBoundingSphere()
     this.dirty = false
   }

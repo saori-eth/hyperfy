@@ -9,7 +9,6 @@ const defaults = {
   kind: 'box',
   size: [1, 1, 1],
   color: '#ffffff',
-  material: null,
   castShadow: true,
   receiveShadow: true,
 }
@@ -19,59 +18,52 @@ const kinds = ['box', 'sphere', 'cylinder', 'cone', 'torus', 'plane']
 // Geometry cache
 let geometryCache = new Map()
 
-const getGeometry = (kind, size) => {
-  const key = `${kind}:${size.join(',')}`
-  
-  if (!geometryCache.has(key)) {
+const getGeometry = (kind) => {
+  // All primitives of the same kind share one unit-sized geometry
+  if (!geometryCache.has(kind)) {
     let geometry
     
     switch (kind) {
       case 'box':
-        geometry = new THREE.BoxGeometry(size[0], size[1], size[2])
+        geometry = new THREE.BoxGeometry(1, 1, 1)
         break
       case 'sphere':
-        geometry = new THREE.SphereGeometry(size[0], 16, 12)
+        geometry = new THREE.SphereGeometry(1, 16, 12)
         break
       case 'cylinder':
-        geometry = new THREE.CylinderGeometry(size[0], size[0], size[1], 16)
+        geometry = new THREE.CylinderGeometry(1, 1, 1, 16)
         break
       case 'cone':
-        geometry = new THREE.ConeGeometry(size[0], size[1], 16)
+        geometry = new THREE.ConeGeometry(1, 1, 16)
         break
       case 'torus':
-        geometry = new THREE.TorusGeometry(size[0], size[1], 12, 16)
+        geometry = new THREE.TorusGeometry(1, 0.3, 12, 16) // Default tube ratio
         break
       case 'plane':
-        geometry = new THREE.PlaneGeometry(size[0], size[1])
+        geometry = new THREE.PlaneGeometry(1, 1)
         break
       default:
         geometry = new THREE.BoxGeometry(1, 1, 1)
     }
     
-    geometryCache.set(key, geometry)
+    geometryCache.set(kind, geometry)
   }
   
-  return geometryCache.get(key)
+  return geometryCache.get(kind)
 }
 
-// Material cache
-let materialCache = new Map()
+// Material cache - always returns white material for instancing
+let defaultMaterial = null
 
-const getMaterial = (color, material) => {
-  if (material) return material
-  
-  const key = color
-  
-  if (!materialCache.has(key)) {
-    const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(color),
+const getMaterial = () => {
+  if (!defaultMaterial) {
+    defaultMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#ffffff'),
       roughness: 0.8,
       metalness: 0.2,
     })
-    materialCache.set(key, mat)
   }
-  
-  return materialCache.get(key)
+  return defaultMaterial
 }
 
 export class Prim extends Node {
@@ -81,8 +73,7 @@ export class Prim extends Node {
     
     this.kind = data.kind
     this.size = data.size
-    this.color = data.color
-    this.material = data.material
+    this.color = data.color !== undefined ? data.color : defaults.color
     this.castShadow = data.castShadow
     this.receiveShadow = data.receiveShadow
   }
@@ -90,19 +81,48 @@ export class Prim extends Node {
   mount() {
     this.needsRebuild = false
     
-    const geometry = getGeometry(this._kind, this._size)
-    const material = getMaterial(this._color, this._material)
+    // Get unit-sized geometry for this kind
+    const geometry = getGeometry(this._kind)
+    
+    // Apply size via scale
+    this.updateScaleFromSize()
+    
+    // Always use instance colors
+    const material = getMaterial()
     
     // Create mesh
     this.handle = this.ctx.world.stage.insert({
       geometry,
       material,
       linked: true,
+      supportsInstanceColor: true,
+      color: this._color,
       castShadow: this._castShadow,
       receiveShadow: this._receiveShadow,
       matrix: this.matrixWorld,
       node: this,
     })
+  }
+  
+  updateScaleFromSize() {
+    // Apply size as scale transformation
+    if (this._kind === 'sphere') {
+      // Sphere uses uniform scale
+      const radius = this._size[0]
+      this.scale.set(radius, radius, radius)
+    } else if (this._kind === 'torus') {
+      // Torus: major radius as uniform scale, tube ratio handled in geometry
+      const radius = this._size[0]
+      this.scale.set(radius, radius, radius)
+    } else if (this._kind === 'cylinder' || this._kind === 'cone') {
+      // Cylinder/cone: radius for X/Z, height for Y
+      const radius = this._size[0]
+      const height = this._size[1]
+      this.scale.set(radius, height, radius)
+    } else {
+      // Box/plane: direct mapping
+      this.scale.set(this._size[0], this._size[1], this._size[2])
+    }
   }
   
   commit(didMove) {
@@ -128,19 +148,18 @@ export class Prim extends Node {
     this._kind = source._kind
     this._size = [...source._size]
     this._color = source._color
-    this._material = source._material
     this._castShadow = source._castShadow
     this._receiveShadow = source._receiveShadow
     return this
   }
   
   applyStats(stats) {
-    const geometry = getGeometry(this._kind, this._size)
+    const geometry = getGeometry(this._kind)
     if (geometry && !stats.geometries.has(geometry.uuid)) {
       stats.geometries.add(geometry.uuid)
       stats.triangles += getTrianglesFromGeometry(geometry)
     }
-    const material = getMaterial(this._color, this._material)
+    const material = getMaterial()
     if (material && !stats.materials.has(material.uuid)) {
       stats.materials.add(material.uuid)
       stats.textureBytes += getTextureBytesFromMaterial(material)
@@ -179,8 +198,10 @@ export class Prim extends Node {
     ]
     if (this._size && this._size[0] === normalized[0] && this._size[1] === normalized[1] && this._size[2] === normalized[2]) return
     this._size = normalized
+    
+    // Update scale instead of rebuilding
     if (this.handle) {
-      this.needsRebuild = true
+      this.updateScaleFromSize()
       this.setDirty()
     }
   }
@@ -195,25 +216,12 @@ export class Prim extends Node {
     }
     if (this._color === value) return
     this._color = value
-    if (this.handle && !this._material) {
-      this.needsRebuild = true
-      this.setDirty()
+    if (this.handle) {
+      // Update color directly via instance attributes
+      if (this.handle.setColor) {
+        this.handle.setColor(new THREE.Color(value))
+      }
     }
-  }
-  
-  
-  get material() {
-    return secureRef({}, () => this._material)
-  }
-  
-  set material(value = defaults.material) {
-    if (value && !value.isMaterial) {
-      throw new Error('[prim] material invalid')
-    }
-    if (this._material === value) return
-    this._material = value
-    this.needsRebuild = true
-    this.setDirty()
   }
   
   get castShadow() {
@@ -269,12 +277,6 @@ export class Prim extends Node {
         },
         set color(value) {
           self.color = value
-        },
-        get material() {
-          return self.material
-        },
-        set material(value) {
-          self.material = value
         },
         get castShadow() {
           return self.castShadow

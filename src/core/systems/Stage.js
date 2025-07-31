@@ -299,6 +299,16 @@ class Model {
     }
   }
   
+  setInstanceColor(index, color) {
+    if (!this.supportsInstanceColor || !color) return
+    
+    const idx3 = index * 3
+    this.instanceColors[idx3] = color.r
+    this.instanceColors[idx3 + 1] = color.g
+    this.instanceColors[idx3 + 2] = color.b
+    this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
+  }
+  
   setupInstanceColorShader() {
     const material = this.material.raw
     const originalOnBeforeCompile = material.onBeforeCompile
@@ -351,13 +361,7 @@ class Model {
     this.iMesh.setMatrixAt(item.idx, item.matrix) // silently fails if too small, gets increased in clean()
     
     // Set instance color if supported
-    if (this.supportsInstanceColor && color) {
-      const idx3 = item.idx * 3
-      this.instanceColors[idx3] = color.r
-      this.instanceColors[idx3 + 1] = color.g
-      this.instanceColors[idx3 + 2] = color.b
-      this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
-    }
+    this.setInstanceColor(item.idx, color)
     
     this.dirty = true
     const sItem = {
@@ -377,11 +381,7 @@ class Model {
       setColor: color => {
         if (this.supportsInstanceColor && color) {
           item.color = color
-          const idx3 = item.idx * 3
-          this.instanceColors[idx3] = color.r
-          this.instanceColors[idx3 + 1] = color.g
-          this.instanceColors[idx3 + 2] = color.b
-          this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
+          this.setInstanceColor(item.idx, color)
         }
       },
       destroy: () => {
@@ -414,12 +414,7 @@ class Model {
       
       // Swap colors if supported
       if (this.supportsInstanceColor && last.color) {
-        const idx3 = item.idx * 3
-        const lastIdx3 = last.idx * 3
-        this.instanceColors[idx3] = this.instanceColors[lastIdx3]
-        this.instanceColors[idx3 + 1] = this.instanceColors[lastIdx3 + 1]
-        this.instanceColors[idx3 + 2] = this.instanceColors[lastIdx3 + 2]
-        this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
+        this.setInstanceColor(item.idx, last.color)
       }
       
       last.idx = item.idx
@@ -453,10 +448,7 @@ class Model {
         
         // Set color for new instances
         if (this.supportsInstanceColor && this.items[i].color) {
-          const idx3 = i * 3
-          this.instanceColors[idx3] = this.items[i].color.r
-          this.instanceColors[idx3 + 1] = this.items[i].color.g
-          this.instanceColors[idx3 + 2] = this.items[i].color.b
+          this.setInstanceColor(i, this.items[i].color)
         }
       }
       

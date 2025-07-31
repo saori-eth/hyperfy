@@ -73,7 +73,7 @@ export class Prim extends Node {
     
     this.kind = data.kind
     this.size = data.size
-    this.color = data.color
+    this.color = data.color !== undefined ? data.color : defaults.color
     this.castShadow = data.castShadow
     this.receiveShadow = data.receiveShadow
   }

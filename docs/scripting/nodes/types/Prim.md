@@ -30,7 +30,7 @@ Defaults to `[1, 1, 1]`.
 
 The color of the primitive as a hex string (e.g., `#ff0000` for red).
 
-Defaults to `#ffffff`.
+Defaults to `#ffffff` (white).
 
 ### `.castShadow`: Boolean
 
@@ -94,6 +94,5 @@ app.on('update', () => {
 
 ## Notes
 
-- Primitives are automatically instanced for optimal performance
 - All primitives of the same type share geometry and render together efficiently
 - For physics collision, primitives work best with `box` and `sphere` shapes. Other shapes may require custom collider geometry or approximations

@@ -26,17 +26,11 @@ If fewer values are provided than required, missing values default to the first 
 
 Defaults to `[1, 1, 1]`.
 
-### `.color`: String|null
+### `.color`: String
 
-The color of the primitive as a hex string (e.g., `#ff0000` for red). When set to `null`, uses the default material.
+The color of the primitive as a hex string (e.g., `#ff0000` for red).
 
-Defaults to `null`.
-
-### `.material`: Material|null
-
-A custom THREE.js material to use instead of the default. When provided, overrides the color property.
-
-Defaults to `null`.
+Defaults to `#ffffff`.
 
 ### `.castShadow`: Boolean
 
@@ -100,9 +94,6 @@ app.on('update', () => {
 
 ## Notes
 
-- Geometries are cached internally based on shape type and size, improving performance when creating many primitives with the same dimensions
-- When using the `color` property without a custom material, materials are cached by color value for better instancing performance
-- When neither `color` nor `material` is specified, the Stage system's default material is used, allowing maximum instancing efficiency
-- Changing the `kind` property after creation will trigger a rebuild of the geometry
-- The `linked: true` setting enables automatic instancing via THREE.InstancedMesh for objects with matching geometry and material
+- Primitives are automatically instanced for optimal performance
+- All primitives of the same type share geometry and render together efficiently
 - For physics collision, primitives work best with `box` and `sphere` shapes. Other shapes may require custom collider geometry or approximations

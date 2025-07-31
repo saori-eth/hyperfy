@@ -9,7 +9,6 @@ const defaults = {
   kind: 'box',
   size: [1, 1, 1],
   color: '#ffffff',
-  material: null,
   castShadow: true,
   receiveShadow: true,
 }
@@ -53,24 +52,18 @@ const getGeometry = (kind) => {
   return geometryCache.get(kind)
 }
 
-// Material cache
-let materialCache = new Map()
+// Material cache - always returns white material for instancing
+let defaultMaterial = null
 
-const getMaterial = (color, material) => {
-  if (material) return material
-  
-  const key = color
-  
-  if (!materialCache.has(key)) {
-    const mat = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(color),
+const getMaterial = () => {
+  if (!defaultMaterial) {
+    defaultMaterial = new THREE.MeshStandardMaterial({
+      color: new THREE.Color('#ffffff'),
       roughness: 0.8,
       metalness: 0.2,
     })
-    materialCache.set(key, mat)
   }
-  
-  return materialCache.get(key)
+  return defaultMaterial
 }
 
 export class Prim extends Node {
@@ -81,7 +74,6 @@ export class Prim extends Node {
     this.kind = data.kind
     this.size = data.size
     this.color = data.color
-    this.material = data.material
     this.castShadow = data.castShadow
     this.receiveShadow = data.receiveShadow
   }
@@ -95,17 +87,16 @@ export class Prim extends Node {
     // Apply size via scale
     this.updateScaleFromSize()
     
-    // Use instance colors for efficiency when no custom material is provided
-    const useInstanceColor = !this._material
-    const material = useInstanceColor ? getMaterial('#ffffff', null) : getMaterial(this._color, this._material)
+    // Always use instance colors
+    const material = getMaterial()
     
     // Create mesh
     this.handle = this.ctx.world.stage.insert({
       geometry,
       material,
       linked: true,
-      supportsInstanceColor: useInstanceColor,
-      color: useInstanceColor ? this._color : null,
+      supportsInstanceColor: true,
+      color: this._color,
       castShadow: this._castShadow,
       receiveShadow: this._receiveShadow,
       matrix: this.matrixWorld,
@@ -157,19 +148,18 @@ export class Prim extends Node {
     this._kind = source._kind
     this._size = [...source._size]
     this._color = source._color
-    this._material = source._material
     this._castShadow = source._castShadow
     this._receiveShadow = source._receiveShadow
     return this
   }
   
   applyStats(stats) {
-    const geometry = getGeometry(this._kind, this._size)
+    const geometry = getGeometry(this._kind)
     if (geometry && !stats.geometries.has(geometry.uuid)) {
       stats.geometries.add(geometry.uuid)
       stats.triangles += getTrianglesFromGeometry(geometry)
     }
-    const material = getMaterial(this._color, this._material)
+    const material = getMaterial()
     if (material && !stats.materials.has(material.uuid)) {
       stats.materials.add(material.uuid)
       stats.textureBytes += getTextureBytesFromMaterial(material)
@@ -226,31 +216,12 @@ export class Prim extends Node {
     }
     if (this._color === value) return
     this._color = value
-    if (this.handle && !this._material) {
-      // Try to update color directly if handle supports it
+    if (this.handle) {
+      // Update color directly via instance attributes
       if (this.handle.setColor) {
         this.handle.setColor(new THREE.Color(value))
-      } else {
-        // Fall back to rebuild if not supported
-        this.needsRebuild = true
-        this.setDirty()
       }
     }
-  }
-  
-  
-  get material() {
-    return secureRef({}, () => this._material)
-  }
-  
-  set material(value = defaults.material) {
-    if (value && !value.isMaterial) {
-      throw new Error('[prim] material invalid')
-    }
-    if (this._material === value) return
-    this._material = value
-    this.needsRebuild = true
-    this.setDirty()
   }
   
   get castShadow() {
@@ -306,12 +277,6 @@ export class Prim extends Node {
         },
         set color(value) {
           self.color = value
-        },
-        get material() {
-          return self.material
-        },
-        set material(value) {
-          self.material = value
         },
         get castShadow() {
           return self.castShadow

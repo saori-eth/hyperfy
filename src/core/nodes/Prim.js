@@ -95,7 +95,6 @@ export class Prim extends Node {
       geometry,
       material,
       linked: true,
-      supportsInstanceColor: true,
       color: this._color,
       castShadow: this._castShadow,
       receiveShadow: this._receiveShadow,

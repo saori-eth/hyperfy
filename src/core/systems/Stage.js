@@ -73,10 +73,11 @@ export class Stage extends System {
     }
   }
 
-  insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix, supportsInstanceColor, color }) {
-    const id = `${geometry.uuid}/${material ? material.uuid : 'default'}/${castShadow}/${receiveShadow}/${supportsInstanceColor}`
+  insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix, color }) {
+    const isPrimitive = color !== undefined
+    const id = `${geometry.uuid}/${material ? material.uuid : 'default'}/${castShadow}/${receiveShadow}/${isPrimitive}`
     if (!this.models.has(id)) {
-      const model = new Model(this, geometry, material, castShadow, receiveShadow, supportsInstanceColor)
+      const model = new Model(this, geometry, material, castShadow, receiveShadow, isPrimitive)
       this.models.set(id, model)
     }
     const colorObj = color ? new THREE.Color(color) : null
@@ -253,7 +254,7 @@ export class Stage extends System {
 }
 
 class Model {
-  constructor(stage, geometry, material, castShadow, receiveShadow, supportsInstanceColor = false) {
+  constructor(stage, geometry, material, castShadow, receiveShadow, isPrimitive = false) {
     material = stage.createMaterial({ raw: material })
 
     this.stage = stage
@@ -261,7 +262,7 @@ class Model {
     this.material = material
     this.castShadow = castShadow
     this.receiveShadow = receiveShadow
-    this.supportsInstanceColor = supportsInstanceColor
+    this.isPrimitive = isPrimitive
 
     if (!this.geometry.boundsTree) this.geometry.computeBoundsTree()
 
@@ -286,8 +287,8 @@ class Model {
     this.items = [] // { matrix, node }
     this.dirty = true
     
-    // Add instance color support
-    if (this.supportsInstanceColor) {
+    // Add instance color support for primitives
+    if (this.isPrimitive) {
       const colors = new Float32Array(10 * 3) // RGB for each instance
       colors.fill(1) // Default to white
       this.instanceColors = colors
@@ -300,7 +301,7 @@ class Model {
   }
   
   setInstanceColor(index, color) {
-    if (!this.supportsInstanceColor || !color) return
+    if (!this.isPrimitive || !color) return
     
     const idx3 = index * 3
     this.instanceColors[idx3] = color.r
@@ -379,7 +380,7 @@ class Model {
         this.stage.octree.move(sItem)
       },
       setColor: color => {
-        if (this.supportsInstanceColor && color) {
+        if (this.isPrimitive && color) {
           item.color = color
           this.setInstanceColor(item.idx, color)
         }
@@ -412,8 +413,8 @@ class Model {
       // there are other instances after this one in the buffer, swap it with the last one and pop it off the end
       this.iMesh.setMatrixAt(item.idx, last.matrix)
       
-      // Swap colors if supported
-      if (this.supportsInstanceColor && last.color) {
+      // Swap colors if primitive
+      if (this.isPrimitive && last.color) {
         this.setInstanceColor(item.idx, last.color)
       }
       
@@ -433,8 +434,8 @@ class Model {
       // console.log('increase', this.mesh.name, 'from', size, 'to', newSize)
       this.iMesh.resize(newSize)
       
-      // Resize instance color buffer if supported
-      if (this.supportsInstanceColor) {
+      // Resize instance color buffer for primitives
+      if (this.isPrimitive) {
         const newColors = new Float32Array(newSize * 3)
         newColors.set(this.instanceColors)
         newColors.fill(1, this.instanceColors.length) // Fill new slots with white
@@ -447,12 +448,12 @@ class Model {
         this.iMesh.setMatrixAt(i, this.items[i].matrix)
         
         // Set color for new instances
-        if (this.supportsInstanceColor && this.items[i].color) {
+        if (this.isPrimitive && this.items[i].color) {
           this.setInstanceColor(i, this.items[i].color)
         }
       }
       
-      if (this.supportsInstanceColor) {
+      if (this.isPrimitive) {
         this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
       }
     }

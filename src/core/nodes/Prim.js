@@ -27,24 +27,35 @@ const getGeometry = (kind) => {
     switch (kind) {
       case 'box':
         geometry = new THREE.BoxGeometry(1, 1, 1)
+        // Translate geometry so bottom is at y=0
+        geometry.translate(0, 0.5, 0)
         break
       case 'sphere':
         geometry = new THREE.SphereGeometry(1, 16, 12)
+        // Translate geometry so bottom is at y=0
+        geometry.translate(0, 1, 0)
         break
       case 'cylinder':
         geometry = new THREE.CylinderGeometry(1, 1, 1, 16)
+        // Translate geometry so bottom is at y=0
+        geometry.translate(0, 0.5, 0)
         break
       case 'cone':
         geometry = new THREE.ConeGeometry(1, 1, 16)
+        // Translate geometry so bottom is at y=0
+        geometry.translate(0, 0.5, 0)
         break
       case 'torus':
         geometry = new THREE.TorusGeometry(1, 0.3, 12, 16) // Default tube ratio
+        // Keep torus centered
         break
       case 'plane':
         geometry = new THREE.PlaneGeometry(1, 1)
+        // Keep plane centered
         break
       default:
         geometry = new THREE.BoxGeometry(1, 1, 1)
+        geometry.translate(0, 0.5, 0)
     }
     
     geometryCache.set(kind, geometry)

@@ -1,6 +1,6 @@
 // Configuration
-const TOTAL_COUNT = 1000
-const WORLD_SIZE = 50
+const TOTAL_COUNT = 100000
+const WORLD_SIZE = 500
 const SHAPES = ['box', 'sphere', 'cylinder', 'cone', 'torus']
 
 // Statistics

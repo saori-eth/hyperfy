@@ -74,7 +74,7 @@ export class Stage extends System {
   }
 
   insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix }) {
-    const id = `${geometry.uuid}/${material ? material.uuid : 'default'}/${castShadow}/${receiveShadow}`
+    const id = `${geometry.uuid}/${material.uuid}/${castShadow}/${receiveShadow}`
     if (!this.models.has(id)) {
       const model = new Model(this, geometry, material, castShadow, receiveShadow)
       this.models.set(id, model)
@@ -282,8 +282,19 @@ class Model {
     this.receiveShadow = receiveShadow
 
     if (!this.geometry.boundsTree) this.geometry.computeBoundsTree()
+      
+    // this.mesh = mesh.clone()
+    // this.mesh.geometry.computeBoundsTree() // three-mesh-bvh
+    // // this.mesh.geometry.computeBoundingBox() // spatial octree
+    // // this.mesh.geometry.computeBoundingSphere() // spatial octree
+    // this.mesh.material.shadowSide = THREE.BackSide // fix csm shadow banding
+    // this.mesh.castShadow = true
+    // this.mesh.receiveShadow = true
+    // this.mesh.matrixAutoUpdate = false
+    // this.mesh.matrixWorldAutoUpdate = false
 
     this.iMesh = new THREE.InstancedMesh(this.geometry, this.material.raw, 10)
+     // this.iMesh.name = this.mesh.name
     this.iMesh.castShadow = this.castShadow
     this.iMesh.receiveShadow = this.receiveShadow
     this.iMesh.matrixAutoUpdate = false
@@ -299,10 +310,10 @@ class Model {
       idx: this.items.length,
       node,
       matrix,
+      // octree
     }
     this.items.push(item)
     this.iMesh.setMatrixAt(item.idx, item.matrix) // silently fails if too small, gets increased in clean()
-    
     this.dirty = true
     const sItem = {
       matrix,
@@ -345,7 +356,6 @@ class Model {
     } else {
       // there are other instances after this one in the buffer, swap it with the last one and pop it off the end
       this.iMesh.setMatrixAt(item.idx, last.matrix)
-      
       last.idx = item.idx
       this.items[item.idx] = last
       this.items.pop()
@@ -584,7 +594,6 @@ class Primitive extends Model {
     if (size < this.items.length) {
       const newSize = count + 100
       this.iMesh.resize(newSize)
-      
       // Resize instance color buffer
       const newColors = new Float32Array(newSize * 3)
       newColors.set(this.instanceColors)

@@ -73,12 +73,20 @@ export class Stage extends System {
     }
   }
 
-  insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix, color, emissive }) {
-    const isPrimitive = color !== undefined
-    const id = `${geometry.uuid}/${material ? material.uuid : 'default'}/${castShadow}/${receiveShadow}/${isPrimitive}`
+  insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix }) {
+    const id = `${geometry.uuid}/${material ? material.uuid : 'default'}/${castShadow}/${receiveShadow}`
     if (!this.models.has(id)) {
-      const model = new Model(this, geometry, material, castShadow, receiveShadow, isPrimitive)
+      const model = new Model(this, geometry, material, castShadow, receiveShadow)
       this.models.set(id, model)
+    }
+    return this.models.get(id).create(node, matrix)
+  }
+  
+  insertPrimitive({ geometry, material, castShadow, receiveShadow, node, matrix, color, emissive }) {
+    const id = `${geometry.uuid}/${material ? material.uuid : 'default'}/${castShadow}/${receiveShadow}/primitive`
+    if (!this.models.has(id)) {
+      const primitive = new Primitive(this, geometry, material, castShadow, receiveShadow)
+      this.models.set(id, primitive)
     }
     const colorObj = color ? new THREE.Color(color) : null
     let emissiveObj = null
@@ -264,7 +272,7 @@ export class Stage extends System {
 }
 
 class Model {
-  constructor(stage, geometry, material, castShadow, receiveShadow, isPrimitive = false) {
+  constructor(stage, geometry, material, castShadow, receiveShadow) {
     material = stage.createMaterial({ raw: material })
 
     this.stage = stage
@@ -272,22 +280,10 @@ class Model {
     this.material = material
     this.castShadow = castShadow
     this.receiveShadow = receiveShadow
-    this.isPrimitive = isPrimitive
 
     if (!this.geometry.boundsTree) this.geometry.computeBoundsTree()
 
-    // this.mesh = mesh.clone()
-    // this.mesh.geometry.computeBoundsTree() // three-mesh-bvh
-    // // this.mesh.geometry.computeBoundingBox() // spatial octree
-    // // this.mesh.geometry.computeBoundingSphere() // spatial octree
-    // this.mesh.material.shadowSide = THREE.BackSide // fix csm shadow banding
-    // this.mesh.castShadow = true
-    // this.mesh.receiveShadow = true
-    // this.mesh.matrixAutoUpdate = false
-    // this.mesh.matrixWorldAutoUpdate = false
-
     this.iMesh = new THREE.InstancedMesh(this.geometry, this.material.raw, 10)
-    // this.iMesh.name = this.mesh.name
     this.iMesh.castShadow = this.castShadow
     this.iMesh.receiveShadow = this.receiveShadow
     this.iMesh.matrixAutoUpdate = false
@@ -296,31 +292,136 @@ class Model {
     this.iMesh.getEntity = this.getEntity.bind(this)
     this.items = [] // { matrix, node }
     this.dirty = true
-    
-    // Add instance color support for primitives
-    if (this.isPrimitive) {
-      const colors = new Float32Array(10 * 3) // RGB for each instance
-      colors.fill(1) // Default to white
-      this.instanceColors = colors
-      const instanceColorAttribute = new THREE.InstancedBufferAttribute(colors, 3)
-      this.iMesh.geometry.setAttribute('instanceColor', instanceColorAttribute)
-      
-      const emissives = new Float32Array(10 * 4) // RGBA for each instance emissive (RGB + intensity)
-      emissives.fill(0) // Default to no emission
-      this.instanceEmissives = emissives
-      const instanceEmissiveAttribute = new THREE.InstancedBufferAttribute(emissives, 4)
-      this.iMesh.geometry.setAttribute('instanceEmissive', instanceEmissiveAttribute)
-      
-      // Modify material to support instance colors
-      this.setupInstanceColorShader()
-      
-      // Mark material as needing update
-      this.material.raw.needsUpdate = true
+  }
+
+  create(node, matrix) {
+    const item = {
+      idx: this.items.length,
+      node,
+      matrix,
     }
+    this.items.push(item)
+    this.iMesh.setMatrixAt(item.idx, item.matrix) // silently fails if too small, gets increased in clean()
+    
+    this.dirty = true
+    const sItem = {
+      matrix,
+      geometry: this.geometry,
+      material: this.material.raw,
+      getEntity: () => this.items[item.idx]?.node.ctx.entity,
+      node,
+    }
+    this.stage.octree.insert(sItem)
+    return {
+      material: this.material.proxy,
+      move: matrix => {
+        this.move(item, matrix)
+        this.stage.octree.move(sItem)
+      },
+      destroy: () => {
+        this.destroy(item)
+        this.stage.octree.remove(sItem)
+      },
+    }
+  }
+
+  move(item, matrix) {
+    item.matrix.copy(matrix)
+    this.iMesh.setMatrixAt(item.idx, matrix)
+    this.dirty = true
+  }
+
+  destroy(item) {
+    const last = this.items[this.items.length - 1]
+    const isOnly = this.items.length === 1
+    const isLast = item === last
+    if (isOnly) {
+      this.items = []
+      this.dirty = true
+    } else if (isLast) {
+      // this is the last instance in the buffer, pop it off the end
+      this.items.pop()
+      this.dirty = true
+    } else {
+      // there are other instances after this one in the buffer, swap it with the last one and pop it off the end
+      this.iMesh.setMatrixAt(item.idx, last.matrix)
+      
+      last.idx = item.idx
+      this.items[item.idx] = last
+      this.items.pop()
+      this.dirty = true
+    }
+  }
+
+  clean() {
+    if (!this.dirty) return
+    const size = this.iMesh.instanceMatrix.array.length / 16
+    const count = this.items.length
+    if (size < this.items.length) {
+      const newSize = count + 100
+      // console.log('increase', this.mesh.name, 'from', size, 'to', newSize)
+      this.iMesh.resize(newSize)
+      
+      for (let i = size; i < count; i++) {
+        this.iMesh.setMatrixAt(i, this.items[i].matrix)
+      }
+    }
+    this.iMesh.count = count
+    if (this.iMesh.parent && !count) {
+      this.stage.scene.remove(this.iMesh)
+      this.dirty = false
+      return
+    }
+    if (!this.iMesh.parent && count) {
+      this.stage.scene.add(this.iMesh)
+    }
+    this.iMesh.instanceMatrix.needsUpdate = true
+    // this.iMesh.computeBoundingSphere()
+    this.dirty = false
+  }
+
+  getEntity(instanceId) {
+    console.warn('TODO: remove if you dont ever see this')
+    return this.items[instanceId]?.node.ctx.entity
+  }
+
+  getTriangles() {
+    const geometry = this.geometry
+    if (geometry.index !== null) {
+      return geometry.index.count / 3
+    } else {
+      return geometry.attributes.position.count / 3
+    }
+  }
+}
+
+class Primitive extends Model {
+  constructor(stage, geometry, material, castShadow, receiveShadow) {
+    super(stage, geometry, material, castShadow, receiveShadow)
+    
+    // Initialize instance color attributes
+    const colors = new Float32Array(10 * 3) // RGB for each instance
+    colors.fill(1) // Default to white
+    this.instanceColors = colors
+    const instanceColorAttribute = new THREE.InstancedBufferAttribute(colors, 3)
+    this.iMesh.geometry.setAttribute('instanceColor', instanceColorAttribute)
+    
+    // Initialize instance emissive attributes
+    const emissives = new Float32Array(10 * 4) // RGBA for each instance emissive (RGB + intensity)
+    emissives.fill(0) // Default to no emission
+    this.instanceEmissives = emissives
+    const instanceEmissiveAttribute = new THREE.InstancedBufferAttribute(emissives, 4)
+    this.iMesh.geometry.setAttribute('instanceEmissive', instanceEmissiveAttribute)
+    
+    // Modify material to support instance colors
+    this.setupInstanceColorShader()
+    
+    // Mark material as needing update
+    this.material.raw.needsUpdate = true
   }
   
   setInstanceColor(index, color) {
-    if (!this.isPrimitive || !color) return
+    if (!color) return
     
     const idx3 = index * 3
     this.instanceColors[idx3] = color.r
@@ -330,7 +431,7 @@ class Model {
   }
   
   setInstanceEmissive(index, emissive, intensity = 1.0) {
-    if (!this.isPrimitive || !emissive) return
+    if (!emissive) return
     
     const idx4 = index * 4
     this.instanceEmissives[idx4] = emissive.r
@@ -390,7 +491,7 @@ class Model {
       )
     }
   }
-
+  
   create(node, matrix, color = null, emissive = null, emissiveIntensity = 1.0) {
     const item = {
       idx: this.items.length,
@@ -399,15 +500,14 @@ class Model {
       color,
       emissive,
       emissiveIntensity,
-      // octree
     }
     this.items.push(item)
-    this.iMesh.setMatrixAt(item.idx, item.matrix) // silently fails if too small, gets increased in clean()
+    this.iMesh.setMatrixAt(item.idx, item.matrix)
     
-    // Set instance color if supported
+    // Set instance color
     this.setInstanceColor(item.idx, color)
     
-    // Set instance emissive if supported
+    // Set instance emissive
     this.setInstanceEmissive(item.idx, emissive, emissiveIntensity)
     
     this.dirty = true
@@ -426,13 +526,13 @@ class Model {
         this.stage.octree.move(sItem)
       },
       setColor: color => {
-        if (this.isPrimitive && color) {
+        if (color) {
           item.color = color
           this.setInstanceColor(item.idx, color)
         }
       },
       setEmissive: (emissive, intensity = 1.0) => {
-        if (this.isPrimitive && emissive) {
+        if (emissive) {
           item.emissive = emissive
           item.emissiveIntensity = intensity
           this.setInstanceEmissive(item.idx, emissive, intensity)
@@ -444,13 +544,7 @@ class Model {
       },
     }
   }
-
-  move(item, matrix) {
-    item.matrix.copy(matrix)
-    this.iMesh.setMatrixAt(item.idx, matrix)
-    this.dirty = true
-  }
-
+  
   destroy(item) {
     const last = this.items[this.items.length - 1]
     const isOnly = this.items.length === 1
@@ -466,13 +560,13 @@ class Model {
       // there are other instances after this one in the buffer, swap it with the last one and pop it off the end
       this.iMesh.setMatrixAt(item.idx, last.matrix)
       
-      // Swap colors if primitive
-      if (this.isPrimitive && last.color) {
+      // Swap colors
+      if (last.color) {
         this.setInstanceColor(item.idx, last.color)
       }
       
-      // Swap emissive if primitive
-      if (this.isPrimitive && last.emissive) {
+      // Swap emissive
+      if (last.emissive) {
         this.setInstanceEmissive(item.idx, last.emissive, last.emissiveIntensity || 1.0)
       }
       
@@ -482,51 +576,47 @@ class Model {
       this.dirty = true
     }
   }
-
+  
   clean() {
     if (!this.dirty) return
     const size = this.iMesh.instanceMatrix.array.length / 16
     const count = this.items.length
     if (size < this.items.length) {
       const newSize = count + 100
-      // console.log('increase', this.mesh.name, 'from', size, 'to', newSize)
       this.iMesh.resize(newSize)
       
-      // Resize instance color buffer for primitives
-      if (this.isPrimitive) {
-        const newColors = new Float32Array(newSize * 3)
-        newColors.set(this.instanceColors)
-        newColors.fill(1, this.instanceColors.length) // Fill new slots with white
-        this.instanceColors = newColors
-        const instanceColorAttribute = new THREE.InstancedBufferAttribute(newColors, 3)
-        this.iMesh.geometry.setAttribute('instanceColor', instanceColorAttribute)
-        
-        const newEmissives = new Float32Array(newSize * 4)
-        newEmissives.set(this.instanceEmissives)
-        newEmissives.fill(0, this.instanceEmissives.length) // Fill new slots with no emission
-        this.instanceEmissives = newEmissives
-        const instanceEmissiveAttribute = new THREE.InstancedBufferAttribute(newEmissives, 4)
-        this.iMesh.geometry.setAttribute('instanceEmissive', instanceEmissiveAttribute)
-      }
+      // Resize instance color buffer
+      const newColors = new Float32Array(newSize * 3)
+      newColors.set(this.instanceColors)
+      newColors.fill(1, this.instanceColors.length) // Fill new slots with white
+      this.instanceColors = newColors
+      const instanceColorAttribute = new THREE.InstancedBufferAttribute(newColors, 3)
+      this.iMesh.geometry.setAttribute('instanceColor', instanceColorAttribute)
+      
+      // Resize instance emissive buffer
+      const newEmissives = new Float32Array(newSize * 4)
+      newEmissives.set(this.instanceEmissives)
+      newEmissives.fill(0, this.instanceEmissives.length) // Fill new slots with no emission
+      this.instanceEmissives = newEmissives
+      const instanceEmissiveAttribute = new THREE.InstancedBufferAttribute(newEmissives, 4)
+      this.iMesh.geometry.setAttribute('instanceEmissive', instanceEmissiveAttribute)
       
       for (let i = size; i < count; i++) {
         this.iMesh.setMatrixAt(i, this.items[i].matrix)
         
         // Set color for new instances
-        if (this.isPrimitive && this.items[i].color) {
+        if (this.items[i].color) {
           this.setInstanceColor(i, this.items[i].color)
         }
         
         // Set emissive for new instances
-        if (this.isPrimitive && this.items[i].emissive) {
+        if (this.items[i].emissive) {
           this.setInstanceEmissive(i, this.items[i].emissive, this.items[i].emissiveIntensity || 1.0)
         }
       }
       
-      if (this.isPrimitive) {
-        this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
-        this.iMesh.geometry.attributes.instanceEmissive.needsUpdate = true
-      }
+      this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
+      this.iMesh.geometry.attributes.instanceEmissive.needsUpdate = true
     }
     this.iMesh.count = count
     if (this.iMesh.parent && !count) {
@@ -538,21 +628,6 @@ class Model {
       this.stage.scene.add(this.iMesh)
     }
     this.iMesh.instanceMatrix.needsUpdate = true
-    // this.iMesh.computeBoundingSphere()
     this.dirty = false
-  }
-
-  getEntity(instanceId) {
-    console.warn('TODO: remove if you dont ever see this')
-    return this.items[instanceId]?.node.ctx.entity
-  }
-
-  getTriangles() {
-    const geometry = this.geometry
-    if (geometry.index !== null) {
-      return geometry.index.count / 3
-    } else {
-      return geometry.attributes.position.count / 3
-    }
   }
 }

@@ -93,16 +93,15 @@ export class Prim extends Node {
     const material = getMaterial()
     
     // Create mesh
-    this.handle = this.ctx.world.stage.insert({
+    this.handle = this.ctx.world.stage.insertPrimitive({
       geometry,
       material,
-      linked: true,
-      color: this._color,
-      emissive: this._emissive,
       castShadow: this._castShadow,
       receiveShadow: this._receiveShadow,
       matrix: this.matrixWorld,
       node: this,
+      color: this._color,
+      emissive: this._emissive,
     })
   }
   

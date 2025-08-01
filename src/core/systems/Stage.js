@@ -282,6 +282,7 @@ class Model {
     this.receiveShadow = receiveShadow
 
     if (!this.geometry.boundsTree) this.geometry.computeBoundsTree()
+      
     // this.mesh = mesh.clone()
     // this.mesh.geometry.computeBoundsTree() // three-mesh-bvh
     // // this.mesh.geometry.computeBoundingBox() // spatial octree

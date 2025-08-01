@@ -73,7 +73,7 @@ export class Stage extends System {
     }
   }
 
-  insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix, color }) {
+  insertLinked({ geometry, material, castShadow, receiveShadow, node, matrix, color, emissive }) {
     const isPrimitive = color !== undefined
     const id = `${geometry.uuid}/${material ? material.uuid : 'default'}/${castShadow}/${receiveShadow}/${isPrimitive}`
     if (!this.models.has(id)) {
@@ -81,7 +81,17 @@ export class Stage extends System {
       this.models.set(id, model)
     }
     const colorObj = color ? new THREE.Color(color) : null
-    return this.models.get(id).create(node, matrix, colorObj)
+    let emissiveObj = null
+    let emissiveIntensity = 1.0
+    if (emissive) {
+      if (typeof emissive === 'string') {
+        emissiveObj = new THREE.Color(emissive)
+      } else if (typeof emissive === 'object') {
+        emissiveObj = new THREE.Color(emissive.color || '#ffffff')
+        emissiveIntensity = emissive.intensity !== undefined ? emissive.intensity : 1.0
+      }
+    }
+    return this.models.get(id).create(node, matrix, colorObj, emissiveObj, emissiveIntensity)
   }
 
   insertSingle({ geometry, material, castShadow, receiveShadow, node, matrix }) {
@@ -295,8 +305,17 @@ class Model {
       const instanceColorAttribute = new THREE.InstancedBufferAttribute(colors, 3)
       this.iMesh.geometry.setAttribute('instanceColor', instanceColorAttribute)
       
+      const emissives = new Float32Array(10 * 4) // RGBA for each instance emissive (RGB + intensity)
+      emissives.fill(0) // Default to no emission
+      this.instanceEmissives = emissives
+      const instanceEmissiveAttribute = new THREE.InstancedBufferAttribute(emissives, 4)
+      this.iMesh.geometry.setAttribute('instanceEmissive', instanceEmissiveAttribute)
+      
       // Modify material to support instance colors
       this.setupInstanceColorShader()
+      
+      // Mark material as needing update
+      this.material.raw.needsUpdate = true
     }
   }
   
@@ -310,6 +329,17 @@ class Model {
     this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
   }
   
+  setInstanceEmissive(index, emissive, intensity = 1.0) {
+    if (!this.isPrimitive || !emissive) return
+    
+    const idx4 = index * 4
+    this.instanceEmissives[idx4] = emissive.r
+    this.instanceEmissives[idx4 + 1] = emissive.g
+    this.instanceEmissives[idx4 + 2] = emissive.b
+    this.instanceEmissives[idx4 + 3] = intensity
+    this.iMesh.geometry.attributes.instanceEmissive.needsUpdate = true
+  }
+  
   setupInstanceColorShader() {
     const material = this.material.raw
     const originalOnBeforeCompile = material.onBeforeCompile
@@ -320,42 +350,55 @@ class Model {
         originalOnBeforeCompile(shader)
       }
       
-      // Inject instance color attribute
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <common>',
-        `#include <common>
+      // Store shader for debugging
+      material.userData.shader = shader
+      
+      // Inject instance color and emissive attributes
+      shader.vertexShader = `
         attribute vec3 instanceColor;
-        varying vec3 vInstanceColor;`
-      )
+        attribute vec4 instanceEmissive;
+        varying vec3 vInstanceColor;
+        varying vec4 vInstanceEmissive;
+      ` + shader.vertexShader
       
-      // Pass instance color to fragment shader
+      // Pass instance color and emissive to fragment shader
       shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-        vInstanceColor = instanceColor;`
+        '#include <worldpos_vertex>',
+        `#include <worldpos_vertex>
+        vInstanceColor = instanceColor;
+        vInstanceEmissive = instanceEmissive;`
       )
       
-      // Apply instance color in fragment shader
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <common>',
-        `#include <common>
-        varying vec3 vInstanceColor;`
-      )
+      // Apply instance color and emissive in fragment shader
+      shader.fragmentShader = `
+        varying vec3 vInstanceColor;
+        varying vec4 vInstanceEmissive;
+      ` + shader.fragmentShader
       
+      // Apply color after the base color is set
       shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <color_fragment>',
-        `#include <color_fragment>
+        '#include <map_fragment>',
+        `#include <map_fragment>
         diffuseColor.rgb *= vInstanceColor;`
+      )
+      
+      // Add emissive - find where emissive is accumulated in the standard material
+      shader.fragmentShader = shader.fragmentShader.replace(
+        '#include <emissivemap_fragment>',
+        `#include <emissivemap_fragment>
+        totalEmissiveRadiance += vInstanceEmissive.rgb * vInstanceEmissive.a;`
       )
     }
   }
 
-  create(node, matrix, color = null) {
+  create(node, matrix, color = null, emissive = null, emissiveIntensity = 1.0) {
     const item = {
       idx: this.items.length,
       node,
       matrix,
       color,
+      emissive,
+      emissiveIntensity,
       // octree
     }
     this.items.push(item)
@@ -363,6 +406,9 @@ class Model {
     
     // Set instance color if supported
     this.setInstanceColor(item.idx, color)
+    
+    // Set instance emissive if supported
+    this.setInstanceEmissive(item.idx, emissive, emissiveIntensity)
     
     this.dirty = true
     const sItem = {
@@ -383,6 +429,13 @@ class Model {
         if (this.isPrimitive && color) {
           item.color = color
           this.setInstanceColor(item.idx, color)
+        }
+      },
+      setEmissive: (emissive, intensity = 1.0) => {
+        if (this.isPrimitive && emissive) {
+          item.emissive = emissive
+          item.emissiveIntensity = intensity
+          this.setInstanceEmissive(item.idx, emissive, intensity)
         }
       },
       destroy: () => {
@@ -418,6 +471,11 @@ class Model {
         this.setInstanceColor(item.idx, last.color)
       }
       
+      // Swap emissive if primitive
+      if (this.isPrimitive && last.emissive) {
+        this.setInstanceEmissive(item.idx, last.emissive, last.emissiveIntensity || 1.0)
+      }
+      
       last.idx = item.idx
       this.items[item.idx] = last
       this.items.pop()
@@ -442,6 +500,13 @@ class Model {
         this.instanceColors = newColors
         const instanceColorAttribute = new THREE.InstancedBufferAttribute(newColors, 3)
         this.iMesh.geometry.setAttribute('instanceColor', instanceColorAttribute)
+        
+        const newEmissives = new Float32Array(newSize * 4)
+        newEmissives.set(this.instanceEmissives)
+        newEmissives.fill(0, this.instanceEmissives.length) // Fill new slots with no emission
+        this.instanceEmissives = newEmissives
+        const instanceEmissiveAttribute = new THREE.InstancedBufferAttribute(newEmissives, 4)
+        this.iMesh.geometry.setAttribute('instanceEmissive', instanceEmissiveAttribute)
       }
       
       for (let i = size; i < count; i++) {
@@ -451,10 +516,16 @@ class Model {
         if (this.isPrimitive && this.items[i].color) {
           this.setInstanceColor(i, this.items[i].color)
         }
+        
+        // Set emissive for new instances
+        if (this.isPrimitive && this.items[i].emissive) {
+          this.setInstanceEmissive(i, this.items[i].emissive, this.items[i].emissiveIntensity || 1.0)
+        }
       }
       
       if (this.isPrimitive) {
         this.iMesh.geometry.attributes.instanceColor.needsUpdate = true
+        this.iMesh.geometry.attributes.instanceEmissive.needsUpdate = true
       }
     }
     this.iMesh.count = count

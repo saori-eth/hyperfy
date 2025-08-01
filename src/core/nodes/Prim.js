@@ -9,6 +9,7 @@ const defaults = {
   kind: 'box',
   size: [1, 1, 1],
   color: '#ffffff',
+  emissive: null,
   castShadow: true,
   receiveShadow: true,
 }
@@ -74,6 +75,7 @@ export class Prim extends Node {
     this.kind = data.kind
     this.size = data.size
     this.color = data.color !== undefined ? data.color : defaults.color
+    this.emissive = data.emissive !== undefined ? data.emissive : defaults.emissive
     this.castShadow = data.castShadow
     this.receiveShadow = data.receiveShadow
   }
@@ -96,6 +98,7 @@ export class Prim extends Node {
       material,
       linked: true,
       color: this._color,
+      emissive: this._emissive,
       castShadow: this._castShadow,
       receiveShadow: this._receiveShadow,
       matrix: this.matrixWorld,
@@ -147,6 +150,7 @@ export class Prim extends Node {
     this._kind = source._kind
     this._size = [...source._size]
     this._color = source._color
+    this._emissive = source._emissive
     this._castShadow = source._castShadow
     this._receiveShadow = source._receiveShadow
     return this
@@ -223,6 +227,30 @@ export class Prim extends Node {
     }
   }
   
+  get emissive() {
+    return this._emissive
+  }
+  
+  set emissive(value = defaults.emissive) {
+    if (value !== null && !isString(value) && (!value || typeof value !== 'object')) {
+      throw new Error('[prim] emissive must be string, object with {color, intensity}, or null')
+    }
+    if (this._emissive === value) return
+    this._emissive = value
+    if (this.handle) {
+      // Update emissive directly via instance attributes
+      if (this.handle.setEmissive && value) {
+        if (isString(value)) {
+          this.handle.setEmissive(new THREE.Color(value), 1.0)
+        } else if (value && typeof value === 'object') {
+          const color = new THREE.Color(value.color || '#ffffff')
+          const intensity = value.intensity !== undefined ? value.intensity : 1.0
+          this.handle.setEmissive(color, intensity)
+        }
+      }
+    }
+  }
+  
   get castShadow() {
     return this._castShadow
   }
@@ -276,6 +304,12 @@ export class Prim extends Node {
         },
         set color(value) {
           self.color = value
+        },
+        get emissive() {
+          return self.emissive
+        },
+        set emissive(value) {
+          self.emissive = value
         },
         get castShadow() {
           return self.castShadow

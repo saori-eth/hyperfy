@@ -1,12 +1,6 @@
-// 10,000 Primitives Stress Test
-// Tests the instanced rendering system with massive scale
-
-console.log('=== 10,000 PRIMITIVES STRESS TEST ===')
-console.log('Testing instanced rendering at scale with static primitives')
-
 // Configuration
-const TOTAL_COUNT = 10000
-const WORLD_SIZE = 200
+const TOTAL_COUNT = 1000
+const WORLD_SIZE = 50
 const SHAPES = ['box', 'sphere', 'cylinder', 'cone', 'torus']
 
 // Statistics
@@ -24,6 +18,13 @@ SHAPES.forEach(shape => stats.shapes[shape] = 0)
 const primitives = []
 
 console.log(`Creating ${TOTAL_COUNT} primitives...`)
+console.log('App object:', typeof app !== 'undefined' ? 'Available' : 'Not available')
+if (typeof app !== 'undefined') {
+  console.log('App methods:', {
+    create: typeof app.create,
+    add: typeof app.add
+  })
+}
 stats.startTime = Date.now ? Date.now() : 0
 
 // Create primitives with even distribution
@@ -62,12 +63,33 @@ for (let i = 0; i < TOTAL_COUNT; i++) {
   const lightness = 40 + Math.random() * 30
   const color = `hsl(${hue}, ${saturation}%, ${lightness}%)`
   
+  // Add emissive to some shapes (20% chance)
+  let emissive = null
+  if (Math.random() < 0.2) {
+    // Create emissive color with similar hue but higher saturation/lightness
+    const emissiveHue = hue
+    const emissiveSaturation = 70 + Math.random() * 30
+    const emissiveLightness = 50 + Math.random() * 30
+    const emissiveColor = `hsl(${emissiveHue}, ${emissiveSaturation}%, ${emissiveLightness}%)`
+    
+    // 50% chance to use object format with custom intensity
+    if (Math.random() < 0.5) {
+      emissive = {
+        color: emissiveColor,
+        intensity: 0.5 + Math.random() * 2.0 // Random intensity between 0.5 and 2.5
+      }
+    } else {
+      emissive = emissiveColor // Default intensity of 1.0
+    }
+  }
+  
   // Create primitive
   const prim = app.create('prim', {
     kind: shape,
     size: size,
     position: position,
     color: color,
+    emissive: emissive,
     castShadow: false,
     receiveShadow: false
   })
@@ -77,67 +99,33 @@ for (let i = 0; i < TOTAL_COUNT; i++) {
   // Store primitive reference
   primitives.push(prim)
   
-  // Progress logging
-  if (i % 1000 === 999) {
-    console.log(`Progress: ${i + 1} / ${TOTAL_COUNT}`)
+  // Log first primitive to debug
+  if (i === 0) {
+    console.log('First primitive created:', prim)
+    console.log('First primitive properties:', {
+      kind: prim.kind,
+      position: prim.position,
+      size: prim.size,
+      color: prim.color,
+      emissive: prim.emissive
+    })
   }
 }
 
 const creationTime = Date.now ? Date.now() - stats.startTime : 0
-console.log(`\n✅ Created ${TOTAL_COUNT} primitives in ${creationTime}ms`)
 
-// Log distribution
-console.log('\n📊 Shape Distribution:')
-Object.entries(stats.shapes).forEach(([shape, count]) => {
-  console.log(`  ${shape}: ${count} instances`)
-})
+console.log(`Created ${primitives.length} primitives in ${creationTime}ms`)
+console.log('Distribution:', stats.shapes)
 
-console.log('\n🎯 Expected Performance:')
-console.log(`  Draw calls: ~${SHAPES.length} (one per shape type)`)
-console.log(`  Reduction: ${Math.round(TOTAL_COUNT / SHAPES.length)}x fewer draw calls`)
-
-// FPS monitoring and color animation
-let animTime = 0
-let colorShift = 0
-app.on('update', (dt) => {
-  animTime += dt
-  stats.frameCount++
-  colorShift += dt * 0.1 // Slow color shift
-  
-  // Update colors for all primitives
-  for (let i = 0; i < primitives.length; i++) {
-    const prim = primitives[i]
-    
-    // Create animated color based on position and time
-    const hue = ((i / TOTAL_COUNT) * 360 + colorShift * 50) % 360
-    const saturation = 60 + Math.sin(animTime + i * 0.001) * 20
-    const lightness = 50 + Math.cos(animTime * 0.5 + i * 0.002) * 15
-    
-    // Update the color
-    prim.color = `hsl(${hue}, ${saturation}%, ${lightness}%)`
+// Try to set camera position if available
+if (typeof world !== 'undefined' && world.getAvatar) {
+  try {
+    const avatar = world.getAvatar()
+    if (avatar) {
+      avatar.position = [0, 50, 100]
+      console.log('Camera/avatar position set')
+    }
+  } catch (e) {
+    console.log('Could not set avatar position:', e.message)
   }
-  
-  // FPS calculation every second
-  if (animTime - stats.lastFpsTime > 1) {
-    const fps = stats.frameCount / (animTime - stats.lastFpsTime)
-    console.log(`FPS: ${fps.toFixed(1)} | Rendering ${TOTAL_COUNT} objects with animated colors`)
-    stats.frameCount = 0
-    stats.lastFpsTime = animTime
-  }
-})
-
-// Instructions
-console.log('\n🎮 STRESS TEST COMPLETE:')
-console.log('  ✓ 10,000 primitives created')
-console.log('  ✓ Different shapes and sizes')
-console.log('  ✓ Colors animating in real-time')
-console.log('  ✓ Demonstrates instance color updates')
-console.log('\n📈 Monitor FPS in console')
-console.log('💡 All rendering in ~5 draw calls!')
-console.log('🌈 Watch the color wave animation!')
-
-// Cleanup function
-return () => {
-  primitives.forEach(data => app.remove(data.prim))
-  console.log('Cleaned up 10K stress test')
 }

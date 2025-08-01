@@ -47,7 +47,9 @@ const getGeometry = (kind) => {
         break
       case 'torus':
         geometry = new THREE.TorusGeometry(1, 0.3, 12, 16) // Default tube ratio
-        // Keep torus centered
+        // Translate geometry so bottom is at y=0
+        // Bottom of torus is at -(majorRadius + tubeRadius) = -(1 + 0.3) = -1.3
+        geometry.translate(0, 1.3, 0)
         break
       case 'plane':
         geometry = new THREE.PlaneGeometry(1, 1)

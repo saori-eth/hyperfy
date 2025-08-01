@@ -39,7 +39,7 @@ const cone = app.create('prim', {
 const torus = app.create('prim', {
   kind: 'torus',
   size: [0.8, 0.3],
-  position: [spacing * 1.5, 0.8, 0],
+  position: [spacing * 1.5, 0, 0],
   color: '#ffff44'
 })
 

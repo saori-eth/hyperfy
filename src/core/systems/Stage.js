@@ -282,7 +282,6 @@ class Model {
     this.receiveShadow = receiveShadow
 
     if (!this.geometry.boundsTree) this.geometry.computeBoundsTree()
-      
     // this.mesh = mesh.clone()
     // this.mesh.geometry.computeBoundsTree() // three-mesh-bvh
     // // this.mesh.geometry.computeBoundingBox() // spatial octree
@@ -294,7 +293,7 @@ class Model {
     // this.mesh.matrixWorldAutoUpdate = false
 
     this.iMesh = new THREE.InstancedMesh(this.geometry, this.material.raw, 10)
-     // this.iMesh.name = this.mesh.name
+    // this.iMesh.name = this.mesh.name
     this.iMesh.castShadow = this.castShadow
     this.iMesh.receiveShadow = this.receiveShadow
     this.iMesh.matrixAutoUpdate = false
@@ -371,7 +370,6 @@ class Model {
       const newSize = count + 100
       // console.log('increase', this.mesh.name, 'from', size, 'to', newSize)
       this.iMesh.resize(newSize)
-      
       for (let i = size; i < count; i++) {
         this.iMesh.setMatrixAt(i, this.items[i].matrix)
       }

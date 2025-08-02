@@ -68,6 +68,39 @@ Whether the primitive should cast shadows. Defaults to `true`.
 
 Whether the primitive should receive shadows from other objects. Defaults to `true`.
 
+### `.physics`: Boolean | Object | null
+
+Enables physics for the primitive. Can be:
+- `true` - Enables static physics with default settings
+- `Object` - Detailed physics configuration (see below)
+- `null` - No physics (default)
+
+When passing an object, the following properties are available:
+
+```javascript
+{
+  type: 'static' | 'kinematic' | 'dynamic',  // Physics body type (default: 'static')
+  mass: Number,                               // Mass in kg for dynamic bodies (default: 1)
+  linearDamping: Number,                      // Linear velocity damping 0-1 (default: 0)
+  angularDamping: Number,                     // Angular velocity damping 0-1 (default: 0.05)
+  staticFriction: Number,                     // Static friction coefficient 0-1 (default: 0.6)
+  dynamicFriction: Number,                    // Dynamic friction coefficient 0-1 (default: 0.6)
+  restitution: Number,                        // Bounciness 0-1 (default: 0)
+  layer: String,                              // Collision layer (default: 'environment')
+  trigger: Boolean,                           // Is trigger volume? (default: false)
+  tag: String,                                // Custom tag for identification
+  onContactStart: Function,                   // Called when contact begins
+  onContactEnd: Function,                     // Called when contact ends
+  onTriggerEnter: Function,                   // Called when entering trigger (trigger only)
+  onTriggerLeave: Function,                   // Called when leaving trigger (trigger only)
+}
+```
+
+Physics types:
+- `static` - Immovable objects (walls, floors, etc.)
+- `kinematic` - Movable by code but not physics (platforms, doors)
+- `dynamic` - Fully simulated physics objects
+
 ### `.{...Node}`
 
 Inherits all [Node](/docs/scripting/nodes/Node.md) properties
@@ -134,6 +167,54 @@ app.on('update', (dt) => {
   torus.rotation.y += 0.01
   torus.emissiveIntensity = Math.sin(Date.now() * 0.002) + 1.5
 })
+
+// Physics examples
+// Static floor
+const floor = app.create('prim', {
+  kind: 'box',
+  size: [10, 0.1, 10],
+  position: [0, 0, 0],
+  color: '#333333',
+  physics: true // Static by default
+})
+
+// Dynamic bouncing ball
+const ball = app.create('prim', {
+  kind: 'sphere',
+  size: [0.5],
+  position: [0, 5, 0],
+  color: '#ff0000',
+  physics: {
+    type: 'dynamic',
+    mass: 1,
+    restitution: 0.8, // Bouncy!
+    linearDamping: 0.1
+  }
+})
+
+// Trigger zone
+const triggerZone = app.create('prim', {
+  kind: 'box',
+  size: [2, 2, 2],
+  position: [5, 1, 0],
+  color: '#00ff00',
+  transparent: true,
+  opacity: 0.3,
+  physics: {
+    type: 'static',
+    trigger: true,
+    onTriggerEnter: (other) => {
+      console.log('Something entered the zone!', other)
+    },
+    onTriggerLeave: (other) => {
+      console.log('Something left the zone!', other)
+    }
+  }
+})
+
+app.add(floor)
+app.add(ball)
+app.add(triggerZone)
 ```
 
 ## Notes
@@ -141,5 +222,15 @@ app.on('update', (dt) => {
 - Primitives with identical material properties are automatically instanced for optimal performance
 - Material properties (color, emissive, metalness, etc.) determine which primitives can be instanced together
 - Changing material properties requires rebuilding the primitive instance
-- For physics collision, primitives work best with `box` and `sphere` shapes
 - Textures are loaded asynchronously and cached - multiple primitives using the same texture URL will share the loaded texture
+
+### Physics Notes
+
+- Physics shapes are automatically generated based on the primitive type
+- `box` and `sphere` primitives have exact physics collision shapes
+- `cylinder`, `cone`, and `torus` use box approximations for physics
+- `plane` uses a thin box for collision
+- Physics bodies are positioned with their bottom at y=0 to match the visual geometry
+- Dynamic bodies require the `mass` property to be set
+- Trigger volumes don't cause physical collisions but can detect overlaps
+- Physics callbacks (onContactStart, etc.) receive the other colliding object as a parameter

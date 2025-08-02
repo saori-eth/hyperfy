@@ -11,6 +11,12 @@ const defaults = {
   size: [1, 1, 1],
   color: '#ffffff',
   emissive: null,
+  emissiveIntensity: 1,
+  metalness: 0.2,
+  roughness: 0.8,
+  opacity: 1,
+  transparent: false,
+  texture: null,
   castShadow: true,
   receiveShadow: true,
   physics: null,
@@ -88,18 +94,51 @@ const getGeometry = (kind) => {
   return geometryCache.get(kind)
 }
 
-// Material cache - always returns white material for instancing
-let defaultMaterial = null
+// Material cache - reuse materials with identical properties
+const materialCache = new Map()
 
-const getMaterial = () => {
-  if (!defaultMaterial) {
-    defaultMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color('#ffffff'),
-      roughness: 0.8,
-      metalness: 0.2,
-    })
+// Create material with specific properties
+const createMaterial = async (props, loader) => {
+  // Create a cache key from material properties
+  const cacheKey = `${props.color || '#ffffff'}_${props.emissive || 'null'}_${props.emissiveIntensity || 1}_${props.metalness !== undefined ? props.metalness : 0.2}_${props.roughness !== undefined ? props.roughness : 0.8}_${props.opacity !== undefined ? props.opacity : 1}_${props.transparent || false}_${props.texture || 'null'}`
+  
+  // Check cache first
+  if (materialCache.has(cacheKey)) {
+    return materialCache.get(cacheKey)
   }
-  return defaultMaterial
+  
+  const material = new THREE.MeshStandardMaterial({
+    color: new THREE.Color(props.color || '#ffffff'),
+    emissive: props.emissive ? new THREE.Color(props.emissive) : new THREE.Color(0x000000),
+    emissiveIntensity: props.emissiveIntensity || 1,
+    metalness: props.metalness !== undefined ? props.metalness : 0.2,
+    roughness: props.roughness !== undefined ? props.roughness : 0.8,
+    opacity: props.opacity !== undefined ? props.opacity : 1,
+    transparent: props.transparent || false,
+  })
+  
+  // Load texture if provided
+  if (props.texture && loader) {
+    try {
+      // Check if texture is already loaded
+      let texture = loader.get('texture', props.texture)
+      if (!texture) {
+        // Load the texture
+        texture = await loader.load('texture', props.texture)
+      }
+      if (texture) {
+        material.map = texture
+        material.needsUpdate = true
+      }
+    } catch (err) {
+      console.warn('[prim] Failed to load texture:', props.texture, err)
+    }
+  }
+  
+  // Cache the material
+  materialCache.set(cacheKey, material)
+  
+  return material
 }
 
 export class Prim extends Node {
@@ -111,6 +150,12 @@ export class Prim extends Node {
     this.size = data.size
     this.color = data.color !== undefined ? data.color : defaults.color
     this.emissive = data.emissive !== undefined ? data.emissive : defaults.emissive
+    this.emissiveIntensity = data.emissiveIntensity !== undefined ? data.emissiveIntensity : defaults.emissiveIntensity
+    this.metalness = data.metalness !== undefined ? data.metalness : defaults.metalness
+    this.roughness = data.roughness !== undefined ? data.roughness : defaults.roughness
+    this.opacity = data.opacity !== undefined ? data.opacity : defaults.opacity
+    this.transparent = data.transparent !== undefined ? data.transparent : defaults.transparent
+    this.texture = data.texture !== undefined ? data.texture : defaults.texture
     this.castShadow = data.castShadow
     this.receiveShadow = data.receiveShadow
     this.physics = data.physics
@@ -122,7 +167,7 @@ export class Prim extends Node {
     this.tempQuat = new THREE.Quaternion()
   }
   
-  mount() {
+  async mount() {
     this.needsRebuild = false
     
     // Get unit-sized geometry for this kind
@@ -131,8 +176,20 @@ export class Prim extends Node {
     // Apply size via scale
     this.updateScaleFromSize()
     
-    // Always use instance colors
-    const material = getMaterial()
+    // Get loader if available (client-side only)
+    const loader = this.ctx.world.loader || null
+    
+    // Create material with current properties
+    const material = await createMaterial({
+      color: this._color,
+      emissive: this._emissive,
+      emissiveIntensity: this._emissiveIntensity,
+      metalness: this._metalness,
+      roughness: this._roughness,
+      opacity: this._opacity,
+      transparent: this._transparent,
+      texture: this._texture,
+    }, loader)
     
     // Create mesh
     this.handle = this.ctx.world.stage.insertPrimitive({
@@ -142,8 +199,6 @@ export class Prim extends Node {
       receiveShadow: this._receiveShadow,
       matrix: this.matrixWorld,
       node: this,
-      color: this._color,
-      emissive: this._emissive,
     })
     
     // Create physics if enabled
@@ -446,10 +501,8 @@ export class Prim extends Node {
     if (this._color === value) return
     this._color = value
     if (this.handle) {
-      // Update color directly via instance attributes
-      if (this.handle.setColor) {
-        this.handle.setColor(new THREE.Color(value))
-      }
+      this.needsRebuild = true
+      this.setDirty()
     }
   }
   
@@ -458,22 +511,14 @@ export class Prim extends Node {
   }
   
   set emissive(value = defaults.emissive) {
-    if (value !== null && !isString(value) && (!value || typeof value !== 'object')) {
-      throw new Error('[prim] emissive must be string, object with {color, intensity}, or null')
+    if (value !== null && !isString(value)) {
+      throw new Error('[prim] emissive must be string or null')
     }
     if (this._emissive === value) return
     this._emissive = value
     if (this.handle) {
-      // Update emissive directly via instance attributes
-      if (this.handle.setEmissive && value) {
-        if (isString(value)) {
-          this.handle.setEmissive(new THREE.Color(value), 1.0)
-        } else if (value && typeof value === 'object') {
-          const color = new THREE.Color(value.color || '#ffffff')
-          const intensity = value.intensity !== undefined ? value.intensity : 1.0
-          this.handle.setEmissive(color, intensity)
-        }
-      }
+      this.needsRebuild = true
+      this.setDirty()
     }
   }
   
@@ -503,6 +548,102 @@ export class Prim extends Node {
     }
     if (this._receiveShadow === value) return
     this._receiveShadow = value
+    if (this.handle) {
+      this.needsRebuild = true
+      this.setDirty()
+    }
+  }
+  
+  get emissiveIntensity() {
+    return this._emissiveIntensity
+  }
+  
+  set emissiveIntensity(value = defaults.emissiveIntensity) {
+    if (!isNumber(value) || value < 0) {
+      throw new Error('[prim] emissiveIntensity must be positive number')
+    }
+    if (this._emissiveIntensity === value) return
+    this._emissiveIntensity = value
+    if (this.handle) {
+      this.needsRebuild = true
+      this.setDirty()
+    }
+  }
+  
+  get metalness() {
+    return this._metalness
+  }
+  
+  set metalness(value = defaults.metalness) {
+    if (!isNumber(value) || value < 0 || value > 1) {
+      throw new Error('[prim] metalness must be number between 0 and 1')
+    }
+    if (this._metalness === value) return
+    this._metalness = value
+    if (this.handle) {
+      this.needsRebuild = true
+      this.setDirty()
+    }
+  }
+  
+  get roughness() {
+    return this._roughness
+  }
+  
+  set roughness(value = defaults.roughness) {
+    if (!isNumber(value) || value < 0 || value > 1) {
+      throw new Error('[prim] roughness must be number between 0 and 1')
+    }
+    if (this._roughness === value) return
+    this._roughness = value
+    if (this.handle) {
+      this.needsRebuild = true
+      this.setDirty()
+    }
+  }
+  
+  get opacity() {
+    return this._opacity
+  }
+  
+  set opacity(value = defaults.opacity) {
+    if (!isNumber(value) || value < 0 || value > 1) {
+      throw new Error('[prim] opacity must be number between 0 and 1')
+    }
+    if (this._opacity === value) return
+    this._opacity = value
+    if (this.handle) {
+      this.needsRebuild = true
+      this.setDirty()
+    }
+  }
+  
+  get transparent() {
+    return this._transparent
+  }
+  
+  set transparent(value = defaults.transparent) {
+    if (!isBoolean(value)) {
+      throw new Error('[prim] transparent must be boolean')
+    }
+    if (this._transparent === value) return
+    this._transparent = value
+    if (this.handle) {
+      this.needsRebuild = true
+      this.setDirty()
+    }
+  }
+  
+  get texture() {
+    return this._texture
+  }
+  
+  set texture(value = defaults.texture) {
+    if (value !== null && !isString(value)) {
+      throw new Error('[prim] texture must be string or null')
+    }
+    if (this._texture === value) return
+    this._texture = value
     if (this.handle) {
       this.needsRebuild = true
       this.setDirty()
@@ -552,6 +693,42 @@ export class Prim extends Node {
         },
         set emissive(value) {
           self.emissive = value
+        },
+        get emissiveIntensity() {
+          return self.emissiveIntensity
+        },
+        set emissiveIntensity(value) {
+          self.emissiveIntensity = value
+        },
+        get metalness() {
+          return self.metalness
+        },
+        set metalness(value) {
+          self.metalness = value
+        },
+        get roughness() {
+          return self.roughness
+        },
+        set roughness(value) {
+          self.roughness = value
+        },
+        get opacity() {
+          return self.opacity
+        },
+        set opacity(value) {
+          self.opacity = value
+        },
+        get transparent() {
+          return self.transparent
+        },
+        set transparent(value) {
+          self.transparent = value
+        },
+        get texture() {
+          return self.texture
+        },
+        set texture(value) {
+          self.texture = value
         },
         get castShadow() {
           return self.castShadow

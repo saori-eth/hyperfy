@@ -1,147 +1,247 @@
-// Test script for physics-enabled primitives
-// Shows how to use the new integrated physics API
+// Comprehensive Prim Examples
+// Demonstrates all primitive types and material properties
 
-const spacing = 3 // Space between shapes
-
-// Dynamic box - simple physics enabled
-const box = app.create('prim', {
+// Basic primitives with different colors
+const redBox = app.create('prim', {
   kind: 'box',
   size: [1, 1, 1],
-  position: [-spacing * 2.5, 3, 0],
-  color: '#ff4444',
-  physics: {
-    type: 'dynamic',
-    mass: 1
-  }
+  position: [0, 0.5, 0],
+  color: '#ff0000'
 })
 
-// Dynamic sphere with custom properties
-const sphere = app.create('prim', {
+const blueSphere = app.create('prim', {
   kind: 'sphere',
   size: [0.5],
-  position: [-spacing * 1.5, 3, 0],
-  color: '#44ff44',
-  physics: {
-    type: 'dynamic',
-    mass: 2,
-    restitution: 0.8 // Bouncy!
-  }
+  position: [2, 0.5, 0],
+  color: '#0000ff'
 })
 
-// Dynamic cylinder
-const cylinder = app.create('prim', {
+const greenCylinder = app.create('prim', {
   kind: 'cylinder',
-  size: [0.5, 2],
-  position: [-spacing * 0.5, 3, 0],
-  color: '#4488ff',
-  physics: {
-    type: 'dynamic',
-    mass: 3
-  }
+  size: [0.3, 1],
+  position: [4, 0.5, 0],
+  color: '#00ff00'
 })
 
-// Dynamic cone with damping
-const cone = app.create('prim', {
+const yellowCone = app.create('prim', {
   kind: 'cone',
-  size: [0.6, 1.5],
-  position: [spacing * 0.5, 3, 0],
-  color: '#ff44ff',
-  physics: {
-    type: 'dynamic',
-    mass: 1.5,
-    linearDamping: 0.5,
-    angularDamping: 0.5
-  }
+  size: [0.4, 1],
+  position: [6, 0.5, 0],
+  color: '#ffff00'
 })
 
-// Dynamic torus
-const torus = app.create('prim', {
+const magentaTorus = app.create('prim', {
   kind: 'torus',
-  size: [0.8, 0.3],
-  position: [spacing * 1.5, 3, 0],
-  color: '#ffff44',
-  physics: {
-    type: 'dynamic',
-    mass: 2
-  }
+  size: [0.5, 0.15],
+  position: [8, 0.5, 0],
+  color: '#ff00ff'
 })
 
-// Static ground - just enable physics with default static type
-const ground = app.create('prim', {
-  kind: 'box',
-  size: [20, 1, 20],
-  position: [0, -0.5, 0],
-  color: '#888888',
-  physics: true // Defaults to static
-})
-
-// Static wall with custom friction
-const wall = app.create('prim', {
+const cyanPlane = app.create('prim', {
   kind: 'plane',
-  size: [10, 10],
-  position: [0, 5, -5],
-  color: '#44ffff',
-  physics: {
-    type: 'static',
-    staticFriction: 0.8,
-    dynamicFriction: 0.8
-  }
+  size: [2, 2],
+  position: [10, 0, 0],
+  rotation: [-Math.PI/2, 0, 0],
+  color: '#00ffff'
 })
 
-// Kinematic platform that moves back and forth
-const platform = app.create('prim', {
+// Metallic and rough variations
+const metallicBox = app.create('prim', {
   kind: 'box',
-  size: [4, 0.5, 2],
-  position: [0, 1, 2],
-  color: '#ff8844',
-  physics: {
-    type: 'kinematic'
-  }
+  size: [1, 1, 1],
+  position: [0, 0.5, -3],
+  color: '#888888',
+  metalness: 1.0,
+  roughness: 0.1
 })
 
-// Add all shapes to the scene
-app.add(box)
-app.add(sphere)
-app.add(cylinder)
-app.add(cone)
-app.add(torus)
-app.add(ground)
-app.add(wall)
-app.add(platform)
+const roughSphere = app.create('prim', {
+  kind: 'sphere',
+  size: [0.5],
+  position: [2, 0.5, -3],
+  color: '#ff8800',
+  metalness: 0.0,
+  roughness: 1.0
+})
 
-// Animate the kinematic platform
+const semiMetallicCylinder = app.create('prim', {
+  kind: 'cylinder',
+  size: [0.3, 1],
+  position: [4, 0.5, -3],
+  color: '#ffffff',
+  metalness: 0.5,
+  roughness: 0.5
+})
+
+// Emissive examples
+const glowingBox = app.create('prim', {
+  kind: 'box',
+  size: [1, 1, 1],
+  position: [0, 0.5, -6],
+  color: '#220000',
+  emissive: '#ff0000',
+  emissiveIntensity: 2.0
+})
+
+const brightSphere = app.create('prim', {
+  kind: 'sphere',
+  size: [0.5],
+  position: [2, 0.5, -6],
+  color: '#002200',
+  emissive: '#00ff00',
+  emissiveIntensity: 3.0
+})
+
+const subtleGlowCone = app.create('prim', {
+  kind: 'cone',
+  size: [0.4, 1],
+  position: [4, 0.5, -6],
+  color: '#666666',
+  emissive: '#ffffff',
+  emissiveIntensity: 0.5
+})
+
+// Transparent examples
+const glassCube = app.create('prim', {
+  kind: 'box',
+  size: [1, 1, 1],
+  position: [0, 0.5, -9],
+  color: '#ffffff',
+  transparent: true,
+  opacity: 0.3,
+  metalness: 0.0,
+  roughness: 0.0
+})
+
+const translucentSphere = app.create('prim', {
+  kind: 'sphere',
+  size: [0.5],
+  position: [2, 0.5, -9],
+  color: '#ff0000',
+  transparent: true,
+  opacity: 0.5
+})
+
+const semiTransparentTorus = app.create('prim', {
+  kind: 'torus',
+  size: [0.5, 0.15],
+  position: [4, 0.5, -9],
+  color: '#0000ff',
+  transparent: true,
+  opacity: 0.7,
+  metalness: 0.3,
+  roughness: 0.2
+})
+
+// Combined properties showcase
+const crystalPrism = app.create('prim', {
+  kind: 'cone',
+  size: [0.5, 1.5],
+  position: [6, 0.75, -9],
+  color: '#88ccff',
+  emissive: '#0088ff',
+  emissiveIntensity: 1.5,
+  transparent: true,
+  opacity: 0.6,
+  metalness: 0.2,
+  roughness: 0.1
+})
+
+// Different sizes demonstration
+const largeCube = app.create('prim', {
+  kind: 'box',
+  size: [3, 0.5, 2],
+  position: [-3, 0.25, 0],
+  color: '#ff6600'
+})
+
+const thinCylinder = app.create('prim', {
+  kind: 'cylinder',
+  size: [0.1, 3],
+  position: [-3, 1.5, -3],
+  color: '#6600ff'
+})
+
+const flatTorus = app.create('prim', {
+  kind: 'torus',
+  size: [1, 0.05],
+  position: [-3, 0.5, -6],
+  color: '#00ff66'
+})
+
+// Add all primitives to the scene
+const primitives = [
+  redBox, blueSphere, greenCylinder, yellowCone, magentaTorus, cyanPlane,
+  metallicBox, roughSphere, semiMetallicCylinder,
+  glowingBox, brightSphere, subtleGlowCone,
+  glassCube, translucentSphere, semiTransparentTorus, crystalPrism,
+  largeCube, thinCylinder, flatTorus
+]
+
+primitives.forEach(prim => app.add(prim))
+
+// Animated examples
 let time = 0
 app.on('update', (dt) => {
   time += dt
   
-  // Move platform side to side
-  platform.position.x = Math.sin(time) * 5
+  // Rotate some primitives
+  magentaTorus.rotation.y += 0.01
+  flatTorus.rotation.x += 0.02
+  crystalPrism.rotation.y += 0.015
   
-  // Spin the torus for visual effect (doesn't affect physics)
-  torus.rotation.y += 0.02
+  // Animate emissive intensity
+  brightSphere.emissiveIntensity = 2 + Math.sin(time * 2)
+  
+  // Animate transparency
+  glassCube.opacity = 0.3 + 0.2 * Math.sin(time * 1.5)
+  
+  // Animate metalness
+  semiMetallicCylinder.metalness = 0.5 + 0.5 * Math.sin(time)
 })
 
-// Example of trigger zone
-const triggerZone = app.create('prim', {
-  kind: 'box',
-  size: [5, 3, 5],
-  position: [0, 1.5, 0],
-  color: '#00ff0080', // Semi-transparent
-  emissive: { color: '#00ff00', intensity: 0.5 },
-  physics: {
-    type: 'static',
-    trigger: true,
-    onTriggerEnter: (event) => {
-      console.log('Something entered the trigger zone!', event)
-    },
-    onTriggerLeave: (event) => {
-      console.log('Something left the trigger zone!', event)
-    }
+// Add physics to some primitives
+setTimeout(() => {
+  // Make the red box dynamic
+  redBox.physics = {
+    type: 'dynamic',
+    mass: 1
   }
-})
-app.add(triggerZone)
+  
+  // Make the floor static
+  const floor = app.create('prim', {
+    kind: 'box',
+    size: [20, 0.1, 20],
+    position: [0, -0.05, -4.5],
+    color: '#333333',
+    physics: true // static by default
+  })
+  app.add(floor)
+  
+  // Drop a few spheres
+  for (let i = 0; i < 5; i++) {
+    const dropSphere = app.create('prim', {
+      kind: 'sphere',
+      size: [0.3],
+      position: [-1 + i * 0.5, 3 + i * 0.5, 0],
+      color: `hsl(${i * 60}, 70%, 50%)`,
+      physics: {
+        type: 'dynamic',
+        mass: 0.5,
+        restitution: 0.8
+      }
+    })
+    app.add(dropSphere)
+  }
+}, 2000)
 
-console.log('Physics-enabled primitives created!')
-console.log('Dynamic objects will fall and interact with physics')
-console.log('The platform moves back and forth')
-console.log('The green zone is a trigger that logs when objects enter/leave')
+console.log('Primitive showcase loaded!')
+console.log('Features demonstrated:')
+console.log('- All 6 primitive types')
+console.log('- Color variations')
+console.log('- Metalness and roughness')
+console.log('- Emissive with intensity')
+console.log('- Transparency and opacity')
+console.log('- Different sizes and proportions')
+console.log('- Animated properties')
+console.log('- Physics integration')

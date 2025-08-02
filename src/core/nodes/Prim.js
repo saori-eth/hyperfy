@@ -5,6 +5,7 @@ import { Node, secureRef } from './Node'
 import { getTrianglesFromGeometry } from '../extras/getTrianglesFromGeometry'
 import { getTextureBytesFromMaterial } from '../extras/getTextureBytesFromMaterial'
 import { Layers } from '../extras/Layers'
+import { geometryToPxMesh } from '../extras/geometryToPxMesh'
 
 const defaults = {
   kind: 'box',
@@ -264,17 +265,34 @@ export class Prim extends Node {
     
     // Create collider shape
     const offset = this.getColliderOffset()
-    let geometry
+    let pxGeometry = null
+    let meshHandle = null
     
-    if (this._kind === 'sphere') {
-      geometry = new PHYSX.PxSphereGeometry(this._size[0])
-    } else if (this._kind === 'plane') {
-      // Plane uses thin box
-      geometry = new PHYSX.PxBoxGeometry(this._size[0] / 2, this._size[1] / 2, 0.05)
+    if (this._kind === 'box') {
+      pxGeometry = new PHYSX.PxBoxGeometry(this._size[0] / 2, this._size[1] / 2, this._size[2] / 2)
+    } else if (this._kind === 'sphere') {
+      pxGeometry = new PHYSX.PxSphereGeometry(this._size[0])
     } else {
-      // Box approximation for other shapes
-      const boxSize = this.getColliderSize()
-      geometry = new PHYSX.PxBoxGeometry(boxSize[0] / 2, boxSize[1] / 2, boxSize[2] / 2)
+      // Use convex mesh for cylinder, cone, torus, and plane
+      const threeGeometry = getGeometry(this._kind)
+      
+      // Create a scaled version of the geometry for physics
+      const scaledGeometry = threeGeometry.clone()
+      const scale = new THREE.Vector3()
+      this.updateScaleFromSize()
+      scale.copy(this.scale)
+      scaledGeometry.scale(scale.x, scale.y, scale.z)
+      
+      // Create convex mesh
+      meshHandle = geometryToPxMesh(this.ctx.world, scaledGeometry, true)
+      if (meshHandle && meshHandle.value) {
+        pxGeometry = new PHYSX.PxConvexMeshGeometry(meshHandle.value)
+        this.meshHandle = meshHandle // Store for cleanup
+      } else {
+        console.warn(`[prim] Failed to create convex mesh for ${this._kind}, falling back to box`)
+        const boxSize = this.getColliderSize()
+        pxGeometry = new PHYSX.PxBoxGeometry(boxSize[0] / 2, boxSize[1] / 2, boxSize[2] / 2)
+      }
     }
     
     // Get material
@@ -292,7 +310,7 @@ export class Prim extends Node {
     }
     
     // Create shape
-    this.shape = this.ctx.world.physics.physics.createShape(geometry, material, true, flags)
+    this.shape = this.ctx.world.physics.physics.createShape(pxGeometry, material, true, flags)
     
     // Set filter data
     const layerName = config.layer || physicsDefaults.layer
@@ -305,12 +323,14 @@ export class Prim extends Node {
     this.shape.setQueryFilterData(filterData)
     this.shape.setSimulationFilterData(filterData)
     
-    // Set local pose with offset
-    const pose = new PHYSX.PxTransform()
-    _v1.set(offset[0], offset[1], offset[2])
-    _v1.toPxTransform(pose)
-    _q1.set(0, 0, 0, 1).toPxTransform(pose)
-    this.shape.setLocalPose(pose)
+    // Set local pose with offset (only for box and sphere)
+    if (this._kind === 'box' || this._kind === 'sphere') {
+      const pose = new PHYSX.PxTransform()
+      _v1.set(offset[0], offset[1], offset[2])
+      _v1.toPxTransform(pose)
+      _q1.set(0, 0, 0, 1).toPxTransform(pose)
+      this.shape.setLocalPose(pose)
+    }
     
     // Attach shape to actor
     this.actor.attachShape(this.shape)
@@ -343,7 +363,7 @@ export class Prim extends Node {
     })
     
     // Clean up
-    PHYSX.destroy(geometry)
+    PHYSX.destroy(pxGeometry)
   }
   
   unmountPhysics() {
@@ -355,6 +375,10 @@ export class Prim extends Node {
       this.shape = null
       this.actor.release()
       this.actor = null
+    }
+    if (this.meshHandle) {
+      this.meshHandle.release()
+      this.meshHandle = null
     }
   }
   

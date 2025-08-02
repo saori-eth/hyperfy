@@ -2,203 +2,193 @@
 
 const PRIMITIVE_TYPES = ['box', 'sphere', 'cylinder', 'cone', 'torus', 'plane']
 const PHYSICS_TYPES = ['static', 'kinematic', 'dynamic']
-
-// Grid layout configuration
 const GRID_SPACING = 4
 const ROW_SPACING = 7
 const START_X = -15
 const START_Z = -18
 
-// Create floor
+// Create arena
 const floor = app.create('prim', {
   kind: 'box',
   size: [50, 0.2, 50],
   position: [0, -0.1, 0],
   color: '#2a2a2a',
-  metalness: 0.3,
-  roughness: 0.8,
-  physics: true
+  physics: true,
 })
 app.add(floor)
 
-// Create walls to contain dynamic objects
-const walls = []
-const wallConfig = [
-  { pos: [0, 2, -25], size: [50, 4, 0.5] }, // North
-  { pos: [0, 2, 25], size: [50, 4, 0.5] },  // South
-  { pos: [-25, 2, 0], size: [0.5, 4, 50] }, // West
-  { pos: [25, 2, 0], size: [0.5, 4, 50] }   // East
+// Create walls
+const wallConfigs = [
+  { pos: [0, 2, -25], size: [50, 4, 0.5] },
+  { pos: [0, 2, 25], size: [50, 4, 0.5] },
+  { pos: [-25, 2, 0], size: [0.5, 4, 50] },
+  { pos: [25, 2, 0], size: [0.5, 4, 50] },
 ]
-
-wallConfig.forEach(config => {
-  const wall = app.create('prim', {
-    kind: 'box',
-    size: config.size,
-    position: config.pos,
-    color: '#444444',
-    physics: true
-  })
-  walls.push(wall)
-  app.add(wall)
+wallConfigs.forEach(cfg => {
+  app.add(
+    app.create('prim', {
+      kind: 'box',
+      size: cfg.size,
+      position: cfg.pos,
+      color: '#444444',
+      physics: true,
+    })
+  )
 })
 
-// Store all test primitives
-const testPrimitives = []
+// Helper to create UI labels
+const createLabel = (text, pos, opts = {}) => {
+  const ui = app.create('ui', {
+    width: opts.width || 120,
+    height: opts.height || 40,
+    size: 0.01,
+    position: pos,
+    billboard: 'y',
+    backgroundColor: opts.bgColor || 'rgba(0, 0, 0, 0.8)',
+    borderRadius: opts.borderRadius || 5,
+    borderWidth: opts.borderWidth || 0,
+    borderColor: opts.borderColor,
+    padding: opts.padding || 5,
+    ...opts.ui,
+  })
+
+  ui.add(
+    app.create('uitext', {
+      value: text,
+      fontSize: opts.fontSize || 20,
+      color: opts.color || '#ffffff',
+      textAlign: 'center',
+      fontWeight: opts.fontWeight || 'bold',
+      ...opts.text,
+    })
+  )
+
+  app.add(ui)
+  return ui
+}
 
 // Add title
-const titleUI = app.create('ui', {
+createLabel('PRIMITIVE PHYSICS TEST', [0, 5, -20], {
   width: 400,
   height: 80,
-  size: 0.01,
-  position: [0, 5, -20],
-  billboard: 'y',
-  backgroundColor: 'rgba(0, 0, 0, 0.9)',
   borderRadius: 10,
   borderWidth: 3,
   borderColor: '#ffffff',
   padding: 10,
-  flexDirection: 'column',
-  alignItems: 'center',
-  justifyContent: 'center'
-})
-
-const titleText = app.create('uitext', {
-  value: 'PRIMITIVE PHYSICS TEST',
   fontSize: 32,
-  color: '#ffffff',
-  textAlign: 'center',
-  fontWeight: 'bold'
+  ui: { flexDirection: 'column', alignItems: 'center', justifyContent: 'center' },
 })
 
-const subtitleText = app.create('uitext', {
-  value: 'Testing convex mesh colliders',
-  fontSize: 18,
-  color: '#aaaaaa',
-  textAlign: 'center',
-  margin: 5
+// Add subtitle
+const titleUI = app.create('ui', {
+  width: 400,
+  height: 30,
+  size: 0.01,
+  position: [0, 4, -20],
+  billboard: 'y',
 })
-
-titleUI.add(titleText)
-titleUI.add(subtitleText)
+titleUI.add(
+  app.create('uitext', {
+    value: 'Testing convex mesh colliders',
+    fontSize: 18,
+    color: '#aaaaaa',
+    textAlign: 'center',
+  })
+)
 app.add(titleUI)
 
 // Add column headers
-PHYSICS_TYPES.forEach((physicsType, index) => {
-  const headerUI = app.create('ui', {
+PHYSICS_TYPES.forEach((type, i) => {
+  const colors = { static: '#4444ff', kinematic: '#44ff44', dynamic: '#ff4444' }
+  const desc = { static: 'Immovable', kinematic: 'Animated', dynamic: 'Falls & Bounces' }
+
+  const headerUI = createLabel(type.toUpperCase(), [START_X + i * GRID_SPACING * 3, 3, START_Z - 5], {
     width: 140,
     height: 60,
-    size: 0.01,
-    position: [START_X + index * GRID_SPACING * 3, 3, START_Z - 5],
-    billboard: 'y',
-    backgroundColor: physicsType === 'dynamic' ? 'rgba(255, 68, 68, 0.2)' : 
-                     physicsType === 'kinematic' ? 'rgba(68, 255, 68, 0.2)' : 
-                     'rgba(68, 68, 255, 0.2)',
+    bgColor: `rgba(${type === 'dynamic' ? '255,68,68' : type === 'kinematic' ? '68,255,68' : '68,68,255'},0.2)`,
     borderRadius: 8,
     borderWidth: 2,
-    borderColor: physicsType === 'dynamic' ? '#ff4444' : 
-                 physicsType === 'kinematic' ? '#44ff44' : '#4444ff',
+    borderColor: colors[type],
     padding: 10,
-    flexDirection: 'column',
-    alignItems: 'center'
-  })
-  
-  const headerText = app.create('uitext', {
-    value: physicsType.toUpperCase(),
     fontSize: 24,
-    color: '#ffffff',
-    textAlign: 'center',
-    fontWeight: 'bold'
+    ui: { flexDirection: 'column', alignItems: 'center' },
   })
-  
-  const headerDesc = app.create('uitext', {
-    value: physicsType === 'dynamic' ? 'Falls & Bounces' : 
-           physicsType === 'kinematic' ? 'Animated' : 'Immovable',
+
+  // Add description
+  const descUI = app.create('uitext', {
+    value: desc[type],
     fontSize: 14,
     color: '#cccccc',
     textAlign: 'center',
-    margin: 2
+    margin: 2,
   })
-  
-  headerUI.add(headerText)
-  headerUI.add(headerDesc)
-  app.add(headerUI)
+  headerUI.children[0].parent.add(descUI)
 })
 
+// Store test primitives
+const testPrimitives = []
+
 // Create test grid
-PRIMITIVE_TYPES.forEach((primType, typeIndex) => {
-  const rowZ = START_Z + typeIndex * ROW_SPACING
-  
-  PHYSICS_TYPES.forEach((physicsType, physIndex) => {
-    const x = START_X + physIndex * GRID_SPACING * 3
-    
-    // Create UI label for this combination
-    const labelUI = app.create('ui', {
-      width: 120,
-      height: 40,
-      size: 0.01,
-      position: [x, 0.5, rowZ + 2.5],
-      billboard: 'y',
-      backgroundColor: 'rgba(0, 0, 0, 0.8)',
-      borderRadius: 5,
-      padding: 5
+PRIMITIVE_TYPES.forEach((primType, row) => {
+  const rowZ = START_Z + row * ROW_SPACING
+
+  // Add row label
+  createLabel(primType.toUpperCase(), [START_X - 5, 1, rowZ], {
+    width: 150,
+    height: 50,
+    bgColor: 'rgba(40, 40, 40, 0.9)',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: `hsl(${row * 60}, 70%, 50%)`,
+    padding: 8,
+    fontSize: 24,
+  })
+
+  PHYSICS_TYPES.forEach((physType, col) => {
+    const x = START_X + col * GRID_SPACING * 3
+
+    // Add physics type label
+    createLabel(physType.toUpperCase(), [x, 0.5, rowZ + 2.5], {
+      color: physType === 'dynamic' ? '#ff4444' : physType === 'kinematic' ? '#44ff44' : '#4444ff',
     })
-    
-    const labelText = app.create('uitext', {
-      value: physicsType.toUpperCase(),
-      fontSize: 20,
-      color: physicsType === 'dynamic' ? '#ff4444' : 
-              physicsType === 'kinematic' ? '#44ff44' : '#4444ff',
-      textAlign: 'center',
-      fontWeight: 'bold'
-    })
-    
-    labelUI.add(labelText)
-    app.add(labelUI)
-    
-    // Create the test primitive
-    const size = primType === 'sphere' ? [0.5] :
-                 primType === 'cylinder' || primType === 'cone' ? [0.5, 1.5] :
-                 primType === 'torus' ? [0.6, 0.2] :
-                 primType === 'plane' ? [1.5, 1.5] : [1, 1, 1]
-    
-    const height = primType === 'sphere' ? 0.5 :
-                   primType === 'box' ? 0.5 :
-                   primType === 'cylinder' || primType === 'cone' ? 0.75 :
-                   primType === 'torus' ? 0.7 :
-                   primType === 'plane' ? 0.75 : 0.5
-    
-    // Dynamic objects start higher to drop
-    const yPos = physicsType === 'dynamic' ? height + 3 : height
-    
-    const testPrim = app.create('prim', {
+
+    // Primitive configuration
+    const configs = {
+      sphere: { size: [0.5], height: 0.5 },
+      cylinder: { size: [0.5, 1.5], height: 0.75 },
+      cone: { size: [0.5, 1.5], height: 0.75 },
+      torus: { size: [0.6, 0.2], height: 0.7 },
+      plane: { size: [1.5, 1.5], height: 0.75, rotation: [0, Math.PI / 4, 0] },
+      box: { size: [1, 1, 1], height: 0.5 },
+    }
+
+    const config = configs[primType] || configs.box
+    const yPos = physType === 'dynamic' ? config.height + 3 : config.height
+
+    // Create test primitive
+    const prim = app.create('prim', {
       kind: primType,
-      size: size,
+      size: config.size,
       position: [x, yPos, rowZ],
-      rotation: primType === 'plane' ? [0, Math.PI / 4, 0] : [0, 0, 0],
-      color: `hsl(${typeIndex * 60}, 70%, 50%)`,
+      rotation: config.rotation || [0, 0, 0],
+      color: `hsl(${row * 60}, 70%, 50%)`,
       metalness: 0.5,
       roughness: 0.5,
       doubleSided: primType === 'plane',
       physics: {
-        type: physicsType,
-        mass: physicsType === 'dynamic' ? 1 : undefined,
+        type: physType,
+        mass: physType === 'dynamic' ? 1 : undefined,
         restitution: 0.3,
         linearDamping: 0.1,
-        angularDamping: 0.1
-      }
+        angularDamping: 0.1,
+      },
     })
-    
-    testPrimitives.push({
-      prim: testPrim,
-      type: primType,
-      physicsType: physicsType,
-      originalY: yPos
-    })
-    
-    app.add(testPrim)
-    
-    // Add trigger zone to test collision detection
-    if (physIndex === 0) { // Only for first column
+
+    testPrimitives.push({ prim, type: primType, physicsType: physType, originalY: yPos })
+    app.add(prim)
+
+    // Add trigger zone for first column
+    if (col === 0) {
       const trigger = app.create('prim', {
         kind: 'box',
         size: [2, 2, 2],
@@ -210,72 +200,32 @@ PRIMITIVE_TYPES.forEach((primType, typeIndex) => {
           type: 'static',
           trigger: true,
           tag: `trigger_${primType}`,
-          onTriggerEnter: (other) => {
-            console.log(`${primType} trigger entered by:`, other.tag || 'unknown')
+          onTriggerEnter: other => {
+            console.log(`${primType} trigger entered by:`, other.playerId || 'unknown')
+            updateStatus(`✓ ${primType} trigger entered`)
           },
-          onTriggerLeave: (other) => {
-            console.log(`${primType} trigger left by:`, other.tag || 'unknown')
-          }
-        }
+          onTriggerLeave: other => {
+            console.log(`${primType} trigger left by:`, other.playerId || 'unknown')
+          },
+        },
       })
       app.add(trigger)
-      
-      // Add trigger label
-      const triggerLabelUI = app.create('ui', {
+
+      createLabel('TRIGGER', [x + GRID_SPACING, 2.5, rowZ], {
         width: 80,
         height: 30,
-        size: 0.01,
-        position: [x + GRID_SPACING, 2.5, rowZ],
-        billboard: 'y',
-        backgroundColor: 'rgba(0, 255, 0, 0.2)',
-        borderRadius: 5,
+        bgColor: 'rgba(0, 255, 0, 0.2)',
         borderWidth: 1,
         borderColor: '#00ff00',
-        padding: 3
-      })
-      
-      const triggerLabelText = app.create('uitext', {
-        value: 'TRIGGER',
+        padding: 3,
         fontSize: 14,
         color: '#00ff00',
-        textAlign: 'center',
-        fontWeight: 'bold'
       })
-      
-      triggerLabelUI.add(triggerLabelText)
-      app.add(triggerLabelUI)
     }
   })
 })
 
-// Add row labels
-PRIMITIVE_TYPES.forEach((primType, index) => {
-  const rowLabelUI = app.create('ui', {
-    width: 150,
-    height: 50,
-    size: 0.01,
-    position: [START_X - 5, 1, START_Z + index * ROW_SPACING],
-    billboard: 'y',
-    backgroundColor: 'rgba(40, 40, 40, 0.9)',
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: `hsl(${index * 60}, 70%, 50%)`,
-    padding: 8
-  })
-  
-  const rowLabelText = app.create('uitext', {
-    value: primType.toUpperCase(),
-    fontSize: 24,
-    color: '#ffffff',
-    textAlign: 'center',
-    fontWeight: 'bold'
-  })
-  
-  rowLabelUI.add(rowLabelText)
-  app.add(rowLabelUI)
-})
-
-// Add interactive test ball
+// Add test ball
 const testBall = app.create('prim', {
   kind: 'sphere',
   size: [0.3],
@@ -287,41 +237,31 @@ const testBall = app.create('prim', {
     type: 'dynamic',
     mass: 2,
     restitution: 0.8,
-    tag: 'test_ball'
-  }
+    tag: 'test_ball',
+  },
 })
 app.add(testBall)
 
-// Animation for kinematic objects
+// Animation
 let time = 0
-app.on('fixedUpdate', (dt) => {
+let forceTimer = 0
+
+app.on('fixedUpdate', dt => {
   time += dt
-  
+  forceTimer += dt
+
+  // Animate kinematic objects
   testPrimitives.forEach(item => {
     if (item.physicsType === 'kinematic') {
-      // Update position and rotation directly on the prim
-      // The prim's commit method will handle updating the physics actor
       item.prim.position.y = item.originalY + Math.sin(time * 2) * 0.5
       item.prim.rotation.y = time
-      
-      // Force immediate update of the physics actor
       item.prim.clean()
     }
   })
-})
 
-// Add physics force test
-let forceTimer = 0
-app.on('fixedUpdate', (dt) => {
-  forceTimer += dt
-  
-  // Apply random impulse to test ball every 5 seconds
+  // Apply impulse to test ball every 5 seconds
   if (forceTimer > 5 && testBall.actor) {
-    const force = new PHYSX.PxVec3(
-      (Math.random() - 0.5) * 10,
-      5 + Math.random() * 5,
-      (Math.random() - 0.5) * 10
-    )
+    const force = new PHYSX.PxVec3((Math.random() - 0.5) * 10, 5 + Math.random() * 5, (Math.random() - 0.5) * 10)
     PHYSX.PxRigidBodyExt.prototype.addForceAtPos(
       testBall.actor,
       force,
@@ -330,12 +270,57 @@ app.on('fixedUpdate', (dt) => {
     )
     PHYSX.destroy(force)
     forceTimer = 0
-    console.log('Applied impulse to test ball')
     updateStatus('⚡ Applied impulse to test ball')
   }
 })
 
-// Position camera for overview
+// Status display
+const statusUI = app.create('ui', {
+  space: 'screen',
+  width: 300,
+  height: 150,
+  position: [0, 1, 0],
+  pivot: 'bottom-left',
+  offset: [20, -20, 0],
+  backgroundColor: 'rgba(0, 0, 0, 0.8)',
+  borderRadius: 10,
+  borderWidth: 2,
+  borderColor: '#666666',
+  padding: 10,
+  flexDirection: 'column',
+  gap: 5,
+})
+
+const statusTitle = app.create('uitext', {
+  value: 'PHYSICS STATUS',
+  fontSize: 18,
+  color: '#ffffff',
+  textAlign: 'center',
+  fontWeight: 'bold',
+  margin: 5,
+})
+
+const statusText = app.create('uitext', {
+  value: 'Waiting for collisions...',
+  fontSize: 14,
+  color: '#aaaaaa',
+  textAlign: 'left',
+  lineHeight: 1.4,
+})
+
+statusUI.add(statusTitle)
+statusUI.add(statusText)
+app.add(statusUI)
+
+// Status update function
+let eventLog = []
+const updateStatus = message => {
+  eventLog.unshift(message)
+  eventLog = eventLog.slice(0, 5)
+  statusText.value = eventLog.join('\\n')
+}
+
+// Set camera position
 if (typeof world !== 'undefined' && world.getAvatar) {
   try {
     const avatar = world.getAvatar()
@@ -348,72 +333,5 @@ if (typeof world !== 'undefined' && world.getAvatar) {
   }
 }
 
-// Add status display for physics events
-const statusUI = app.create('ui', {
-  space: 'screen',
-  width: 300,
-  height: 150,
-  size: 0.01,
-  position: [0, 1, 0],
-  pivot: 'bottom-left',
-  offset: [20, -20, 0],
-  backgroundColor: 'rgba(0, 0, 0, 0.8)',
-  borderRadius: 10,
-  borderWidth: 2,
-  borderColor: '#666666',
-  padding: 10,
-  flexDirection: 'column',
-  gap: 5
-})
-
-const statusTitle = app.create('uitext', {
-  value: 'PHYSICS STATUS',
-  fontSize: 18,
-  color: '#ffffff',
-  textAlign: 'center',
-  fontWeight: 'bold',
-  margin: 5
-})
-
-const statusText = app.create('uitext', {
-  value: 'Waiting for collisions...',
-  fontSize: 14,
-  color: '#aaaaaa',
-  textAlign: 'left',
-  lineHeight: 1.4
-})
-
-statusUI.add(statusTitle)
-statusUI.add(statusText)
-app.add(statusUI)
-
-// Update status on trigger events
-let eventLog = []
-const updateStatus = (message) => {
-  eventLog.unshift(message)
-  eventLog = eventLog.slice(0, 5) // Keep last 5 events
-  statusText.value = eventLog.join('\\n')
-}
-
-// Update trigger callbacks to use status display
-testPrimitives.forEach(item => {
-  if (item.prim.physics && item.prim.physics.onTriggerEnter) {
-    const originalEnter = item.prim.physics.onTriggerEnter
-    item.prim.physics.onTriggerEnter = (other) => {
-      originalEnter(other)
-      updateStatus(`✓ ${item.type} trigger entered`)
-    }
-  }
-})
-
 console.log('=== Primitive Physics Test ===')
-console.log('Layout:')
-console.log('- Rows: Different primitive types (box, sphere, cylinder, cone, torus, plane)')
-console.log('- Columns: Different physics types')
-console.log('  - Blue: Static (immovable)')
-console.log('  - Green: Kinematic (animated)')
-console.log('  - Red: Dynamic (falls and bounces)')
-console.log('- Green boxes: Trigger zones (first column only)')
-console.log('- Purple ball: Test dynamic object with periodic impulses')
-console.log('')
 console.log('All non-box/sphere shapes now use convex mesh colliders!')

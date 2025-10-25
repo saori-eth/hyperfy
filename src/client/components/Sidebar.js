@@ -65,9 +65,9 @@ import { uuid } from '../../core/utils'
 import { useRank } from './useRank'
 import { Ranks } from '../../core/extras/ranks'
 import { WalletConnect } from './WalletConnect'
-import { TokenManager } from './TokenManager'
+import { TokensButton, TokensPane } from './TokenManager'
 
-const mainSectionPanes = ['prefs']
+const mainSectionPanes = ['prefs', 'tokens']
 const worldSectionPanes = ['world', 'docs', 'apps', 'add']
 const appSectionPanes = ['app', 'script', 'nodes', 'meta']
 
@@ -223,16 +223,10 @@ export function Sidebar({ world, ui }) {
           )}
           {isAdmin && (
             <Section active={activePane} top bottom>
-              <TokenManager className="sidebar-btn" style={{
-                width: '2.75rem',
-                height: '1.875rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'white',
-                position: 'relative',
-                cursor: 'pointer'
-              }} />
+              <TokensButton 
+                world={world}
+                activePane={activePane}
+              />
             </Section>
           )}
           {ui.app && (
@@ -269,6 +263,7 @@ export function Sidebar({ world, ui }) {
           )}
         </div>
         {ui.pane === 'prefs' && <Prefs world={world} hidden={!ui.active} />}
+        {ui.pane === 'tokens' && <TokensPane world={world} hidden={!ui.active} />}
         {ui.pane === 'world' && <World world={world} hidden={!ui.active} />}
         {ui.pane === 'apps' && <Apps world={world} hidden={!ui.active} />}
         {ui.pane === 'add' && <Add world={world} hidden={!ui.active} />}

@@ -65,6 +65,7 @@ import { uuid } from '../../core/utils'
 import { useRank } from './useRank'
 import { Ranks } from '../../core/extras/ranks'
 import { WalletConnect } from './WalletConnect'
+import { TokenManager } from './TokenManager'
 
 const mainSectionPanes = ['prefs']
 const worldSectionPanes = ['world', 'docs', 'apps', 'add']
@@ -218,6 +219,20 @@ export function Sidebar({ world, ui }) {
               >
                 <CirclePlusIcon size='1.25rem' />
               </Btn>
+            </Section>
+          )}
+          {isAdmin && (
+            <Section active={activePane} top bottom>
+              <TokenManager className="sidebar-btn" style={{
+                width: '2.75rem',
+                height: '1.875rem',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                position: 'relative',
+                cursor: 'pointer'
+              }} />
             </Section>
           )}
           {ui.app && (

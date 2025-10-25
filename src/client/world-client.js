@@ -6,6 +6,7 @@ import { css } from '@firebolt-dev/css'
 
 import { createClientWorld } from '../core/createClientWorld'
 import { CoreUI } from './components/CoreUI'
+import { EthereumProvider } from './components/EthereumProvider'
 
 export { System } from '../core/systems/System'
 
@@ -71,7 +72,9 @@ export function Client({ wsUrl, onSetup }) {
     >
       <div className='App__viewport' ref={viewportRef}>
         <div className='App__ui' ref={uiRef}>
-          <CoreUI world={world} />
+          <EthereumProvider>
+            <CoreUI world={world} />
+          </EthereumProvider>
         </div>
       </div>
     </div>

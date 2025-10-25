@@ -64,6 +64,7 @@ import { isTouch } from '../utils'
 import { uuid } from '../../core/utils'
 import { useRank } from './useRank'
 import { Ranks } from '../../core/extras/ranks'
+import { WalletConnect } from './WalletConnect'
 
 const mainSectionPanes = ['prefs']
 const worldSectionPanes = ['world', 'docs', 'apps', 'add']
@@ -132,6 +133,16 @@ export function Sidebar({ world, ui }) {
             >
               <MenuIcon size='1.25rem' />
             </Btn>
+            <WalletConnect className="sidebar-btn" style={{
+              width: '2.75rem',
+              height: '1.875rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'white',
+              position: 'relative',
+              cursor: 'pointer'
+            }} />
             <Btn
               active={activePane === 'players'}
               suspended={ui.pane === 'players' && !activePane}

@@ -2,7 +2,7 @@ import 'dotenv-flow/config'
 import { DopplerSDK, getAirlockOwner } from '@whetstone-research/doppler-sdk'
 import { createPublicClient, createWalletClient, http, parseEther } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { base, baseSepolia } from 'viem/chains'
+import { base, baseSepolia, monadTestnet } from 'viem/chains'
 
 async function createStaticAuction() {
   const privateKey = process.env.PRIVATE_KEY
@@ -11,17 +11,17 @@ async function createStaticAuction() {
     throw new Error('PRIVATE_KEY environment variable not set')
   }
 
-  const rpcUrl = 'https://base-mainnet.g.alchemy.com/v2/63CB5WPw0QfKj4TdoybS8pz06yBNEm5N'
+  const rpcUrl = 'https://monad-testnet.g.alchemy.com/v2/G086tYMJqytqsd2V-e2Vy'
 
   const account = privateKeyToAccount(privateKey)
 
   const publicClient = createPublicClient({
-    chain: base,
+    chain: monadTestnet,
     transport: http(rpcUrl),
   })
 
   const walletClient = createWalletClient({
-    chain: base,
+    chain: monadTestnet,
     transport: http(rpcUrl),
     account,
   })
@@ -29,7 +29,7 @@ async function createStaticAuction() {
   const sdk = new DopplerSDK({
     publicClient,
     walletClient,
-    chainId: base.id,
+    chainId: monadTestnet.id,
   })
 
   const airlockOwner = await getAirlockOwner(publicClient)
@@ -78,7 +78,7 @@ async function createStaticAuction() {
   try {
     console.log('Creating static auction with address:', account.address)
 
-    const simulation = await sdk.factory.simulateCreateDynamicAuction(params)
+    const simulation = await sdk.factory.simulateCreateStaticAuction(params)
     console.log('success')
 
     return simulation

@@ -49,6 +49,7 @@
     "@whetstone-research/doppler-sdk": "0.0.1-alpha.62",
     "better-sqlite3": "^11.7.2",
     "d3": "^7.9.0",
+    "doppler-router": "^1.0.15",
     "dotenv-flow": "^4.1.0",
     "esbuild-plugin-polyfill-node": "^0.3.0",
     "eventemitter3": "^5.0.1",

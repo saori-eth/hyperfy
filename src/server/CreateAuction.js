@@ -2,7 +2,7 @@ import 'dotenv-flow/config'
 import { DopplerSDK, getAirlockOwner } from '@whetstone-research/doppler-sdk'
 import { createPublicClient, createWalletClient, http, parseEther, isAddress, getAddress } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { monad } from 'viem/chains'
+import { monad, monadTestnet } from 'viem/chains'
 
 async function createMulticurveAuction() {
   const privateKey = process.env.PRIVATE_KEY
@@ -11,11 +11,17 @@ async function createMulticurveAuction() {
     throw new Error('PRIVATE_KEY environment variable not set')
   }
 
-  const rpcUrl = 'https://monad-mainnet.g.alchemy.com/v2/WrbA3A-mra41HOZTZqoljUKh_X5yWqRW'
+  // Mode switch: 'mainnet' or 'testnet' (default)
+  const MODE = (process.env.CHAIN_MODE || 'testnet').toLowerCase()
+  const isMainnet = MODE === 'mainnet'
+
+  const rpcUrl = isMainnet
+    ? 'https://monad-mainnet.g.alchemy.com/v2/WrbA3A-mra41HOZTZqoljUKh_X5yWqRW'
+    : 'https://monad-testnet.g.alchemy.com/v2/WrbA3A-mra41HOZTZqoljUKh_X5yWqRW'
 
   const account = privateKeyToAccount(privateKey)
 
-  const chain = monad
+  const chain = isMainnet ? monad : monadTestnet
 
   const publicClient = createPublicClient({
     chain,
@@ -49,7 +55,9 @@ async function createMulticurveAuction() {
 
   const vestingDurationSeconds = 365 * 24 * 60 * 60
 
-  const initializerAddress = getAddress('0xce3099b2f07029b086e5e92a1573c5f5a3071783')
+  const initializerAddress = getAddress(
+    isMainnet ? '0xce3099b2f07029b086e5e92a1573c5f5a3071783' : '0xA3C847eAb58eAa9cbc215C785c9cfBc19CDABD5f'
+  )
 
   const params = sdk
     .buildMulticurveAuction()
@@ -93,6 +101,8 @@ async function createMulticurveAuction() {
 
   try {
     const { asset, pool } = await sdk.factory.simulateCreateMulticurve(params)
+    console.log('token', asset)
+    console.log('pool', pool)
   } catch (error) {
     console.error('Error creating auction:', error)
     throw error

@@ -1,99 +1,101 @@
 import 'dotenv-flow/config'
 import { DopplerSDK, getAirlockOwner } from '@whetstone-research/doppler-sdk'
-import { createPublicClient, createWalletClient, http, parseEther } from 'viem'
+import { createPublicClient, createWalletClient, http, parseEther, isAddress, getAddress } from 'viem'
 import { privateKeyToAccount } from 'viem/accounts'
-import { base, baseSepolia, monadTestnet } from 'viem/chains'
+import { monad } from 'viem/chains'
 
-async function createStaticAuction() {
+async function createMulticurveAuction() {
   const privateKey = process.env.PRIVATE_KEY
-  console.log('privateKey', privateKey)
+
   if (!privateKey) {
     throw new Error('PRIVATE_KEY environment variable not set')
   }
 
-  const rpcUrl = 'https://monad-testnet.g.alchemy.com/v2/G086tYMJqytqsd2V-e2Vy'
+  const rpcUrl = 'https://monad-mainnet.g.alchemy.com/v2/WrbA3A-mra41HOZTZqoljUKh_X5yWqRW'
 
   const account = privateKeyToAccount(privateKey)
 
+  const chain = monad
+
   const publicClient = createPublicClient({
-    chain: monadTestnet,
+    chain,
     transport: http(rpcUrl),
   })
 
-  const walletClient = createWalletClient({
-    chain: monadTestnet,
+  const wallet = createWalletClient({
+    chain,
     transport: http(rpcUrl),
     account,
   })
 
   const sdk = new DopplerSDK({
     publicClient,
-    walletClient,
-    chainId: monadTestnet.id,
+    wallet,
+    chainId: chain.id,
   })
 
   const airlockOwner = await getAirlockOwner(publicClient)
 
+  const tokenName = 'My Token'
+  const tokenSymbol = 'MTK'
+  const tokenURI = 'https://example.com/token-metadata.json'
+
+  const totalSupplyValue = parseEther('1000000000')
+  const numTokensToSellValue = parseEther('900000000')
+
+  const fee = 0.0003
+  const feeBeneficiary = wallet.account.address
+  const airlockBeneficiary = airlockOwner
+
+  const vestingDurationSeconds = 365 * 24 * 60 * 60
+
+  const initializerAddress = getAddress('0xce3099b2f07029b086e5e92a1573c5f5a3071783')
+
   const params = sdk
-    .buildDynamicAuction()
+    .buildMulticurveAuction()
+    .withV4MulticurveInitializer(initializerAddress)
     .tokenConfig({
-      name: 'TEST DYNAMIC',
-      symbol: 'TEST',
-      tokenURI: 'https://example.com/dynamic-token.json',
+      name: tokenName,
+      symbol: tokenSymbol,
+      tokenURI,
+      yearlyMintRate: 0n,
     })
     .saleConfig({
-      initialSupply: parseEther('10000000'), // 10M tokens
-      numTokensToSell: parseEther('5000000'), // Sell 5M tokens
-      numeraire: '0x4200000000000000000000000000000000000006', // WETH on Base
+      initialSupply: totalSupplyValue,
+      numTokensToSell: numTokensToSellValue,
+      numeraire: '0x7ba905b8f4e07a4f6403743a3d0639a88b069e07', // Quote in the chain's native token
     })
-    .poolConfig({ fee: 3000, tickSpacing: 60 })
-    .auctionByTicks({
-      durationDays: 7,
-      epochLength: 3600,
-      startTick: -92103,
-      endTick: -69080,
-      minProceeds: parseEther('100'),
-      maxProceeds: parseEther('5000'),
+    .withMulticurveAuction({
+      fee: Math.round(parseFloat(fee) * 10000),
+      tickSpacing: 100,
+      curves: [
+        { tickLower: -48500, tickUpper: -23600, numPositions: 10, shares: parseEther('0.5') },
+        { tickLower: -27700, tickUpper: 2300, numPositions: 5, shares: parseEther('0.25') },
+        { tickLower: -7500, tickUpper: 34500, numPositions: 5, shares: parseEther('0.225') },
+        { tickLower: 34500, tickUpper: 887200, numPositions: 1, shares: parseEther('0.025') },
+      ],
+      beneficiaries: [
+        { beneficiary: feeBeneficiary, shares: parseEther('0.95') },
+        { beneficiary: airlockBeneficiary, shares: parseEther('0.05') },
+      ],
     })
-    .withMigration({
-      type: 'uniswapV4',
-      fee: 3000,
-      tickSpacing: 60,
-      streamableFees: {
-        lockDuration: 365 * 24 * 60 * 60,
-        beneficiaries: [
-          { beneficiary: account.address, shares: parseEther('0.95') }, // 95% (1e18 WAD)
-          { beneficiary: airlockOwner, shares: parseEther('0.05') }, // 5% (1e18 WAD)
-          // Modify beneficiaries as needed - shares must sum to 1e18 (100%)
-          // { beneficiary: '0xBeneficiary1...', shares: parseEther('0.5') }, // 50%
-          // { beneficiary: '0xBeneficiary2...', shares: parseEther('0.3') }, // 30%
-          // { beneficiary: '0xBeneficiary3...', shares: parseEther('0.2') }, // 20%
-        ],
-      },
+    .withVesting({
+      duration: vestingDurationSeconds,
+      recipients: [wallet.account.address, airlockOwner],
+      amounts: [parseEther('0.95'), parseEther('0.05')],
     })
-    .withGovernance({ type: 'default' })
-    .withUserAddress(account.address)
+    .withIntegrator('0x0000000000000000000000000000000000000000')
+    .withGovernance({ type: 'noOp' })
+    .withMigration({ type: 'noOp' })
+    .withUserAddress(wallet.account.address)
     .build()
 
   try {
-    console.log('Creating static auction with address:', account.address)
-
-    const simulation = await sdk.factory.simulateCreateStaticAuction(params)
-    console.log('success')
-
-    return simulation
+    const { asset, pool } = await sdk.factory.simulateCreateMulticurve(params)
   } catch (error) {
-    console.error('Error creating static auction:', error)
+    console.error('Error creating auction:', error)
     throw error
   }
 }
 
-createStaticAuction()
-  .then(() => {
-    console.log('Static auction created successfully!')
-    process.exit(0)
-  })
-  .catch(error => {
-    console.error('Failed to create static auction:', error)
-    process.exit(1)
-  })
+createMulticurveAuction()

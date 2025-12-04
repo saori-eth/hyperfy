@@ -69,10 +69,11 @@ async function createMulticurveAuction() {
       fee: Math.round(parseFloat(fee) * 10000),
       tickSpacing: 100,
       curves: [
-        { tickLower: -48500, tickUpper: -23600, numPositions: 10, shares: parseEther('0.5') },
-        { tickLower: -27700, tickUpper: 2300, numPositions: 5, shares: parseEther('0.25') },
-        { tickLower: -7500, tickUpper: 34500, numPositions: 5, shares: parseEther('0.225') },
-        { tickLower: 34500, tickUpper: 887200, numPositions: 1, shares: parseEther('0.025') },
+        // assumes MON price is .032
+        { tickLower: -48500, tickUpper: -23600, numPositions: 10, shares: parseEther('0.5') }, // ~$250k - ~$3m
+        { tickLower: -27700, tickUpper: 2300, numPositions: 5, shares: parseEther('0.25') }, // $2m - $40m
+        { tickLower: -7500, tickUpper: 34500, numPositions: 5, shares: parseEther('0.225') }, // ~$15m - ~$1b
+        { tickLower: 34500, tickUpper: 887200, numPositions: 1, shares: parseEther('0.025') }, // tail ~$1b+
       ],
       beneficiaries: [
         { beneficiary: feeBeneficiary, shares: parseEther('0.95') },

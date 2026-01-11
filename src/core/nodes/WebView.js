@@ -6,7 +6,6 @@ import { Node } from './Node'
 
 const defaults = {
   src: null,
-  html: null,
   width: 1,
   height: 1,
   factor: 100,
@@ -22,7 +21,6 @@ export class WebView extends Node {
     this.name = 'webview'
 
     this.src = data.src
-    this.html = data.html
     this.width = data.width
     this.height = data.height
     this.factor = data.factor
@@ -35,7 +33,6 @@ export class WebView extends Node {
   copy(source, recursive) {
     super.copy(source, recursive)
     this._src = source._src
-    this._html = source._html
     this._width = source._width
     this._height = source._height
     this._factor = source._factor
@@ -81,7 +78,7 @@ export class WebView extends Node {
 
   buildWorld() {
     const n = ++this.n
-    const hasContent = this._src || this._html
+    const hasContent = this._src
 
     // Create the black mesh (cutout)
     const geometry = new THREE.PlaneGeometry(this._width, this._height)
@@ -133,11 +130,7 @@ export class WebView extends Node {
       iframe.style.height = heightPx
       iframe.style.border = '0px'
       iframe.style.pointerEvents = 'none'
-      if (this._html) {
-        iframe.srcdoc = this._html
-      } else {
-        iframe.src = this._src
-      }
+      iframe.src = this._src
 
       container.appendChild(inner)
       inner.appendChild(iframe)
@@ -193,7 +186,7 @@ export class WebView extends Node {
   }
 
   buildScreen() {
-    const hasContent = this._src || this._html
+    const hasContent = this._src
     if (!hasContent) return
 
     // For screen space, width/height are in pixels
@@ -223,11 +216,7 @@ export class WebView extends Node {
     iframe.style.width = '100%'
     iframe.style.height = '100%'
     iframe.style.border = '0px'
-    if (this._html) {
-      iframe.srcdoc = this._html
-    } else {
-      iframe.src = this._src
-    }
+    iframe.src = this._src
 
     container.appendChild(iframe)
 
@@ -291,20 +280,6 @@ export class WebView extends Node {
     }
     if (this._src === value) return
     this._src = value
-    this.needsRebuild = true
-    this.setDirty()
-  }
-
-  get html() {
-    return this._html
-  }
-
-  set html(value = defaults.html) {
-    if (value !== null && !isString(value)) {
-      throw new Error('[webview] html not null or string')
-    }
-    if (this._html === value) return
-    this._html = value
     this.needsRebuild = true
     this.setDirty()
   }
@@ -388,12 +363,6 @@ export class WebView extends Node {
         },
         set src(value) {
           self.src = value
-        },
-        get html() {
-          return self.html
-        },
-        set html(value) {
-          self.html = value
         },
         get width() {
           return self.width

@@ -3,7 +3,7 @@
 Displays a UI plane in-world
 
 ```jsx
-const ui = app.create('ui')
+const ui = object.create('ui')
 ui.backgroundColor = 'rgba(0, 0, 0, 0.5)'
 ```
 
@@ -24,7 +24,7 @@ NOTE: when using `screen`, the `.position` value now represents a ratio from 0 t
  * The following screen-space UI is rendered in the top left of the 
  * screen, 20px away from both edges.
 */
-const ui = app.create('ui', {
+const ui = object.create('ui', {
   space: 'screen',
   pivot: 'top-right',
   position: [1, 0, 0] // far right

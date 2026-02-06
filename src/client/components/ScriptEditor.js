@@ -10,15 +10,15 @@ const cached = {
   model: null,
 }
 
-export function ScriptEditor({ app, onHandle }) {
-  const key = app.data.id
+export function ScriptEditor({ object, onHandle }) {
+  const key = object.data.id
   const mountRef = useRef()
   const codeRef = useRef()
   const [editor, setEditor] = useState(null)
-  const [fontSize, setFontSize] = useState(() => 12 * app.world.prefs.ui)
+  const [fontSize, setFontSize] = useState(() => 12 * object.world.prefs.ui)
   const save = async () => {
-    const world = app.world
-    const blueprint = app.blueprint
+    const world = object.world
+    const blueprint = object.blueprint
     const code = codeRef.current
     // convert to file
     const blob = new Blob([code], { type: 'text/plain' })
@@ -56,9 +56,9 @@ export function ScriptEditor({ app, onHandle }) {
         setFontSize(14 * changes.ui.value)
       }
     }
-    app.world.prefs.on('change', onPrefsChange)
+    object.world.prefs.on('change', onPrefsChange)
     return () => {
-      app.world.prefs.off('change', onPrefsChange)
+      object.world.prefs.off('change', onPrefsChange)
     }
   }, [])
   useEffect(() => {
@@ -78,7 +78,7 @@ export function ScriptEditor({ app, onHandle }) {
       if (dead) return
       // only use cached if it matches this key
       const state = cached.key === key ? cached : null
-      const initialCode = state?.value ?? app.script?.code ?? '// …'
+      const initialCode = state?.value ?? object.script?.code ?? '// …'
       const uri = monaco.Uri.parse(`inmemory://model/${key}`)
       let model = monaco.editor.getModel(uri)
       if (!model) {
@@ -114,8 +114,8 @@ export function ScriptEditor({ app, onHandle }) {
       })
       setEditor(editor)
       // watch changes
-      app.onScript = () => {
-        const newCode = app.script?.code || '// ...'
+      object.onScript = () => {
+        const newCode = object.script?.code || '// ...'
         if (newCode !== codeRef.current) {
           editor.setValue(newCode)
           codeRef.current = newCode
@@ -184,7 +184,7 @@ const load = () => {
 
 // see https://stackoverflow.com/questions/65921179/vs-code-theme-dark-plus-css-for-monaco-editor
 // see https://github.com/ChristopherHButler/vscode-themes-in-monaco
-// see https://vsctim.vercel.app/
+// see https://vsctim.vercel.object/
 const darkPlusTheme = {
   inherit: true,
   base: 'vs-dark',

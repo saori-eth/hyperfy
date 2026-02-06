@@ -21,11 +21,11 @@ import { hashFile } from '../../core/utils-client'
 import { isArray, isBoolean } from 'lodash-es'
 import { css } from '@firebolt-dev/css'
 
-export function MenuApp({ world, app, blur }) {
+export function MenuApp({ world, object, blur }) {
   const [pages, setPages] = useState(() => ['index'])
-  const [blueprint, setBlueprint] = useState(app.blueprint)
+  const [blueprint, setBlueprint] = useState(object.blueprint)
   useEffect(() => {
-    window.app = app
+    window.object = object
     const onModify = bp => {
       if (bp.id === blueprint.id) setBlueprint(bp)
     }
@@ -51,7 +51,7 @@ export function MenuApp({ world, app, blur }) {
   if (page === 'metadata') Page = MenuAppMetadata
   return (
     <Menu title={blueprint.name} blur={blur}>
-      <Page world={world} app={app} blueprint={blueprint} pop={pop} push={push} />
+      <Page world={world} object={object} blueprint={blueprint} pop={pop} push={push} />
     </Menu>
   )
 }
@@ -62,7 +62,7 @@ const extToType = {
 }
 const allowedModels = ['glb', 'vrm']
 
-function MenuAppIndex({ world, app, blueprint, pop, push }) {
+function MenuAppIndex({ world, object, blueprint, pop, push }) {
   const player = world.entities.player
   const frozen = blueprint.frozen // TODO: disable code editor, model change, metadata editing, flag editing etc
   const changeModel = async file => {
@@ -88,7 +88,7 @@ function MenuAppIndex({ world, app, blueprint, pop, push }) {
   }
   const download = async () => {
     try {
-      const file = await exportApp(app.blueprint, world.loader.loadFile)
+      const file = await exportApp(object.blueprint, world.loader.loadFile)
       downloadFile(file)
     } catch (err) {
       console.error(err)
@@ -96,40 +96,40 @@ function MenuAppIndex({ world, app, blueprint, pop, push }) {
   }
   return (
     <>
-      <MenuItemFields world={world} app={app} blueprint={blueprint} />
-      {app.fields?.length > 0 && <MenuLine />}
+      <MenuItemFields world={world} object={object} blueprint={blueprint} />
+      {object.fields?.length > 0 && <MenuLine />}
       {!frozen && (
         <MenuItemFileBtn
           label='Model'
-          hint='Change the model for this app'
+          hint='Change the model for this object'
           accept='.glb,.vrm'
           value={blueprint.model}
           onChange={changeModel}
         />
       )}
-      {!frozen && <MenuItemBtn label='Code' hint='View or edit the code for this app' onClick={world.ui.toggleCode} />}
-      {!frozen && <MenuItemBtn label='Flags' hint='View/edit flags for this app' onClick={() => push('flags')} nav />}
-      <MenuItemBtn label='Metadata' hint='View/edit metadata for this app' onClick={() => push('metadata')} nav />
-      <MenuItemBtn label='Download' hint='Download this app as a .hyp file' onClick={download} />
+      {!frozen && <MenuItemBtn label='Code' hint='View or edit the code for this object' onClick={world.ui.toggleCode} />}
+      {!frozen && <MenuItemBtn label='Flags' hint='View/edit flags for this object' onClick={() => push('flags')} nav />}
+      <MenuItemBtn label='Metadata' hint='View/edit metadata for this object' onClick={() => push('metadata')} nav />
+      <MenuItemBtn label='Download' hint='Download this object as a .hyp file' onClick={download} />
       <MenuItemBtn
         label='Delete'
-        hint='Delete this app instance'
+        hint='Delete this object instance'
         onClick={() => {
           world.ui.setMenu(null)
-          app.destroy(true)
+          object.destroy(true)
         }}
       />
     </>
   )
 }
 
-function MenuItemFields({ world, app, blueprint }) {
-  const [fields, setFields] = useState(() => app.fields)
+function MenuItemFields({ world, object, blueprint }) {
+  const [fields, setFields] = useState(() => object.fields)
   const props = blueprint.props
   useEffect(() => {
-    app.onFields = setFields
+    object.onFields = setFields
     return () => {
-      app.onFields = null
+      object.onFields = null
     }
   }, [])
   const modify = (key, value) => {
@@ -275,7 +275,7 @@ function MenuItemField({ world, props, field, value, modify }) {
   return null
 }
 
-function MenuAppFlags({ world, app, blueprint, pop, push }) {
+function MenuAppFlags({ world, object, blueprint, pop, push }) {
   const player = world.entities.player
   const toggle = async (key, value) => {
     value = isBoolean(value) ? value : !blueprint[key]
@@ -286,22 +286,22 @@ function MenuAppFlags({ world, app, blueprint, pop, push }) {
   }
   return (
     <>
-      <MenuItemBack hint='Go back to the main app details' onClick={pop} />
+      <MenuItemBack hint='Go back to the main object details' onClick={pop} />
       <MenuItemToggle
         label='Preload'
-        hint='Preload this app before players enter the world'
+        hint='Preload this object before players enter the world'
         value={blueprint.preload}
         onChange={value => toggle('preload', value)}
       />
       <MenuItemToggle
         label='Lock'
-        hint='Lock the app so that after downloading it the model, script and metadata can no longer be edited'
+        hint='Lock the object so that after downloading it the model, script and metadata can no longer be edited'
         value={blueprint.locked}
         onChange={value => toggle('locked', value)}
       />
       <MenuItemToggle
         label='Unique'
-        hint='When duplicating this app in the world, create a completely new and unique instance with its own separate config'
+        hint='When duplicating this object in the world, create a completely new and unique instance with its own separate config'
         value={blueprint.unique}
         onChange={value => toggle('unique', value)}
       />
@@ -309,7 +309,7 @@ function MenuAppFlags({ world, app, blueprint, pop, push }) {
   )
 }
 
-function MenuAppMetadata({ world, app, blueprint, pop, push }) {
+function MenuAppMetadata({ world, object, blueprint, pop, push }) {
   const player = world.entities.player
   const set = async (key, value) => {
     const version = blueprint.version + 1
@@ -318,16 +318,16 @@ function MenuAppMetadata({ world, app, blueprint, pop, push }) {
   }
   return (
     <>
-      <MenuItemBack hint='Go back to the main app details' onClick={pop} />
+      <MenuItemBack hint='Go back to the main object details' onClick={pop} />
       <MenuItemText
         label='Name'
-        hint='The name of this app'
+        hint='The name of this object'
         value={blueprint.name}
         onChange={value => set('name', value)}
       />
       <MenuItemFile
         label='Image'
-        hint='An image/icon for this app'
+        hint='An image/icon for this object'
         kind='texture'
         value={blueprint.image}
         onChange={value => set('image', value)}
@@ -335,14 +335,14 @@ function MenuAppMetadata({ world, app, blueprint, pop, push }) {
       />
       <MenuItemText
         label='Author'
-        hint='The name of the author that made this app'
+        hint='The name of the author that made this object'
         value={blueprint.author}
         onChange={value => set('author', value)}
       />
-      <MenuItemText label='URL' hint='A url for this app' value={blueprint.url} onChange={value => set('url', value)} />
+      <MenuItemText label='URL' hint='A url for this object' value={blueprint.url} onChange={value => set('url', value)} />
       <MenuItemTextarea
         label='Description'
-        hint='A description for this app'
+        hint='A description for this object'
         value={blueprint.desc}
         onChange={value => set('desc', value)}
       />

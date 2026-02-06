@@ -8,14 +8,14 @@ const START_X = -15
 const START_Z = -18
 
 // Create arena
-const floor = app.create('prim', {
+const floor = object.create('prim', {
   type: 'box',
   scale: [50, 0.2, 50],
   position: [0, -0.07, 0],
   color: '#2a2a2a',
   physics: 'static',
 })
-app.add(floor)
+object.add(floor)
 
 // Create walls
 const wallConfigs = [
@@ -25,8 +25,8 @@ const wallConfigs = [
   { pos: [25, 2, 0], scale: [0.5, 4, 50] },
 ]
 wallConfigs.forEach(cfg => {
-  app.add(
-    app.create('prim', {
+  object.add(
+    object.create('prim', {
       type: 'box',
       scale: cfg.scale,
       position: cfg.pos,
@@ -38,7 +38,7 @@ wallConfigs.forEach(cfg => {
 
 // Helper to create UI labels
 const createLabel = (text, pos, opts = {}) => {
-  const ui = app.create('ui', {
+  const ui = object.create('ui', {
     width: opts.width || 120,
     height: opts.height || 40,
     size: 0.01,
@@ -53,7 +53,7 @@ const createLabel = (text, pos, opts = {}) => {
   })
 
   ui.add(
-    app.create('uitext', {
+    object.create('uitext', {
       value: text,
       fontSize: opts.fontSize || 20,
       color: opts.color || '#ffffff',
@@ -63,7 +63,7 @@ const createLabel = (text, pos, opts = {}) => {
     })
   )
 
-  app.add(ui)
+  object.add(ui)
   return ui
 }
 
@@ -80,7 +80,7 @@ createLabel('PRIMITIVE PHYSICS TEST', [0, 5, -20], {
 })
 
 // Add subtitle
-const titleUI = app.create('ui', {
+const titleUI = object.create('ui', {
   width: 400,
   height: 30,
   size: 0.01,
@@ -88,14 +88,14 @@ const titleUI = app.create('ui', {
   billboard: 'y',
 })
 titleUI.add(
-  app.create('uitext', {
+  object.create('uitext', {
     value: 'Testing convex mesh colliders',
     fontSize: 18,
     color: '#aaaaaa',
     textAlign: 'center',
   })
 )
-app.add(titleUI)
+object.add(titleUI)
 
 // Add column headers
 PHYSICS_TYPES.forEach((type, i) => {
@@ -115,7 +115,7 @@ PHYSICS_TYPES.forEach((type, i) => {
   })
 
   // Add description
-  const descUI = app.create('uitext', {
+  const descUI = object.create('uitext', {
     value: desc[type],
     fontSize: 14,
     color: '#cccccc',
@@ -166,7 +166,7 @@ PRIMITIVE_TYPES.forEach((primType, row) => {
     const yPos = physType === 'dynamic' ? config.height + 3 : config.height
 
     // Create test primitive
-    const prim = app.create('prim', {
+    const prim = object.create('prim', {
       type: primType,
       size: config.size,
       position: [x, yPos, rowZ],
@@ -183,11 +183,11 @@ PRIMITIVE_TYPES.forEach((primType, row) => {
     })
 
     testPrimitives.push({ prim, type: primType, physicsType: physType, originalY: yPos })
-    app.add(prim)
+    object.add(prim)
 
     // Add trigger zone for first column
     if (col === 0) {
-      const trigger = app.create('prim', {
+      const trigger = object.create('prim', {
         type: primType,
         scale: [2, 2, 2],
         position: [x + GRID_SPACING, 1, rowZ],
@@ -209,7 +209,7 @@ PRIMITIVE_TYPES.forEach((primType, row) => {
           console.log(`${primType} trigger left by:`, other.playerId || 'unknown')
         },
       })
-      app.add(trigger)
+      object.add(trigger)
 
       createLabel('TRIGGER', [x + GRID_SPACING, 2.5, rowZ], {
         width: 80,
@@ -226,7 +226,7 @@ PRIMITIVE_TYPES.forEach((primType, row) => {
 })
 
 // Add test ball
-const testBall = app.create('prim', {
+const testBall = object.create('prim', {
   type: 'sphere',
   scale: [0.3, 0.3, 0.3],
   position: [0, 5, 0],
@@ -238,13 +238,13 @@ const testBall = app.create('prim', {
   restitution: 0.8,
   tag: 'test_ball',
 })
-app.add(testBall)
+object.add(testBall)
 
 // Animation
 let time = 0
 let forceTimer = 0
 
-app.on('fixedUpdate', dt => {
+object.on('fixedUpdate', dt => {
   time += dt
   forceTimer += dt
 
@@ -274,7 +274,7 @@ app.on('fixedUpdate', dt => {
 })
 
 // Status display
-const statusUI = app.create('ui', {
+const statusUI = object.create('ui', {
   space: 'screen',
   width: 300,
   height: 150,
@@ -290,7 +290,7 @@ const statusUI = app.create('ui', {
   gap: 5,
 })
 
-const statusTitle = app.create('uitext', {
+const statusTitle = object.create('uitext', {
   value: 'PHYSICS STATUS',
   fontSize: 18,
   color: '#ffffff',
@@ -299,7 +299,7 @@ const statusTitle = app.create('uitext', {
   margin: 5,
 })
 
-const statusText = app.create('uitext', {
+const statusText = object.create('uitext', {
   value: 'Waiting for collisions...',
   fontSize: 14,
   color: '#aaaaaa',
@@ -309,7 +309,7 @@ const statusText = app.create('uitext', {
 
 statusUI.add(statusTitle)
 statusUI.add(statusText)
-app.add(statusUI)
+object.add(statusUI)
 
 // Status update function
 let eventLog = []

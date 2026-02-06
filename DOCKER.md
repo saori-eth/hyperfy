@@ -6,9 +6,9 @@ The project can be run using Docker. Make sure you have Docker installed on your
 
 ```bash
 docker build -t hyperfydemo . && docker run -d -p 3000:3000 \
-  -v "$(pwd)/src:/app/src" \
-  -v "$(pwd)/world:/app/world" \
-  -v "$(pwd)/.env:/app/.env" \
+  -v "$(pwd)/src:/object/src" \
+  -v "$(pwd)/world:/object/world" \
+  -v "$(pwd)/.env:/object/.env" \
   -e DOMAIN=demo.hyperfy.host \
   -e PORT=3000 \
   -e ASSETS_DIR=/world/assets \

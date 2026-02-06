@@ -6,7 +6,7 @@ Represents a single audio clip that can be played in the world.
 
 ### `.src`: String
 
-An absolute url to an audio file, or an asset url from an audio file embedded in the app.
+An absolute url to an audio file, or an asset url from an audio file embedded in the object.
 
 Currently only `mp3` files are supported.
 

@@ -264,12 +264,12 @@ const migrations = [
       }
     }
   },
-  // migrate or generate scene app
+  // migrate or generate scene object
   async db => {
     const now = moment().toISOString()
     const record = await db('config').where('key', 'settings').first()
     const settings = JSON.parse(record?.value || '{}')
-    // if using a settings model, we'll convert this to the scene app
+    // if using a settings model, we'll convert this to the scene object
     if (settings.model) {
       // create blueprint and entity
       const blueprintId = '$scene' // singleton
@@ -303,7 +303,7 @@ const migrations = [
         id: entityId,
         data: JSON.stringify({
           id: entityId,
-          type: 'app',
+          type: 'object',
           blueprint: blueprint.id,
           position: [0, 0, 0],
           quaternion: [0, 0, 0, 1],
@@ -323,7 +323,7 @@ const migrations = [
         .where('key', 'settings')
         .update({ value: JSON.stringify(settings) })
     }
-    // otherwise create the scene app from src/world/scene.hyp
+    // otherwise create the scene object from src/world/scene.hyp
     else {
       const rootDir = path.join(__dirname, '../')
       const scenePath = path.join(rootDir, 'src/world/scene.hyp')
@@ -331,9 +331,9 @@ const migrations = [
       const file = new File([buffer], 'scene.hyp', {
         type: 'application/octet-stream',
       })
-      const app = await importApp(file)
+      const object = await importApp(file)
       // upload the asset
-      for (const asset of app.assets) {
+      for (const asset of object.assets) {
         const filename = asset.url.split('asset://').pop()
         const buffer = Buffer.from(await asset.file.arrayBuffer())
         const file = new File([buffer], filename, {
@@ -344,11 +344,11 @@ const migrations = [
         await assets.upload(file)
       }
       // create blueprint and entity
-      app.blueprint.id = '$scene' // singleton
-      app.blueprint.preload = true
+      object.blueprint.id = '$scene' // singleton
+      object.blueprint.preload = true
       const blueprint = {
-        id: app.blueprint.id,
-        data: JSON.stringify(app.blueprint),
+        id: object.blueprint.id,
+        data: JSON.stringify(object.blueprint),
         createdAt: now,
         updatedAt: now,
       }
@@ -358,7 +358,7 @@ const migrations = [
         id: entityId,
         data: JSON.stringify({
           id: entityId,
-          type: 'app',
+          type: 'object',
           blueprint: blueprint.id,
           position: [0, 0, 0],
           quaternion: [0, 0, 0, 1],

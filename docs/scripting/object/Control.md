@@ -1,14 +1,14 @@
 # Input
 
-## `app.control(options)`: Control
+## `object.control(options)`: Control
 
-The `app.control()` method gives you access to user inputs like keyboard and mouse and gives you control over the camera etc. It's the primary way to create interactive experiences.
+The `object.control()` method gives you access to user inputs like keyboard and mouse and gives you control over the camera etc. It's the primary way to create interactive experiences.
 
 ```javascript
 // Get a control object
-const control = app.control()
+const control = object.control()
 
-// The app will be cleaned up automatically, but if you need to manually release control:
+// The object will be cleaned up automatically, but if you need to manually release control:
 control.release()
 ```
 
@@ -43,7 +43,7 @@ Access pointer (mouse) information.
 
 ```javascript
 // Get pointer delta every frame
-app.on('update', () => {
+object.on('update', () => {
   const pointerDelta = control.pointer.delta
   if (pointerDelta.x !== 0 || pointerDelta.y !== 0) {
     console.log('Pointer moved:', pointerDelta.x, pointerDelta.y)

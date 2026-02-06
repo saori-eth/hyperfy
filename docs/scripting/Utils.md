@@ -6,7 +6,7 @@ This document covers miscellaneous utility globals available in the scripting en
 
 ## `num`
 
-A global method for generating random numbers. This is provided as a substitute for `Math.random()`, which is not available in the app script runtime.
+A global method for generating random numbers. This is provided as a substitute for `Math.random()`, which is not available in the object script runtime.
 
 ```javascript
 /**

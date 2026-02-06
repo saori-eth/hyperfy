@@ -3,7 +3,7 @@
 Represents text inside a UI.
 
 ```jsx
-const text = app.create('uitext')
+const text = object.create('uitext')
 text.value = 'Hello world'
 ```
 

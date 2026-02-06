@@ -15,7 +15,7 @@ Hyperfy is an open-source framework for building interactive 3D virtual worlds. 
 
 - **Standalone persistent worlds** - Host on your own domain
 - **Realtime content creation** - Build directly in-world
-- **Interactive app system** - Create dynamic applications with JavaScript
+- **Interactive object system** - Create dynamic applications with JavaScript
 - **Portable avatars** - Connect via Hyperfy for consistent identity
 - **Physics-based interactions** - Built on PhysX for realistic simulation
 - **WebXR support** - Experience worlds in VR

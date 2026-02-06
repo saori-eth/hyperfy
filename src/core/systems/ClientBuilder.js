@@ -401,7 +401,7 @@ export class ClientBuilder extends System {
         }
         const data = {
           id: uuid(),
-          type: 'app',
+          type: 'object',
           blueprint: blueprintId,
           position: entity.root.position.toArray(),
           quaternion: entity.root.quaternion.toArray(),
@@ -453,10 +453,10 @@ export class ClientBuilder extends System {
     }
     // translate updates
     if (this.selected && this.mode === 'translate' && this.gizmoActive) {
-      const app = this.selected
-      app.root.position.copy(this.gizmoTarget.position)
-      app.root.quaternion.copy(this.gizmoTarget.quaternion)
-      app.root.scale.copy(this.gizmoTarget.scale)
+      const object = this.selected
+      object.root.position.copy(this.gizmoTarget.position)
+      object.root.quaternion.copy(this.gizmoTarget.quaternion)
+      object.root.scale.copy(this.gizmoTarget.scale)
     }
     // rotate updates
     if (this.selected && this.mode === 'rotate' && this.control.controlLeft.pressed) {
@@ -466,20 +466,20 @@ export class ClientBuilder extends System {
       this.gizmo.rotationSnap = SNAP_DEGREES * DEG2RAD
     }
     if (this.selected && this.mode === 'rotate' && this.gizmoActive) {
-      const app = this.selected
-      app.root.position.copy(this.gizmoTarget.position)
-      app.root.quaternion.copy(this.gizmoTarget.quaternion)
-      app.root.scale.copy(this.gizmoTarget.scale)
+      const object = this.selected
+      object.root.position.copy(this.gizmoTarget.position)
+      object.root.quaternion.copy(this.gizmoTarget.quaternion)
+      object.root.scale.copy(this.gizmoTarget.scale)
     }
     // scale updates
     if (this.selected && this.mode === 'scale' && this.gizmoActive) {
-      const app = this.selected
-      app.root.scale.copy(this.gizmoTarget.scale)
+      const object = this.selected
+      object.root.scale.copy(this.gizmoTarget.scale)
     }
     // grab updates
     if (this.selected && this.mode === 'grab') {
-      const app = this.selected
-      const hit = this.getHitAtBeam(app, true)
+      const object = this.selected
+      const hit = this.getHitAtBeam(object, true)
       // place at distance
       const beamPos = this.beam.position
       const beamDir = v1.copy(FORWARD).applyQuaternion(this.beam.quaternion)
@@ -538,25 +538,25 @@ export class ClientBuilder extends System {
         this.target.rotation.y += rotate * delta
       }
       // apply movement
-      app.root.position.copy(this.target.position)
-      app.root.quaternion.copy(this.target.quaternion)
-      app.root.scale.copy(this.target.scale)
+      object.root.position.copy(this.target.position)
+      object.root.quaternion.copy(this.target.quaternion)
+      object.root.scale.copy(this.target.scale)
       // snap rotation to degrees
       if (!this.control.controlLeft.down) {
         const newY = this.target.rotation.y
         const degrees = newY / DEG2RAD
         const snappedDegrees = Math.round(degrees / SNAP_DEGREES) * SNAP_DEGREES
-        app.root.rotation.y = snappedDegrees * DEG2RAD
+        object.root.rotation.y = snappedDegrees * DEG2RAD
       }
       // update matrix
-      app.root.clean()
+      object.root.clean()
       // and snap to any nearby points
       if (!this.control.controlLeft.down) {
-        for (const pos of app.snaps) {
+        for (const pos of object.snaps) {
           const result = this.world.snaps.octree.query(pos, SNAP_DISTANCE)[0]
           if (result) {
             const offset = v1.copy(result.position).sub(pos)
-            app.root.position.add(offset)
+            object.root.position.add(offset)
             break
           }
         }
@@ -566,12 +566,12 @@ export class ClientBuilder extends System {
     if (this.selected) {
       this.lastMoveSendTime += delta
       if (this.lastMoveSendTime > this.world.networkRate) {
-        const app = this.selected
+        const object = this.selected
         this.world.network.send('entityModified', {
-          id: app.data.id,
-          position: app.root.position.toArray(),
-          quaternion: app.root.quaternion.toArray(),
-          scale: app.root.scale.toArray(),
+          id: object.data.id,
+          position: object.root.position.toArray(),
+          quaternion: object.root.quaternion.toArray(),
+          scale: object.root.scale.toArray(),
         })
         this.lastMoveSendTime = 0
       }
@@ -644,12 +644,12 @@ export class ClientBuilder extends System {
     this.mode = mode
     if (this.mode === 'grab') {
       if (this.selected) {
-        const app = this.selected
+        const object = this.selected
         this.control.keyC.capture = true
         this.control.scrollDelta.capture = true
-        this.target.position.copy(app.root.position)
-        this.target.quaternion.copy(app.root.quaternion)
-        this.target.scale.copy(app.root.scale)
+        this.target.position.copy(object.root.position)
+        this.target.quaternion.copy(object.root.quaternion)
+        this.target.scale.copy(object.root.scale)
         this.target.limit = PROJECT_MAX
       }
     }
@@ -661,27 +661,27 @@ export class ClientBuilder extends System {
     this.updateActions()
   }
 
-  select(app) {
+  select(object) {
     // do nothing if unchanged
-    if (this.selected === app) return
+    if (this.selected === object) return
     // deselect existing
-    if (this.selected && this.selected !== app) {
+    if (this.selected && this.selected !== object) {
       if (!this.selected.dead && this.selected.data.mover === this.world.network.id) {
-        const app = this.selected
-        app.data.mover = null
-        app.data.position = app.root.position.toArray()
-        app.data.quaternion = app.root.quaternion.toArray()
-        app.data.scale = app.root.scale.toArray()
-        app.data.state = {}
+        const object = this.selected
+        object.data.mover = null
+        object.data.position = object.root.position.toArray()
+        object.data.quaternion = object.root.quaternion.toArray()
+        object.data.scale = object.root.scale.toArray()
+        object.data.state = {}
         this.world.network.send('entityModified', {
-          id: app.data.id,
+          id: object.data.id,
           mover: null,
-          position: app.data.position,
-          quaternion: app.data.quaternion,
-          scale: app.data.scale,
-          state: app.data.state,
+          position: object.data.position,
+          quaternion: object.data.quaternion,
+          scale: object.data.scale,
+          state: object.data.state,
         })
-        app.build()
+        object.build()
       }
       this.selected = null
       if (this.mode === 'grab') {
@@ -693,30 +693,30 @@ export class ClientBuilder extends System {
       }
     }
     // select new (if any)
-    if (app) {
+    if (object) {
       this.addUndo({
         name: 'move-entity',
-        entityId: app.data.id,
-        position: app.data.position.slice(),
-        quaternion: app.data.quaternion.slice(),
-        scale: app.data.scale.slice(),
+        entityId: object.data.id,
+        position: object.data.position.slice(),
+        quaternion: object.data.quaternion.slice(),
+        scale: object.data.scale.slice(),
       })
-      if (app.data.mover !== this.world.network.id) {
-        app.data.mover = this.world.network.id
-        app.build()
-        this.world.network.send('entityModified', { id: app.data.id, mover: app.data.mover })
+      if (object.data.mover !== this.world.network.id) {
+        object.data.mover = this.world.network.id
+        object.build()
+        this.world.network.send('entityModified', { id: object.data.id, mover: object.data.mover })
       }
-      this.selected = app
+      this.selected = object
       if (this.mode === 'grab') {
         this.control.keyC.capture = true
         this.control.scrollDelta.capture = true
-        this.target.position.copy(app.root.position)
-        this.target.quaternion.copy(app.root.quaternion)
-        this.target.scale.copy(app.root.scale)
+        this.target.position.copy(object.root.position)
+        this.target.quaternion.copy(object.root.quaternion)
+        this.target.scale.copy(object.root.scale)
         this.target.limit = PROJECT_MAX
       }
       if (this.mode === 'translate' || this.mode === 'rotate' || this.mode === 'scale') {
-        this.attachGizmo(app, this.mode)
+        this.attachGizmo(object, this.mode)
       }
     }
     // update actions
@@ -874,7 +874,7 @@ export class ClientBuilder extends System {
     this.xrLaser.visible = true
   }
 
-  attachGizmo(app, mode) {
+  attachGizmo(object, mode) {
     if (this.gizmo) this.detachGizmo()
     // create gizmo
     this.gizmo = new TransformControls(this.world.camera, this.viewport)
@@ -892,9 +892,9 @@ export class ClientBuilder extends System {
     this.gizmoTarget = new THREE.Object3D()
     this.gizmoHelper = this.gizmo.getHelper()
     // initialize it
-    this.gizmoTarget.position.copy(app.root.position)
-    this.gizmoTarget.quaternion.copy(app.root.quaternion)
-    this.gizmoTarget.scale.copy(app.root.scale)
+    this.gizmoTarget.position.copy(object.root.position)
+    this.gizmoTarget.quaternion.copy(object.root.quaternion)
+    this.gizmoTarget.scale.copy(object.root.scale)
     this.world.stage.scene.add(this.gizmoTarget)
     this.world.stage.scene.add(this.gizmoHelper)
     this.gizmo.rotationSnap = SNAP_DEGREES * DEG2RAD
@@ -1106,7 +1106,7 @@ export class ClientBuilder extends System {
       this.world.network.send('blueprintModified', change)
       return
     }
-    // otherwise spawn the app
+    // otherwise spawn the object
     const blueprint = {
       id: uuid(),
       version: 0,
@@ -1128,7 +1128,7 @@ export class ClientBuilder extends System {
     }
     const data = {
       id: uuid(),
-      type: 'app',
+      type: 'object',
       blueprint: blueprint.id,
       position: transform.position,
       quaternion: transform.quaternion,
@@ -1139,17 +1139,17 @@ export class ClientBuilder extends System {
       state: {},
     }
     this.world.blueprints.add(blueprint, true)
-    const app = this.world.entities.add(data, true)
+    const object = this.world.entities.add(data, true)
     const promises = info.assets.map(asset => {
       return this.world.network.upload(asset.file)
     })
     try {
       await Promise.all(promises)
-      app.onUploaded()
+      object.onUploaded()
     } catch (err) {
       console.error('failed to upload .hyp assets')
       console.error(err)
-      app.destroy()
+      object.destroy()
     }
   }
 
@@ -1183,12 +1183,12 @@ export class ClientBuilder extends System {
     }
     // register blueprint
     this.world.blueprints.add(blueprint, true)
-    // spawn the app moving
+    // spawn the object moving
     // - mover: follows this clients cursor until placed
     // - uploader: other clients see a loading indicator until its fully uploaded
     const data = {
       id: uuid(),
-      type: 'app',
+      type: 'object',
       blueprint: blueprint.id,
       position: transform.position,
       quaternion: transform.quaternion,
@@ -1198,11 +1198,11 @@ export class ClientBuilder extends System {
       pinned: false,
       state: {},
     }
-    const app = this.world.entities.add(data, true)
+    const object = this.world.entities.add(data, true)
     // upload the glb
     await this.world.network.upload(file)
     // mark as uploaded so other clients can load it in
-    app.onUploaded()
+    object.onUploaded()
   }
 
   async addAvatar(file, transform, canPlace) {
@@ -1243,12 +1243,12 @@ export class ClientBuilder extends System {
         }
         // register blueprint
         this.world.blueprints.add(blueprint, true)
-        // spawn the app moving
+        // spawn the object moving
         // - mover: follows this clients cursor until placed
         // - uploader: other clients see a loading indicator until its fully uploaded
         const data = {
           id: uuid(),
-          type: 'app',
+          type: 'object',
           blueprint: blueprint.id,
           position: transform.position,
           quaternion: transform.quaternion,
@@ -1258,11 +1258,11 @@ export class ClientBuilder extends System {
           pinned: false,
           state: {},
         }
-        const app = this.world.entities.add(data, true)
+        const object = this.world.entities.add(data, true)
         // upload the glb
         await this.world.network.upload(file)
         // mark as uploaded so other clients can load it in
-        app.onUploaded()
+        object.onUploaded()
       },
       onEquip: async () => {
         // close pane

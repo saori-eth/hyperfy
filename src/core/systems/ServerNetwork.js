@@ -149,7 +149,7 @@ export class ServerNetwork extends System {
         console.error(err)
       }
     }
-    // app entities
+    // object entities
     for (const id of this.dirtyApps) {
       const entity = this.world.entities.get(id)
       if (entity) {

@@ -5,8 +5,8 @@ Renders a VRM avatar
 ```jsx
 const src = props.avatar?.url
 const emote = props.emote?.url
-const avatar = app.create('avatar', { src, emote })
-app.add(avatar)
+const avatar = object.create('avatar', { src, emote })
+object.add(avatar)
 ```
 
 ## Properties

@@ -1,6 +1,6 @@
 # Models
 
-Dragging and dropping a `glb` model directly into a world will convert it into an "App" with no script or config attached to it.
+Dragging and dropping a `glb` model directly into a world will convert it into an "Object" with no script or config attached to it.
 
 For the purposes of these docs, we will assume you are using Blender to author 3D models and export them to GLTF-Binary (glb) files to use in your world.
 

@@ -2,11 +2,11 @@
 
 ## Environment
 
-Apps are individual objects in a 3D virtual world and each app has its own transform (position, rotation and scale) in the world.
+Objects are individual objects in a 3D virtual world and each object has its own transform (position, rotation and scale) in the world.
 All apps have a script attached to them, and the script executes in its own isolated JavaScript compartment.
 Scripts are able to instantiate shapes and other things to form specific objects like a couch, building or plant.
 Players are free to grab apps, move them around or duplicate them.
-The origin of an app should always be treated as the 'ground' position, as players generally move apps across surfaces of other apps.
+The origin of an object should always be treated as the 'ground' position, as players generally move apps across surfaces of other apps.
 Players are around 1.7m tall, are able to jump around 1.5m high and around 5m in distance when running and jumping.
 
 ## Coordinate System & Units
@@ -27,7 +27,7 @@ Scripts all execute in isolated compartments and a very strict set of globals ar
 - DEG2RAD: multiply by this constant to convert degrees into radians
 - RAD2DEG: multiply by this constant to convert radians into degrees
 - uuid: a function that generates uuid's
-- app: the app the current script is attached to
+- object: the object the current script is attached to
 
 Only use globals listed above (eg "Date" does not exist and will crash)
 
@@ -36,19 +36,19 @@ Only use globals listed above (eg "Date" does not exist and will crash)
 Shapes are the primary way to create visuals, we call these prims. Each `type` of prim has its own `size` format. This is how you create them:
 
 ```jsx
-const box = app.create('prim', {
+const box = object.create('prim', {
   type: 'box',
   size: [1, 2, 3], // width, height, depth
   color: '#ff0000' // red
 })
 
-const sphere = app.create('prim', {
+const sphere = object.create('prim', {
   type: 'sphere',
   size: [0.5], // radius
   color: '#00ff00' // green
 })
 
-const cylinder = app.create('prim', {
+const cylinder = object.create('prim', {
   type: 'cylinder',
   size: [0.5, 0.5, 1], // topRadius, bottomRadius, height
   color: '#0000ff' // blue
@@ -58,7 +58,7 @@ const cylinder = app.create('prim', {
 Once created you can also edit their properties if needed:
 
 ```jsx
-const box = app.create('prim', {
+const box = object.create('prim', {
   type: 'box',
   size: [1, 2, 3],
   color: '#ff0000'
@@ -73,7 +73,7 @@ box.color = 'green'
 Some shapes might need to be semi-transparent, and the `opacity` property controls this:
 
 ```jsx
-const window = app.create('prim', {
+const window = object.create('prim', {
   type: 'box',
   size: [2, 2, 0.1],
   color: 'blue',
@@ -83,10 +83,10 @@ const window = app.create('prim', {
 
 ## Rendering
 
-Creating a node (eg a prim) does not be make it visible. Only nodes added to the `app` global become visible in the world.
+Creating a node (eg a prim) does not be make it visible. Only nodes added to the `object` global become visible in the world.
 
 ```jsx
-app.add(boxA)
+object.add(boxA)
 ```
 
 ## Nested Hierarchy
@@ -97,14 +97,14 @@ For example when making a wheel for a car, you can construct one wheel and then 
 To do this, there is also a special `group` node that doesn't have a visual and is purely for 
 
 ```jsx
-const wheel = app.create('group')
-const tire = app.create('prim', {
+const wheel = object.create('group')
+const tire = object.create('prim', {
   type: 'cylinder',
   size: [0.5, 0.5, 0.2],
   color: 'black',
   physics: 'static',
 })
-const hub = app.create('prim', {
+const hub = object.create('prim', {
   type: 'cylinder',
   size: [0.3, 0.3, 0.25],
   color: 'grey',
@@ -117,17 +117,17 @@ const wheelFR = wheel.clone(true)
 const wheelBL = wheel.clone(true)
 const wheelBR = wheel.clone(true)
 // ...position the wheels (not shown)
-app.add(wheelFL)
-app.add(wheelFR)
-app.add(wheelBL)
-app.add(wheelBR)
+object.add(wheelFL)
+object.add(wheelFR)
+object.add(wheelBL)
+object.add(wheelBR)
 ```
 
 It is also very useful to 'change' the pivot point of something and make it easier to work with:
 
 ```jsx
-const bar = app.create('group')
-const beam = app.create('prim', {
+const bar = object.create('group')
+const beam = object.create('prim', {
   type: 'box',
   size: [1, 0.2, 10],
   position: [0, 0, -5], // shift back
@@ -137,18 +137,18 @@ bar.add(beam)
 bar.rotation.y += 45 * DEG2RAD
 ```
 
-## App Origin
+## Object Origin
 
-Most of the time, players will place apps on top of other surfaces, so app origins should be treated as the 'ground'.
+Most of the time, players will place apps on top of other surfaces, so object origins should be treated as the 'ground'.
 This means that most of the time you will need to lift things up:
 
 ```jsx
-const box = app.create('prim', {
+const box = object.create('prim', {
   type: 'box',
   size: [1, 1, 1],
   position: [0, 0.5, 0] // lift up so it sits on the ground surface
 })
-app.add(box)
+object.add(box)
 ```
 
 ## Transforms
@@ -156,7 +156,7 @@ app.add(box)
 When creating prims you can also specify position, rotation (or quaternion) and scale:
 
 ```jsx
-const box = app.create('prim', {
+const box = object.create('prim', {
   type: 'box',
   size: [1, 1, 1],
   position: [0, 2, 0], // xyz in meters
@@ -193,7 +193,7 @@ By default prims have no collision but it's likely you'll want to make them have
 Objects that should have collision should use `static` collision, but if they move programmatically they should have `kinematic` collision.
 
 ```jsx
-const box = app.create('prim', {
+const box = object.create('prim', {
   type: 'box',
   size: [1, 2, 3],
   physics: 'static', // null, 'static' or 'kinematic'
@@ -205,12 +205,12 @@ const box = app.create('prim', {
 Only when requested, you can make things move or change over time by hooking into the animation cycle:
 
 ```jsx
-app.on('animate', delta => {
+object.on('animate', delta => {
   box.rotation.y += 45 * DEG2RAD * delta // rotate around Y axis each frame 45 degrees per second
 })
 ```
 
-The `animate` rate is dynamic based on how far away the app is from the camera, so be sure to use `delta` time to normalize speeds.
+The `animate` rate is dynamic based on how far away the object is from the camera, so be sure to use `delta` time to normalize speeds.
 
 If animations start in response to triggers or actions and have an end time, subscribe and unsubscribe for performance:
 
@@ -220,10 +220,10 @@ const animate = delta => {
 }
 
 // subscribe when something needs to happen
-app.on('animate', animate)
+object.on('animate', animate)
 
 // unsubscribe when finsihed to save resources
-app.off('animate', animate)
+object.off('animate', animate)
 ```
 
 ## Bloom
@@ -231,7 +231,7 @@ app.off('animate', animate)
 In addition to setting the color of a prim you can also push its color into HDR range causing it glow:
 
 ```jsx
-const box = app.create('prim', {
+const box = object.create('prim', {
   type: 'box',
   size: [1, 1, 1],
   color: 'red',
@@ -256,14 +256,14 @@ If requested you can add simple response to interaction with an `action` node.
 An action node displays a label when players come near it and if they click it the script is notified:
 
 ```jsx
-const action = app.create('action', {
+const action = object.create('action', {
   label: 'Open',
   position: [0, 0.5, 0],
   onTrigger: () => {
     door.rotation.y = 90 * DEG2RAD
   }
 })
-app.add(action)
+object.add(action)
 ```
 
 ## Triggers
@@ -271,7 +271,7 @@ app.add(action)
 Prims can become trigger zones and notify you when a player enters or leaves the prim volume:
 
 ```jsx
-const zone = app.create('prim', {
+const zone = object.create('prim', {
   type: 'box',
   size: [4, 4, 4],
   opacity: 0,
@@ -305,39 +305,39 @@ if (world.isServer) {
 }
 
 // send an event from a client to the server
-app.send('someEvent', { some: 'data' })
+object.send('someEvent', { some: 'data' })
 
 // send an event from the server to all clients
-app.send('anotherEvent', { some: 'data' })
+object.send('anotherEvent', { some: 'data' })
 
 // subscribe to an event sent from the server or a client
-app.on('someEvent', data => {
+object.on('someEvent', data => {
   console.log(data) // { some: 'data' }
 })
 ```
 
-On the server, you have access to a `state` object to store current state as the app changes. It is just a plain old javascript object.
+On the server, you have access to a `state` object to store current state as the object changes. It is just a plain old javascript object.
 When clients connect, the current `state` on the server is sent along to the client so that the client launches with that state, like a snapshot.
 When a client reads this state, it is only a single one-time snapshot and does not update anymore, but feel free to use this object to track state as you receive new events from the server.
 
 ```jsx
 if (world.isClient) {
-  if (app.state.ready) {
-    init(app.state)
+  if (object.state.ready) {
+    init(object.state)
   } else {
-    app.on('init, init)
+    object.on('init, init)
   }
   function init(state) {
-    // at this point it is guaranteed that the server has initialised the app and its state.
-    // sometimes an app runs on the client before the server, eg when clients edit scripts.
+    // at this point it is guaranteed that the server has initialised the object and its state.
+    // sometimes an object runs on the client before the server, eg when clients edit scripts.
     // this is where we initialise objects based on state and subscribe to server events...
   }
 }
 
 if (world.isServer) {
-  app.state.open = false // a door variable for example
-  app.state.ready = true
-  app.send('init', app.state)
+  object.state.open = false // a door variable for example
+  object.state.ready = true
+  object.send('init', object.state)
 }
 ```
 

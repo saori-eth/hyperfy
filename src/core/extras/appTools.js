@@ -44,7 +44,7 @@ export async function exportApp(blueprint, resolveFile) {
     blueprint.disabled = false
   }
 
-  const filename = `${blueprint.name || 'app'}.hyp`
+  const filename = `${blueprint.name || 'object'}.hyp`
 
   // create header
   const header = {

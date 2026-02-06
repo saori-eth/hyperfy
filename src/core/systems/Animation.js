@@ -8,7 +8,7 @@ const BATCH_SIZE = 10
 /**
  * Animation System
  *
- * - Updates app animation rates based on distance to camera
+ * - Updates object animation rates based on distance to camera
  *
  */
 export class Animation extends System {
@@ -40,19 +40,19 @@ export class Animation extends System {
     const camPos = v1.setFromMatrixPosition(this.world.camera.matrixWorld)
     const batch = Math.min(BATCH_SIZE, this.apps.length)
     for (let i = 0; i < batch; i++) {
-      const app = this.apps[this.cursor % this.apps.length]
-      if (!app.root) {
+      const object = this.apps[this.cursor % this.apps.length]
+      if (!object.root) {
         this.cursor++
         continue
       }
-      const appPos = app.root.position
+      const appPos = object.root.position
       const distance = camPos.distanceTo(appPos)
       if (distance < 30) {
-        app.animateRate = 0.001 // max fps
+        object.animateRate = 0.001 // max fps
       } else if (distance < 80) {
-        app.animateRate = 1 / 30
+        object.animateRate = 1 / 30
       } else {
-        app.animateRate = 1 / 20
+        object.animateRate = 1 / 20
       }
       this.cursor++
     }

@@ -4,9 +4,9 @@ import { createRoot } from 'react-dom/client'
 
 import { Client } from './world-client'
 
-function App() {
+function Object() {
   return <Client wsUrl={env.PUBLIC_WS_URL} />
 }
 
 const root = createRoot(document.getElementById('root'))
-root.render(<App />)
+root.render(<Object />)

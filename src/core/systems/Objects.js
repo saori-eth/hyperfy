@@ -23,13 +23,13 @@ const internalEvents = [
 ]
 
 /**
- * Apps System
+ * Objects System
  *
  * - Runs on both the server and client.
- * - A single place to manage app runtime methods used by all apps
+ * - A single place to manage object runtime methods used by all apps
  *
  */
-export class Apps extends System {
+export class Objects extends System {
   constructor(world) {
     super(world)
     this.initWorldHooks()
@@ -99,7 +99,7 @@ export class Apps extends System {
         if (internalEvents.includes(name)) {
           return console.error(`apps cannot emit internal events (${name})`)
         }
-        warn('world.emit() is deprecated, use app.emit() instead')
+        warn('world.emit() is deprecated, use object.emit() instead')
         world.events.emit(name, data)
       },
       getTime(entity) {
@@ -348,7 +348,7 @@ export class Apps extends System {
     }
   }
 
-  inject({ world, app }) {
+  inject({ world, object }) {
     if (world) {
       for (const key in world) {
         const value = world[key]
@@ -365,9 +365,9 @@ export class Apps extends System {
         }
       }
     }
-    if (app) {
-      for (const key in app) {
-        const value = app[key]
+    if (object) {
+      for (const key in object) {
+        const value = object[key]
         const isFunction = typeof value === 'function'
         if (isFunction) {
           this.appMethods[key] = value

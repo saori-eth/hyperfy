@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: support for AI and AI generated apps via ChatGPT, Grok, Gemini etc (see .env)
 - core: env for cleaning up old blueprints and assets on launch (CLEAN=true)
 - core: support for remote databases
-- core: added safemode for rare case an app plays up
+- core: added safemode for rare case an object plays up
 - core: XR/VR improvements to physical movement, snap turn etc
 - core: XR/VR building basics
 - apps: support for `prim` shapes and optimizations to support thousands of unique primitive shapes at once
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - core: more boot logs for brevity
 - core: fix not being able to see chat text selection
-- [BREAKING] core: apps now remain active while being moved in edit mode by default, disable with app.resetOnMove=true or check at runtime with app.isMoving. existing apps that use world space nodes will likely need to update their code.
+- [BREAKING] core: apps now remain active while being moved in edit mode by default, disable with object.resetOnMove=true or check at runtime with object.isMoving. existing apps that use world space nodes will likely need to update their code.
 - core: improved AO to look slightly more natural
 - core: when creating nodes you can now also use Vector3 instances if needed, instead of requiring plain old arrays
 - core: support alt key in numeric inputs for small steps
@@ -38,7 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Fixed
-- core: safely capture errors during app update calls
+- core: safely capture errors during object update calls
 - core: ensure code editor syncs correctly over multiplayer if both editors have the code window open and one hits save
 - core: nested kinematic rigidbody physics not updating correctly outside fixedUpdate
 - core: fix false disconnects that keep happening on some worlds (ping-pong related)
@@ -59,7 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: touch and ui pointer handling improvements
 - core: avatar distance based rate now amortized and faster
 - core: script window now scales with UI scale setting
-- core: show app name in script window for brevity
+- core: show object name in script window for brevity
 - core: buffered interpolation of networked players to reduce jitter
 - apps: calling world.chat(msg) automatically assigns `id` and `createdAt` values if not provided
 - docs: restructure and improvements
@@ -75,7 +75,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - core: ambient occlusion
-- core: new scene app format
+- core: new scene object format
 - core: touch device joystick UI
 - core: new camera-facing character controls
 - core: first-person support
@@ -124,13 +124,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.12.0]
 
 ### Added
-- core: add toggle to completely disable an app but keep it in the world
+- core: add toggle to completely disable an object but keep it in the world
 - core: add scale gizmo (3)
 - core: add shift to scale in build mode
 - core: add ui v3
-- core: add initial app collection
+- core: add initial object collection
 - core: node-client support for running the client in a nodejs environment
-- apps: experimental app.keepActive=true to keep apps executing while being moved
+- apps: experimental object.keepActive=true to keep apps executing while being moved
 - apps: add audio.setPlaybackRate to control pitch
 - apps: add image node
 - apps: add `pivot` option to video node
@@ -150,7 +150,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - core: correct video color space
-- core: prevent chat opening up when hitting enter in an app prop input
+- core: prevent chat opening up when hitting enter in an object prop input
 - core: fix edge case where colliders cannot be generated for some meshes
 - core: fix shift-click file props to download not working
 - core: fix ctrl+R to reload the page duplicating objects when in build mode
@@ -231,10 +231,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: support ctrl+z to undo added, moved and removed apps
 - core: build mode right click with mouse to inspect
 - apps: new "buttons" prop
-- apps: app.sendTo(playerId, name, data) available on server
+- apps: object.sendTo(playerId, name, data) available on server
 - apps: node.children array of all child nodes
 - apps: uiimage.src support asset urls from props
-- apps: emit an app.on('destroy', cb) event that is run right before an app is destroyed/restarted
+- apps: emit an object.on('destroy', cb) event that is run right before an object is destroyed/restarted
 - apps: add player.isAdmin for securely checking if a player is an admin
 
 ### Changed
@@ -243,8 +243,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: preload local avatar and movement emotes before entering the world
 - apps: ui borderRadius use arcs instead of quadratic curves
 - apps: player effects moved to player.applyEffect (BREAKING CHANGE)
-- core: use more memory efficient app proxies
-- core: support custom app runtime method injection
+- core: use more memory efficient object proxies
+- core: support custom object runtime method injection
 - core: show red reticle when in build mode for clarity
 - apps: unify player.id/userId/networkId etc as player.id
 
@@ -254,7 +254,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - apps: anchors positions behind by one frame
 - apps: ui canvas using incorrect color space
 - apps: ensure control.camera initial values are accurate
-- apps: exporting app with emojis in props broken
+- apps: exporting object with emojis in props broken
 - apps: ui pointer events were not accurate
 - apps: ensure player enter event is emitted after they receive snapshot
 - apps: ui gap value not correctly multiplied by resolution
@@ -272,14 +272,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - core: simplified build controls and actions displayed
 - core: nametags and chat bubbles now track player head
-- core: remove glb extension from app names (via drag-n-drop)
+- core: remove glb extension from object names (via drag-n-drop)
 
 ### Fixed
 - core: fix scaling things to zero causing octree issues
 - core: remove external cdn deps (they're unreliable)
 - core: preload rubik font before nametags draw
-- apps: release control when app unmounts
-- apps: prevent app pointer event errors bubbling up to engine
+- apps: release control when object unmounts
+- apps: prevent object pointer event errors bubbling up to engine
 
 ## [0.7.1]
 
@@ -301,7 +301,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: new admin apps list to help find apps, improve performance, etc
 - core: new device setting panel to change shadows, resolution, postprocessing, volume etc
 - apps: add fog support to sky node
-- apps: add delete button to app inspect window
+- apps: add delete button to object inspect window
 - apps: world.raycast() support
 - apps: support for borderWidth and borderColor on `ui` and `uiview` nodes
 - apps: player effects (anchor, emote, snare, freeze, duration, cancellable)
@@ -309,7 +309,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 
 
 ### Changed
-- core: improved GUI, chat, actions and app inspector design
+- core: improved GUI, chat, actions and object inspector design
 - core: reduce z-fighting at long distance
 - core: apps drop rotated 180 degrees for consistency with 3D design tools
 - apps: set metadata name to initial glb file name
@@ -321,7 +321,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: add missing `num` utility for generating random numbers
 - core: code pane sometimes shrinks to 1px in size
 - core: when dropping a glb, it will correctly snap to an initial 5deg rotation
-- core: subsequent model button presses not working in app inspector
+- core: subsequent model button presses not working in object inspector
 - core: fix DOM-related memory leak 
 - core: fix artifial 2s delay on file uploads
 
@@ -335,7 +335,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - apps: support Date.now()
 - core: support downloading apps as .hyp files
 - core: support drag and drop .hyp files
-- core: support app metadata (image, name, author, url, desc)
+- core: support object metadata (image, name, author, url, desc)
 - apps: new number field
 - apps: support snap points and embedded snap points in glbs
 - core: support drag and drop urls from another website (glbs, hyps etc)
@@ -343,7 +343,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - core: reduce docker image size + provide prebuilt images
 - apps: props are now a global in scripts
-- apps: support app.create(name, props) syntax
+- apps: support object.create(name, props) syntax
 - core: unified node props 
 - core: upgrade to three@0.173.0
 - core: show chat message when dropping a file without permission
@@ -353,10 +353,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - core: fix crashes caused by undefined blueprint props
-- apps: fix removing app configure not updating inspect window
+- apps: fix removing object configure not updating inspect window
 - apps: ui not updated in octree after moving
 - apps: fix crash due to props not being set up
-- core: dont show context wheel when app has no visible actions
+- core: dont show context wheel when object has no visible actions
 - core: support castShadow/receiveShadow props on imported glbs
 - core: fix avatars not unmounting correctly causing memory leak
 - core: fix big audio memory issue + firefox not working
@@ -369,7 +369,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - apps: avatar.height property
 - apps: new `nametag` node 
 - core: player nametags
-- core: app preload option + overlay
+- core: object preload option + overlay
 - apps: sky node for controlling skybox image, hdr, sunDirection and sunIntensity
 - apps: rigidbody.sleeping property
 - apps: all nodes including ui now suppot onPointerEnter, onPointerLeave, onPointerDown, onPointerUp events
@@ -377,7 +377,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - core: /status endpoint
 - apps: uiimage node
 - apps: uv scrolling via mesh.material.textureX|textureY values
-- apps: emitting events to other apps via app.emit(name, data)
+- apps: emitting events to other apps via object.emit(name, data)
 - core: `/spawn set` and `/spawn clear` commands for admins to change spawn
 - core: generate player colliders on the server to track contacts/triggers
 - apps: world.getTime() returns server time, even on client
@@ -405,11 +405,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.4.0]
 
 ### Added
-- Expose fetch to app runtime
+- Expose fetch to object runtime
 - Add UI, UIView and UIText nodes
-- Add app.uuid() utility
-- Add app.getTimestamp(format?) utility
-- Add app.getTime() utility (uses performance.now)
+- Add object.uuid() utility
+- Add object.getTimestamp(format?) utility
+- Add object.getTime() utility (uses performance.now)
 - Allow apps to post to chat
 - Support VRM drag and drop, to place or equip
 - Add ability to run multiple worlds and switch using WORLD env
@@ -423,8 +423,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fix various edge cases where scripts can crash
 - Fix node proxy mechanism not working
 - Disabled VRM loading on server (affects vrm's renamed to glb)
-- Properly abort all in-flight fetch requests an app is making when it rebuilds
-- Prevent app async unhandled exceptions bubbling up to a full world crash (see lockdown)
+- Properly abort all in-flight fetch requests an object is making when it rebuilds
+- Prevent object async unhandled exceptions bubbling up to a full world crash (see lockdown)
 - Fixed camera insanity when loading into the world
 
 ## [0.3.0]
@@ -433,7 +433,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Environment variable to limit model upload size
 - Node.traverse(callback)
 - Ability to disable world saving completely
-- Initial app networking
+- Initial object networking
 - Temporary skybox
 - Re-enabled stats via /stats chat command
 - Let players know when they are disconnected from the world

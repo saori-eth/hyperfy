@@ -48,7 +48,7 @@ export function Client({ wsUrl, onSetup }) {
   }, [])
   return (
     <div
-      className='App'
+      className='Object'
       css={css`
         position: absolute;
         top: 0;

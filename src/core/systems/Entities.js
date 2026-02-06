@@ -1,10 +1,10 @@
-import { App } from '../entities/App'
+import { Object } from '../entities/Object'
 import { PlayerLocal } from '../entities/PlayerLocal'
 import { PlayerRemote } from '../entities/PlayerRemote'
 import { System } from './System'
 
 const Types = {
-  app: App,
+  object: Object,
   playerLocal: PlayerLocal,
   playerRemote: PlayerRemote,
 }

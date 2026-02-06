@@ -1,18 +1,18 @@
-# App
+# Object
 
-The global `app` variable is always available within the app scripting runtime.
+The global `object` variable is always available within the object scripting runtime.
 
 ## Properties
 
 ### `.instanceId`: String
 
-The instance ID of the current app.
-Every app has its own unique ID that is shared across all clients and the server.
+The instance ID of the current object.
+Every object has its own unique ID that is shared across all clients and the server.
 
 ### `.version`: String
 
-The version of the app instance.
-This number is incremented whenever the app is modified which includes but is not limited to updating scripts and models.
+The version of the object instance.
+This number is incremented whenever the object is modified which includes but is not limited to updating scripts and models.
 
 ### `.state`: Object
 
@@ -27,9 +27,9 @@ Inherits all [Node](/docs/scripting/nodes/Node.md) properties
 
 ### `.on(name, callback)`
 
-Subscribes to custom networked app events and engine update events like `update`, `fixedUpdate` and `lateUpdate`.
+Subscribes to custom networked object events and engine update events like `update`, `fixedUpdate` and `lateUpdate`.
 
-Custom networked events are received when a different client/server sends an event with `app.send(event, data)`. 
+Custom networked events are received when a different client/server sends an event with `object.send(event, data)`. 
 
 IMPORTANT: Only subscribe to update events when they are needed. The engine is optimized to completely skip over large amounts of apps that don't need to receive update events.
 
@@ -54,7 +54,7 @@ NOTE: you cannot emit built-in events such as `enter` or `leave` as these are in
 
 ### `.get(nodeId)`: Node
 
-Finds and returns any node with the matching ID from the model the app is using.
+Finds and returns any node with the matching ID from the model the object is using.
 If your model is made with blender, this is the object "name".
 
 NOTE: Blender GLTF exporter renames objects in some cases, eg by removing spaces. Best practice is to simply name everything in UpperCamelCase with no other characters.
@@ -65,8 +65,8 @@ Creates and returns a node of the specified name.
 
 ### `.control(options)`
 
-Gives you control to listen for inputs and modify things like camera position. See [Control(/docs/scripting/app/Control.md) for more info.
+Gives you control to listen for inputs and modify things like camera position. See [Control(/docs/scripting/object/Control.md) for more info.
 
 #### `.configure(fields)`
 
-Configures custom UI for your app. See [Props](/docs/scripting/app/Props.md) for more info.
+Configures custom UI for your object. See [Props](/docs/scripting/object/Props.md) for more info.

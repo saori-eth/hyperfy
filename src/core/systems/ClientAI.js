@@ -5,9 +5,9 @@ import { uuid } from '../utils'
  * AI System
  *
  * - Runs on the client
- * - /create <desc> to prompt an app into existence
- * - /edit <desc> to edit the app you are looking at
- * - /fix to send the error stack of a crashed app to ai to fix
+ * - /create <desc> to prompt an object into existence
+ * - /edit <desc> to edit the object you are looking at
+ * - /fix to send the error stack of a crashed object to ai to fix
  *
  */
 export class ClientAI extends System {
@@ -61,10 +61,10 @@ export class ClientAI extends System {
     this.world.builder.control.pointer.lock()
     // wait a tick
     await new Promise(resolve => setTimeout(resolve, 100))
-    // create app
+    // create object
     const appData = {
       id: uuid(),
-      type: 'app',
+      type: 'object',
       blueprint: blueprint.id,
       position: transform.position,
       quaternion: transform.quaternion,
@@ -74,8 +74,8 @@ export class ClientAI extends System {
       pinned: false,
       state: {},
     }
-    const app = this.world.entities.add(appData, true)
-    // this.world.builder.select(app)
+    const object = this.world.entities.add(appData, true)
+    // this.world.builder.select(object)
 
     // send to server
     const action = {
@@ -97,7 +97,7 @@ export class ClientAI extends System {
     }
     const entity = this.world.builder.getEntityAtReticle()
     if (!entity || !entity.isApp || entity.blueprint.scene) {
-      return console.error('[ai] no app found at reticle')
+      return console.error('[ai] no object found at reticle')
     }
     // send to server
     const action = {
@@ -119,7 +119,7 @@ export class ClientAI extends System {
     }
     const entity = this.world.builder.getEntityAtReticle()
     if (!entity || !entity.isApp || entity.blueprint.scene) {
-      return console.error('[ai] no app found at reticle')
+      return console.error('[ai] no object found at reticle')
     }
     if (!entity.scriptError) {
       return console.error('[ai] no script error to fix')

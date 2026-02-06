@@ -1,13 +1,13 @@
 # Props
 
-Apps can expose a list of custom UI fields allowing non-technical people to configure or change the way your apps work.
+Objects can expose a list of custom UI fields allowing non-technical people to configure or change the way your apps work.
 
 ## Configure
 
-To generate custom UI for your app, configure the fields at the top of your app's script like this:
+To generate custom UI for your object, configure the fields at the top of your object's script like this:
 
 ```jsx
-app.configure([
+object.configure([
   {
     key: 'name',
     type: 'text',
@@ -20,7 +20,7 @@ The example above will create a text input for you to enter a name.
 
 ## Props
 
-Apps have a global `props` variable for you to read back the values entered in custom fields.
+Objects have a global `props` variable for you to read back the values entered in custom fields.
 
 ```jsx
 props.name
@@ -125,7 +125,7 @@ A switch field with many options
 
 ### File
 
-A file field for selecting and uploading additional assets that can be used by your app.
+A file field for selecting and uploading additional assets that can be used by your object.
 
 ```jsx
 {
@@ -149,7 +149,7 @@ Note that the value set on props is an object that looks like this:
 The type of file you collect depends on how you would use it. For example you can use audio files with an audio node:
 
 ```jsx
-const audio = app.create('audio', {
+const audio = object.create('audio', {
   src: props.audio?.url
 })
 audio.play()
@@ -173,7 +173,7 @@ The value set on props is a hex color string (e.g., '#ff0000' for red).
 
 ### Button
 
-Displays a button that when clicked, executes something in the running app.
+Displays a button that when clicked, executes something in the running object.
 
 ```jsx
 {

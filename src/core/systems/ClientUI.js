@@ -3,7 +3,7 @@ import { ControlPriorities } from '../extras/ControlPriorities'
 import { System } from './System'
 import { thickness } from 'three/src/nodes/TSL.js'
 
-const appPanes = ['app', 'script', 'nodes', 'meta']
+const appPanes = ['object', 'script', 'nodes', 'meta']
 
 export class ClientUI extends System {
   constructor(world) {
@@ -11,11 +11,11 @@ export class ClientUI extends System {
     this.state = {
       visible: true,
       active: false,
-      app: null,
+      object: null,
       pane: null,
       reticleSuppressors: 0,
     }
-    this.lastAppPane = 'app'
+    this.lastAppPane = 'object'
     this.control = null
   }
 
@@ -28,8 +28,8 @@ export class ClientUI extends System {
       if (this.state.pane) {
         this.state.pane = null
         this.broadcast()
-      } else if (this.state.app) {
-        this.state.app = null
+      } else if (this.state.object) {
+        this.state.object = null
         this.broadcast()
       }
     }
@@ -57,7 +57,7 @@ export class ClientUI extends System {
       this.state.pane = null
     } else {
       // if (appPanes.includes(this.state.pane) && !appPanes.includes(pane)) {
-      //   this.state.app = null
+      //   this.state.object = null
       // }
       this.state.pane = pane
       if (appPanes.includes(pane)) {
@@ -74,9 +74,9 @@ export class ClientUI extends System {
     this.broadcast()
   }
 
-  setApp(app) {
-    this.state.app = app
-    this.state.pane = app ? this.lastAppPane : null
+  setApp(object) {
+    this.state.object = object
+    this.state.pane = object ? this.lastAppPane : null
     this.broadcast()
   }
 

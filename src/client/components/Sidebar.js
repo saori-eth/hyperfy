@@ -67,7 +67,7 @@ import { Ranks } from '../../core/extras/ranks'
 
 const mainSectionPanes = ['prefs']
 const worldSectionPanes = ['world', 'docs', 'apps', 'add']
-const appSectionPanes = ['app', 'script', 'nodes', 'meta']
+const appSectionPanes = ['object', 'script', 'nodes', 'meta']
 
 const e1 = new THREE.Euler(0, 0, 0, 'YXZ')
 const q1 = new THREE.Quaternion()
@@ -209,12 +209,12 @@ export function Sidebar({ world, ui }) {
               </Btn>
             </Section>
           )}
-          {ui.app && (
+          {ui.object && (
             <Section active={activePane} top bottom>
               <Btn
-                active={activePane === 'app'}
-                suspended={ui.pane === 'app' && !activePane}
-                onClick={() => world.ui.togglePane('app')}
+                active={activePane === 'object'}
+                suspended={ui.pane === 'object' && !activePane}
+                onClick={() => world.ui.togglePane('object')}
               >
                 <SquareMenuIcon size='1.25rem' />
               </Btn>
@@ -244,12 +244,12 @@ export function Sidebar({ world, ui }) {
         </div>
         {ui.pane === 'prefs' && <Prefs world={world} hidden={!ui.active} />}
         {ui.pane === 'world' && <World world={world} hidden={!ui.active} />}
-        {ui.pane === 'apps' && <Apps world={world} hidden={!ui.active} />}
+        {ui.pane === 'apps' && <Objects world={world} hidden={!ui.active} />}
         {ui.pane === 'add' && <Add world={world} hidden={!ui.active} />}
-        {ui.pane === 'app' && <App key={ui.app.data.id} world={world} hidden={!ui.active} />}
-        {ui.pane === 'script' && <Script key={ui.app.data.id} world={world} hidden={!ui.active} />}
-        {ui.pane === 'nodes' && <Nodes key={ui.app.data.id} world={world} hidden={!ui.active} />}
-        {ui.pane === 'meta' && <Meta key={ui.app.data.id} world={world} hidden={!ui.active} />}
+        {ui.pane === 'object' && <Object key={ui.object.data.id} world={world} hidden={!ui.active} />}
+        {ui.pane === 'script' && <Script key={ui.object.data.id} world={world} hidden={!ui.active} />}
+        {ui.pane === 'nodes' && <Nodes key={ui.object.data.id} world={world} hidden={!ui.active} />}
+        {ui.pane === 'meta' && <Meta key={ui.object.data.id} world={world} hidden={!ui.active} />}
         {ui.pane === 'players' && <Players world={world} hidden={!ui.active} />}
       </div>
     </HintProvider>
@@ -740,7 +740,7 @@ function World({ world, hidden }) {
           )}
           <FieldSwitch
             label='Voice Chat'
-            hint='Set the base voice chat mode. Apps are able to modify this using custom rules.'
+            hint='Set the base voice chat mode. Objects are able to modify this using custom rules.'
             options={voiceChatOptions}
             value={voice}
             onChange={voice => world.settings.set('voice', voice, true)}
@@ -794,7 +794,7 @@ const appsState = {
   perf: false,
   scrollTop: 0,
 }
-function Apps({ world, hidden }) {
+function Objects({ world, hidden }) {
   const contentRef = useRef()
   const [query, setQuery] = useState(appsState.query)
   const [perf, setPerf] = useState(appsState.perf)
@@ -869,7 +869,7 @@ function Apps({ world, hidden }) {
         `}
       >
         <div className='apps-head'>
-          <div className='apps-title'>Apps</div>
+          <div className='apps-title'>Objects</div>
           <label className='apps-search'>
             <SearchIcon size='1.125rem' />
             <input type='text' placeholder='Search' value={query} onChange={e => setQuery(e.target.value)} />
@@ -908,7 +908,7 @@ function Add({ world, hidden }) {
     setTimeout(() => {
       const data = {
         id: uuid(),
-        type: 'app',
+        type: 'object',
         blueprint: blueprint.id,
         position: transform.position,
         quaternion: transform.quaternion,
@@ -918,8 +918,8 @@ function Add({ world, hidden }) {
         pinned: false,
         state: {},
       }
-      const app = world.entities.add(data, true)
-      world.builder.select(app)
+      const object = world.entities.add(data, true)
+      world.builder.select(object)
     }, 100)
   }
   return (
@@ -1005,17 +1005,17 @@ const extToType = {
 const allowedModels = ['glb', 'vrm']
 let showTransforms = false
 
-function App({ world, hidden }) {
+function Object({ world, hidden }) {
   const { setHint } = useContext(HintContext)
-  const app = world.ui.state.app
-  const [pinned, setPinned] = useState(app.data.pinned)
+  const object = world.ui.state.object
+  const [pinned, setPinned] = useState(object.data.pinned)
   const [transforms, setTransforms] = useState(showTransforms)
-  const [blueprint, setBlueprint] = useState(app.blueprint)
+  const [blueprint, setBlueprint] = useState(object.blueprint)
   useEffect(() => {
     showTransforms = transforms
   }, [transforms])
   useEffect(() => {
-    window.app = app
+    window.object = object
     const onModify = bp => {
       if (bp.id === blueprint.id) setBlueprint(bp)
     }
@@ -1027,7 +1027,7 @@ function App({ world, hidden }) {
   const frozen = blueprint.frozen // TODO: disable code editor, model change, metadata editing, flag editing etc
   const download = async () => {
     try {
-      const file = await exportApp(app.blueprint, world.loader.loadFile)
+      const file = await exportApp(object.blueprint, world.loader.loadFile)
       downloadFile(file)
     } catch (err) {
       console.error(err)
@@ -1062,15 +1062,15 @@ function App({ world, hidden }) {
     world.network.send('blueprintModified', { id: blueprint.id, version, [key]: value })
   }
   const togglePinned = () => {
-    const pinned = !app.data.pinned
-    app.data.pinned = pinned
-    world.network.send('entityModified', { id: app.data.id, pinned })
+    const pinned = !object.data.pinned
+    object.data.pinned = pinned
+    world.network.send('entityModified', { id: object.data.id, pinned })
     setPinned(pinned)
   }
   return (
     <Pane hidden={hidden}>
       <div
-        className='app'
+        className='object'
         css={css`
           background: rgba(11, 10, 21, 0.9);
           border: 1px solid rgba(255, 255, 255, 0.05);
@@ -1078,14 +1078,14 @@ function App({ world, hidden }) {
           display: flex;
           flex-direction: column;
           min-height: 1rem;
-          .app-head {
+          .object-head {
             height: 3.125rem;
             padding: 0 1rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             align-items: center;
           }
-          .app-title {
+          .object-title {
             flex: 1;
             font-weight: 500;
             font-size: 1rem;
@@ -1094,7 +1094,7 @@ function App({ world, hidden }) {
             text-overflow: ellipsis;
             overflow: hidden;
           }
-          .app-btn {
+          .object-btn {
             width: 2rem;
             height: 2rem;
             display: flex;
@@ -1106,14 +1106,14 @@ function App({ world, hidden }) {
               color: white;
             }
           }
-          .app-toggles {
+          .object-toggles {
             padding: 0.5rem 1.4rem;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             display: flex;
             align-items: center;
             justify-content: space-between;
           }
-          .app-toggle {
+          .object-toggle {
             width: 2rem;
             height: 2rem;
             display: flex;
@@ -1130,10 +1130,10 @@ function App({ world, hidden }) {
               color: #434556;
             }
           }
-          .app-transforms {
+          .object-transforms {
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
           }
-          .app-transforms-btn {
+          .object-transforms-btn {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1142,18 +1142,18 @@ function App({ world, hidden }) {
               cursor: pointer;
             }
           }
-          .app-content {
+          .object-content {
             flex: 1;
             overflow-y: auto;
           }
         `}
       >
-        <div className='app-head'>
-          <div className='app-title'>{app.blueprint.name}</div>
+        <div className='object-head'>
+          <div className='object-title'>{object.blueprint.name}</div>
           <div
-            className='app-btn'
+            className='object-btn'
             onClick={download}
-            onPointerEnter={() => setHint('Download this app')}
+            onPointerEnter={() => setHint('Download this object')}
             onPointerLeave={() => setHint(null)}
           >
             <DownloadIcon size='1.125rem' />
@@ -1161,7 +1161,7 @@ function App({ world, hidden }) {
           {!frozen && (
             <AppModelBtn value={blueprint.model} onChange={changeModel}>
               <div
-                className='app-btn'
+                className='object-btn'
                 onPointerEnter={() => setHint('Change this apps base model')}
                 onPointerLeave={() => setHint(null)}
               >
@@ -1171,12 +1171,12 @@ function App({ world, hidden }) {
           )}
           {!blueprint.scene && (
             <div
-              className='app-btn'
+              className='object-btn'
               onClick={() => {
                 world.ui.setApp(null)
-                app.destroy(true)
+                object.destroy(true)
               }}
-              onPointerEnter={() => setHint('Delete this app')}
+              onPointerEnter={() => setHint('Delete this object')}
               onPointerLeave={() => setHint(null)}
             >
               <Trash2Icon size='1.125rem' />
@@ -1184,62 +1184,62 @@ function App({ world, hidden }) {
           )}
         </div>
         {!blueprint.scene && (
-          <div className='app-toggles'>
+          <div className='object-toggles'>
             <div
-              className={cls('app-toggle', { active: blueprint.disabled })}
+              className={cls('object-toggle', { active: blueprint.disabled })}
               onClick={() => toggleKey('disabled')}
-              onPointerEnter={() => setHint('Disable this app so that it is no longer active in the world.')}
+              onPointerEnter={() => setHint('Disable this object so that it is no longer active in the world.')}
               onPointerLeave={() => setHint(null)}
             >
               <OctagonXIcon size='1.125rem' />
               {/* {blueprint.disabled ? <SquareIcon size='1.125rem' /> : <SquareCheckBigIcon size='1.125rem' />} */}
             </div>
             <div
-              className={cls('app-toggle', { active: pinned })}
+              className={cls('object-toggle', { active: pinned })}
               onClick={() => togglePinned()}
-              onPointerEnter={() => setHint("Pin this app so it can't accidentally be moved.")}
+              onPointerEnter={() => setHint("Pin this object so it can't accidentally be moved.")}
               onPointerLeave={() => setHint(null)}
             >
               <PinIcon size='1.125rem' />
             </div>
             <div
-              className={cls('app-toggle', { active: blueprint.preload })}
+              className={cls('object-toggle', { active: blueprint.preload })}
               onClick={() => toggleKey('preload')}
-              onPointerEnter={() => setHint('Preload this app before entering the world.')}
+              onPointerEnter={() => setHint('Preload this object before entering the world.')}
               onPointerLeave={() => setHint(null)}
             >
               <LoaderPinwheelIcon size='1.125rem' />
             </div>
             <div
-              className={cls('app-toggle', { active: blueprint.unique })}
+              className={cls('object-toggle', { active: blueprint.unique })}
               onClick={() => toggleKey('unique')}
-              onPointerEnter={() => setHint('Make this app unique so that new duplicates are not linked to this one.')}
+              onPointerEnter={() => setHint('Make this object unique so that new duplicates are not linked to this one.')}
               onPointerLeave={() => setHint(null)}
             >
               <SparkleIcon size='1.125rem' />
             </div>
           </div>
         )}
-        <div className='app-content noscrollbar'>
+        <div className='object-content noscrollbar'>
           {!blueprint.scene && (
-            <div className='app-transforms'>
-              <div className='app-transforms-btn' onClick={() => setTransforms(!transforms)}>
+            <div className='object-transforms'>
+              <div className='object-transforms-btn' onClick={() => setTransforms(!transforms)}>
                 <ChevronsUpDownIcon size='1rem' />
               </div>
-              {transforms && <AppTransformFields app={app} />}
+              {transforms && <AppTransformFields object={object} />}
             </div>
           )}
-          <AppFields world={world} app={app} blueprint={blueprint} />
+          <AppFields world={world} object={object} blueprint={blueprint} />
         </div>
       </div>
     </Pane>
   )
 }
 
-function AppTransformFields({ app }) {
-  const [position, setPosition] = useState(app.root.position.toArray())
-  const [rotation, setRotation] = useState(app.root.rotation.toArray().map(n => n * RAD2DEG))
-  const [scale, setScale] = useState(app.root.scale.toArray())
+function AppTransformFields({ object }) {
+  const [position, setPosition] = useState(object.root.position.toArray())
+  const [rotation, setRotation] = useState(object.root.rotation.toArray().map(n => n * RAD2DEG))
+  const [scale, setScale] = useState(object.root.scale.toArray())
   return (
     <>
       <FieldVec3
@@ -1252,9 +1252,9 @@ function AppTransformFields({ app }) {
         onChange={value => {
           console.log(value)
           setPosition(value)
-          app.modify({ position: value })
-          app.world.network.send('entityModified', {
-            id: app.data.id,
+          object.modify({ position: value })
+          object.world.network.send('entityModified', {
+            id: object.data.id,
             position: value,
           })
         }}
@@ -1269,9 +1269,9 @@ function AppTransformFields({ app }) {
         onChange={value => {
           setRotation(value)
           value = q1.setFromEuler(e1.fromArray(value.map(n => n * DEG2RAD))).toArray()
-          app.modify({ quaternion: value })
-          app.world.network.send('entityModified', {
-            id: app.data.id,
+          object.modify({ quaternion: value })
+          object.world.network.send('entityModified', {
+            id: object.data.id,
             quaternion: value,
           })
         }}
@@ -1285,9 +1285,9 @@ function AppTransformFields({ app }) {
         value={scale}
         onChange={value => {
           setScale(value)
-          app.modify({ scale: value })
-          app.world.network.send('entityModified', {
-            id: app.data.id,
+          object.modify({ scale: value })
+          object.world.network.send('entityModified', {
+            id: object.data.id,
             scale: value,
           })
         }}
@@ -1331,13 +1331,13 @@ function AppModelBtn({ value, onChange, children }) {
   )
 }
 
-function AppFields({ world, app, blueprint }) {
-  const [fields, setFields] = useState(() => app.fields)
+function AppFields({ world, object, blueprint }) {
+  const [fields, setFields] = useState(() => object.fields)
   const props = blueprint.props
   useEffect(() => {
-    app.onFields = setFields
+    object.onFields = setFields
     return () => {
-      app.onFields = null
+      object.onFields = null
     }
   }, [])
   const modify = (key, value) => {
@@ -1485,7 +1485,7 @@ function AppField({ world, props, field, value, modify }) {
 }
 
 function Script({ world, hidden }) {
-  const app = world.ui.state.app
+  const object = world.ui.state.object
   const containerRef = useRef()
   const resizeRef = useRef()
   const [handle, setHandle] = useState(null)
@@ -1571,19 +1571,19 @@ function Script({ world, hidden }) {
       `}
     >
       <div className='script-head'>
-        <div className='script-title'>Script: {app.blueprint?.name}</div>
+        <div className='script-title'>Script: {object.blueprint?.name}</div>
         <div className='script-btn' onClick={() => handle?.save()}>
           <SaveIcon size='1.125rem' />
         </div>
       </div>
-      <ScriptEditor key={app.data.id} app={app} onHandle={setHandle} />
+      <ScriptEditor key={object.data.id} object={object} onHandle={setHandle} />
       <div className='script-resizer' ref={resizeRef} />
     </div>
   )
 }
 
 function Nodes({ world, hidden }) {
-  const app = world.ui.state.app
+  const object = world.ui.state.object
   return (
     <Pane hidden={hidden}>
       <div
@@ -1613,17 +1613,17 @@ function Nodes({ world, hidden }) {
         <div className='nodes-head'>
           <div className='nodes-title'>Nodes</div>
         </div>
-        <NodeHierarchy app={app} />
+        <NodeHierarchy object={object} />
       </div>
     </Pane>
   )
 }
 
 function Meta({ world, hidden }) {
-  const app = world.ui.state.app
-  const [blueprint, setBlueprint] = useState(app.blueprint)
+  const object = world.ui.state.object
+  const [blueprint, setBlueprint] = useState(object.blueprint)
   useEffect(() => {
-    window.app = app
+    window.object = object
     const onModify = bp => {
       if (bp.id === blueprint.id) setBlueprint(bp)
     }
@@ -1674,13 +1674,13 @@ function Meta({ world, hidden }) {
         <div className='meta-content noscrollbar'>
           <FieldText
             label='Name'
-            hint='The name of this app'
+            hint='The name of this object'
             value={blueprint.name}
             onChange={value => set('name', value)}
           />
           <FieldFile
             label='Image'
-            hint='An image/icon for this app'
+            hint='An image/icon for this object'
             kind='texture'
             value={blueprint.image}
             onChange={value => set('image', value)}
@@ -1688,19 +1688,19 @@ function Meta({ world, hidden }) {
           />
           <FieldText
             label='Author'
-            hint='The name of the author that made this app'
+            hint='The name of the author that made this object'
             value={blueprint.author}
             onChange={value => set('author', value)}
           />
           <FieldText
             label='URL'
-            hint='A url for this app'
+            hint='A url for this object'
             value={blueprint.url}
             onChange={value => set('url', value)}
           />
           <FieldTextarea
             label='Description'
-            hint='A description for this app'
+            hint='A description for this object'
             value={blueprint.desc}
             onChange={value => set('desc', value)}
           />

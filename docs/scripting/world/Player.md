@@ -111,7 +111,7 @@ Overrides the players voice chat level to `disabled`, `spatial` or `global`.
 
 By default all players have the voice level defined in the world settings menu, but `.setVoiceLevel` allows apps to override it using any logic needed.
 
-Calling `player.setVoiceLevel(null)` removes the current apps override and reverting to the world setting (unless another app is overriding it).
+Calling `player.setVoiceLevel(null)` removes the current apps override and reverting to the world setting (unless another object is overriding it).
 
 **NOTE:** Changes stack with priority, so if two apps have set a voice level, the higher priority level takes precendence. Global is the highest priority.
 

@@ -4,17 +4,17 @@
 const SPACING = 3
 
 // Create floor
-const floor = app.create('prim', {
+const floor = object.create('prim', {
   type: 'box',
   scale: [20, 0.1, 10],
   position: [0, -0.05, 0],
   color: '#2a2a2a',
   physics: 'static',
 })
-app.add(floor)
+object.add(floor)
 
 // Box primitive
-const box = app.create('prim', {
+const box = object.create('prim', {
   type: 'box',
   scale: [1, 1, 1],
   position: [-7.5, 0.5, 0],
@@ -22,10 +22,10 @@ const box = app.create('prim', {
   metalness: 0.3,
   roughness: 0.7,
 })
-app.add(box)
+object.add(box)
 
 // Sphere primitive
-const sphere = app.create('prim', {
+const sphere = object.create('prim', {
   type: 'sphere',
   scale: [0.5, 0.5, 0.5],
   position: [-4.5, 0.5, 0],
@@ -33,10 +33,10 @@ const sphere = app.create('prim', {
   metalness: 0.8,
   roughness: 0.2,
 })
-app.add(sphere)
+object.add(sphere)
 
 // Cylinder primitive
-const cylinder = app.create('prim', {
+const cylinder = object.create('prim', {
   type: 'cylinder',
   scale: [0.5, 1.5, 0.5],
   position: [-1.5, 0.75, 0],
@@ -44,10 +44,10 @@ const cylinder = app.create('prim', {
   metalness: 0.4,
   roughness: 0.6,
 })
-app.add(cylinder)
+object.add(cylinder)
 
 // Cone primitive
-const cone = app.create('prim', {
+const cone = object.create('prim', {
   type: 'cone',
   scale: [0.5, 1.5, 0.5],
   position: [1.5, 0.75, 0],
@@ -55,10 +55,10 @@ const cone = app.create('prim', {
   metalness: 0.5,
   roughness: 0.5,
 })
-app.add(cone)
+object.add(cone)
 
 // Torus primitive
-const torus = app.create('prim', {
+const torus = object.create('prim', {
   type: 'torus',
   scale: [0.6, 0.6, 0.6],
   position: [4.5, 0.7, 0],
@@ -66,10 +66,10 @@ const torus = app.create('prim', {
   metalness: 0.7,
   roughness: 0.3,
 })
-app.add(torus)
+object.add(torus)
 
 // Plane primitive (vertical to be visible)
-const plane = app.create('prim', {
+const plane = object.create('prim', {
   type: 'plane',
   scale: [1.5, 1.5, 1],
   position: [7.5, 0.75, 0],
@@ -79,7 +79,7 @@ const plane = app.create('prim', {
   roughness: 0.8,
   doubleside: true,
 })
-app.add(plane)
+object.add(plane)
 
 // Add labels under each primitive
 const labels = [
@@ -93,7 +93,7 @@ const labels = [
 
 // Create text labels (using small boxes as placeholders for demonstration)
 labels.forEach(label => {
-  const labelBox = app.create('prim', {
+  const labelBox = object.create('prim', {
     type: 'box',
     scale: [1.2, 0.1, 0.3],
     position: [label.x, 0.05, 2],
@@ -101,11 +101,11 @@ labels.forEach(label => {
     emissive: '#ffffff',
     emissiveIntensity: 0.3,
   })
-  app.add(labelBox)
+  object.add(labelBox)
 })
 
 // Add some animation to make it more interesting
-app.on('update', dt => {
+object.on('update', dt => {
   // Rotate box
   box.rotation.y += 0.5 * dt
 

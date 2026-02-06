@@ -2,7 +2,7 @@
 // Tests realistic material usage patterns for better performance
 
 // Configure props for texture upload
-app.configure([
+object.configure([
   {
     type: 'file',
     key: 'textureFile',
@@ -119,7 +119,7 @@ for (let i = 0; i < TOTAL_PRIMITIVES; i++) {
   }
 
   // Create primitive
-  const prim = app.create('prim', {
+  const prim = object.create('prim', {
     type: shape,
     scale: scaleArr,
     position: position,
@@ -128,7 +128,7 @@ for (let i = 0; i < TOTAL_PRIMITIVES; i++) {
     receiveShadow: false,
   })
 
-  app.add(prim)
+  object.add(prim)
   stats.instances.push(prim)
 
   // Log progress
@@ -158,7 +158,7 @@ stats.materialUsage.forEach((count, idx) => {
 
 // Create a special textured showcase primitive if texture is provided
 if (props.textureFile?.url) {
-  const texturedBox = app.create('prim', {
+  const texturedBox = object.create('prim', {
     type: 'box',
     scale: [4, 4, 4],
     position: [0, 2, -10],
@@ -167,11 +167,11 @@ if (props.textureFile?.url) {
     metalness: 0.0,
     roughness: 0.8,
   })
-  app.add(texturedBox)
+  object.add(texturedBox)
   stats.instances.push(texturedBox)
 
   // Make it rotate slowly
-  app.on('update', dt => {
+  object.on('update', dt => {
     texturedBox.rotation.y += 0.3 * dt
   })
 
@@ -196,7 +196,7 @@ for (let i = 0; i < animatedCount; i++) {
   })
 }
 
-app.on('update', dt => {
+object.on('update', dt => {
   animatedPrims.forEach(({ prim, speed, axis }) => {
     prim.rotation[axis] += speed * dt
   })

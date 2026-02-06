@@ -38,13 +38,13 @@ class Collections {
         const appFile = new File([appBuffer], appFilename, {
           type: 'application/octet-stream',
         })
-        const app = await importApp(appFile)
-        for (const asset of app.assets) {
+        const object = await importApp(appFile)
+        for (const asset of object.assets) {
           // const file = asset.file
           // const assetFilename = asset.url.slice(8) // remove 'asset://' prefix
           await assets.upload(asset.file)
         }
-        blueprints.push(app.blueprint)
+        blueprints.push(object.blueprint)
       }
       this.list.push({
         id: folderName,

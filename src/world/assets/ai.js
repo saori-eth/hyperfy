@@ -1,6 +1,6 @@
-app.remove(app.get('Block'))
+object.remove(object.get('Block'))
 
-app.configure([
+object.configure([
   {
     key: 'prompt',
     type: 'text',
@@ -17,7 +17,7 @@ app.configure([
 
 if (world.isServer) return
 
-const $ui = app.create('ui', {
+const $ui = object.create('ui', {
   width: 200,
   height: 200,
   size: 0.01,
@@ -28,14 +28,14 @@ const $ui = app.create('ui', {
   justifyContent: 'flex-start',
   padding: [0, 0, 2, 0],
 })
-const $bubble = app.create('uiview', {
+const $bubble = object.create('uiview', {
   backgroundColor: 'rgba(0,0,0,0.95)',
   borderRadius: 16,
   padding: 16,
 })
-let prompt = app.config.prompt
+let prompt = object.config.prompt
 if (prompt.length > 100) prompt = prompt.slice(0, 100) + '...'
-const $text = app.create('uitext', {
+const $text = object.create('uitext', {
   value: prompt,
   fontSize: 14,
   fontWeight: 400,
@@ -43,7 +43,7 @@ const $text = app.create('uitext', {
   textAlign: 'center',
   margin: [0, 0, 10, 0],
 })
-const $time = app.create('uitext', {
+const $time = object.create('uitext', {
   value: '4s',
   fontSize: 10,
   fontWeight: 200,
@@ -53,12 +53,12 @@ const $time = app.create('uitext', {
 $ui.add($bubble)
 $bubble.add($text)
 $bubble.add($time)
-const $line = app.create('uiview', {
+const $line = object.create('uiview', {
   width: 1,
   backgroundColor: 'white',
   flexGrow: 1,
 })
-const $dot = app.create('uiview', {
+const $dot = object.create('uiview', {
   width: 5,
   height: 5,
   borderRadius: 10,
@@ -66,10 +66,10 @@ const $dot = app.create('uiview', {
 })
 $ui.add($line)
 $ui.add($dot)
-app.add($ui)
+object.add($ui)
 
-const createdAt = app.config.createdAt
-app.on('update', () => {
+const createdAt = object.config.createdAt
+object.on('update', () => {
   const elapsed = world.getTime() - createdAt
   $time.value = elapsed.toFixed(0) + 's'
 })

@@ -26,7 +26,7 @@ if (typeof window !== 'undefined') {
   safeMode = new URLSearchParams(window.location.search).get('safemode')
 }
 
-export class App extends Entity {
+export class Object extends Entity {
   constructor(world, data, local) {
     super(world, data, local)
     this.isApp = true
@@ -222,7 +222,7 @@ export class App extends Entity {
   }
 
   update(delta) {
-    // if someone else is moving the app, interpolate updates
+    // if someone else is moving the object, interpolate updates
     if (this.data.mover && this.data.mover !== this.world.network.id) {
       this.networkPos.update(delta)
       this.networkQuat.update(delta)
@@ -429,7 +429,7 @@ export class App extends Entity {
   }
 
   getNodes() {
-    // note: this is currently just used in the nodes tab in the app inspector
+    // note: this is currently just used in the nodes tab in the object inspector
     // to get a clean hierarchy
     if (!this.blueprint) return
     const type = this.blueprint.model.endsWith('vrm') ? 'avatar' : 'model'

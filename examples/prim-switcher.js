@@ -1,9 +1,9 @@
 // Primitive Switcher - Switch between different primitive types with adjustable scale
-const box = app.get('Block')
+const box = object.get('Block')
 box.visible = false
 
 // Configure props UI
-app.configure([
+object.configure([
   {
     type: 'switch',
     key: 'primType',
@@ -117,7 +117,7 @@ app.configure([
 const scaleArray = [props.scaleX || 1, props.scaleY || 1, props.scaleZ || 1]
 
 // Create new primitive - geometry is already translated so y=0 is the bottom
-const currentPrim = app.create('prim', {
+const currentPrim = object.create('prim', {
   type: props.primType || 'box',
   scale: scaleArray,
   position: [0, 0, 0],
@@ -133,7 +133,7 @@ const currentPrim = app.create('prim', {
 })
 currentPrim.position.y += props.scaleY / 2
 
-app.add(currentPrim)
+object.add(currentPrim)
 
 // for (let i = 0; i < 10000; i++) {
 //   const c = currentPrim.clone(true)
@@ -142,10 +142,10 @@ app.add(currentPrim)
 //     num(0, 10, 3),
 //     num(-300, 300, 3),
 //   )
-//   app.add(c)
+//   object.add(c)
 // }
 
-app.on('update', dt => {
+object.on('update', dt => {
   // Auto rotate if enabled
   if (props.rotate && currentPrim) {
     currentPrim.rotation.y += dt * (props.rotationSpeed || 1)
@@ -153,7 +153,7 @@ app.on('update', dt => {
 })
 
 // Add info display
-const info = app.create('ui', {
+const info = object.create('ui', {
   width: 300,
   height: 50,
   size: 0.01,
@@ -166,7 +166,7 @@ const info = app.create('ui', {
   gap: 5,
 })
 
-const title = app.create('uitext', {
+const title = object.create('uitext', {
   value: 'Primitive Switcher',
   fontSize: 20,
   color: '#ffffff',
@@ -174,7 +174,7 @@ const title = app.create('uitext', {
   textAlign: 'center',
 })
 
-const subtitle = app.create('uitext', {
+const subtitle = object.create('uitext', {
   value: 'Use the props panel to change settings',
   fontSize: 14,
   color: '#aaaaaa',
@@ -183,7 +183,7 @@ const subtitle = app.create('uitext', {
 
 info.add(title)
 info.add(subtitle)
-app.add(info)
+object.add(info)
 
 // console.log('Primitive Switcher ready!')
 // console.log('Use the props panel in your browser to:')

@@ -3,10 +3,10 @@
 Creates a particle emitter that can be used for VFX such as rain, fire, magic, etc.
 
 ```jsx
-const particles = app.create('particles', {
+const particles = object.create('particles', {
   shape: ['cone', 1, 25, 1],
 })
-app.add(particles)
+object.add(particles)
 ```
 
 ## Properties
@@ -137,7 +137,7 @@ Defaults to `1`.
 The URL to the image used as the particle texture.
 
 ```jsx
-app.configure([
+object.configure([
   {
     key: 'image',
     type: 'file',

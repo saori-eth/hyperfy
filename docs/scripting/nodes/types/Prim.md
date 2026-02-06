@@ -150,7 +150,7 @@ Inherits all [Node](/docs/scripting/nodes/Node.md) properties
 
 ```javascript
 // Create various primitives with different materials
-const box = app.create('prim', {
+const box = object.create('prim', {
   type: 'box',
   scale: [2, 1, 3],
   position: [0, 1, 0],
@@ -159,7 +159,7 @@ const box = app.create('prim', {
   roughness: 0.2
 })
 
-const sphere = app.create('prim', {
+const sphere = object.create('prim', {
   type: 'sphere',
   scale: [0.5, 0.5, 0.5],
   position: [3, 1, 0],
@@ -169,7 +169,7 @@ const sphere = app.create('prim', {
 })
 
 // Transparent glass-like cylinder
-const cylinder = app.create('prim', {
+const cylinder = object.create('prim', {
   type: 'cylinder',
   scale: [0.3, 2, 0.3],
   position: [-3, 1, 0],
@@ -181,7 +181,7 @@ const cylinder = app.create('prim', {
 })
 
 // Animated torus
-const torus = app.create('prim', {
+const torus = object.create('prim', {
   type: 'torus',
   scale: [1, 1, 1],
   position: [0, 3, 0],
@@ -189,7 +189,7 @@ const torus = app.create('prim', {
 })
 
 // Textured plane (double-sided)
-const texturedPlane = app.create('prim', {
+const texturedPlane = object.create('prim', {
   type: 'plane',
   scale: [2, 2, 1],
   position: [0, 1, -3],
@@ -198,21 +198,21 @@ const texturedPlane = app.create('prim', {
   doubleside: true // Visible from both sides
 })
 
-app.add(box)
-app.add(sphere)
-app.add(cylinder)
-app.add(torus)
-app.add(texturedPlane)
+object.add(box)
+object.add(sphere)
+object.add(cylinder)
+object.add(torus)
+object.add(texturedPlane)
 
 // Animate emissive intensity
-app.on('update', (dt) => {
+object.on('update', (dt) => {
   torus.rotation.y += 0.01
   torus.emissiveIntensity = Math.sin(Date.now() * 0.002) + 1.5
 })
 
 // Physics examples
 // Static floor
-const floor = app.create('prim', {
+const floor = object.create('prim', {
   type: 'box',
   scale: [10, 0.1, 10],
   position: [0, 0, 0],
@@ -221,7 +221,7 @@ const floor = app.create('prim', {
 })
 
 // Dynamic bouncing ball
-const ball = app.create('prim', {
+const ball = object.create('prim', {
   type: 'sphere',
   scale: [0.5, 0.5, 0.5],
   position: [0, 5, 0],
@@ -233,7 +233,7 @@ const ball = app.create('prim', {
 })
 
 // Trigger zone
-const triggerZone = app.create('prim', {
+const triggerZone = object.create('prim', {
   type: 'box',
   scale: [2, 2, 2],
   position: [5, 1, 0],
@@ -254,9 +254,9 @@ const triggerZone = app.create('prim', {
 ball.tag = 'player_ball' // Can be changed at runtime
 ball.restitution = 0.5   // Updates bounciness
 
-app.add(floor)
-app.add(ball)
-app.add(triggerZone)
+object.add(floor)
+object.add(ball)
+object.add(triggerZone)
 ```
 
 ## Notes

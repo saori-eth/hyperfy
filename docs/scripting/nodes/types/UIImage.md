@@ -3,7 +3,7 @@
 Represents an image inside a UI, similar to an img tag in HTML.
 
 ```jsx
-const image = app.create('uiimage', {
+const image = object.create('uiimage', {
   src: 'https://example.com/image.png',
   width: 200,
   height: 150,

@@ -6,7 +6,7 @@ import { OpenAI } from 'openai'
 import { System } from './System'
 import { hashFile } from '../utils-server'
 
-const prefix = `app.remove(app.get('Block'))
+const prefix = `object.remove(object.get('Block'))
 `
 
 const docs = fs.readFileSync(path.join(__dirname, 'public/ai-docs.md'), 'utf8')
@@ -71,7 +71,7 @@ export class ServerAI extends System {
 
   async create({ blueprintId, appId, prompt }) {
     console.log('[ai] creating...')
-    // classify prompt to a short descriptive name for the app
+    // classify prompt to a short descriptive name for the object
     this.classify({ blueprintId, prompt })
     // send prompt to ai to generate code
     const startAt = performance.now()

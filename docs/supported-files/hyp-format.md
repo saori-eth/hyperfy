@@ -1,6 +1,6 @@
 # .hyp File Format Documentation
 
-The `.hyp` file format is a custom binary format used for Hyperfy Apps that bundles a blueprint configuration with its associated assets.
+The `.hyp` file format is a custom binary format used for Hyperfy Objects that bundles a blueprint configuration with its associated assets.
 
 ## File Structure
 
@@ -11,7 +11,7 @@ A `.hyp` file consists of three main sections:
 
 2. Header (JSON)
    - Contains two main objects:
-     - `blueprint`: The app configuration
+     - `blueprint`: The object configuration
      - `assets`: Metadata for all bundled assets
 
 3. Asset Data
@@ -48,11 +48,11 @@ The header is a JSON object with the following structure:
 
 ### Blueprint Properties
 
-- `name`: The name of the app (used for the output filename if not specified)
+- `name`: The name of the object (used for the output filename if not specified)
 - `model`: (Optional) URL of the main 3D model file
-- `script`: (Optional) URL of the app's script file
+- `script`: (Optional) URL of the object's script file
 - `props`: Object containing additional properties with associated assets
-- `frozen`: Boolean flag indicating if the app is locked/frozen
+- `frozen`: Boolean flag indicating if the object is locked/frozen
 
 ### Asset Types
 

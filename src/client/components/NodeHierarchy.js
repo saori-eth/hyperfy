@@ -12,9 +12,9 @@ import {
 import { useEffect, useMemo, useState } from 'react'
 import { cls } from './cls'
 
-export function NodeHierarchy({ app }) {
+export function NodeHierarchy({ object }) {
   const [selectedNode, setSelectedNode] = useState(null)
-  const rootNode = useMemo(() => app.getNodes(), [])
+  const rootNode = useMemo(() => object.getNodes(), [])
 
   useEffect(() => {
     if (rootNode && !selectedNode) {
@@ -220,7 +220,7 @@ function renderHierarchy(nodes, depth = 0, selectedNode, setSelectedNode) {
           onClick={() => setSelectedNode(node)}
         >
           <Icon size={14} />
-          <span>{node.id === '$root' ? 'app' : node.id}</span>
+          <span>{node.id === '$root' ? 'object' : node.id}</span>
         </div>
         {hasChildren && renderHierarchy(children, depth + 1, selectedNode, setSelectedNode)}
       </div>

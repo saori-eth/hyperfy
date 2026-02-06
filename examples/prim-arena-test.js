@@ -19,7 +19,7 @@ const gameState = {
 console.log('Building arena...')
 
 // Create floor
-const floor = app.create('prim', {
+const floor = object.create('prim', {
   type: 'box',
   scale: [ARENA_SIZE, 0.2, ARENA_SIZE],
   position: [0, -0.1, 0],
@@ -28,14 +28,14 @@ const floor = app.create('prim', {
   roughness: 0.8,
   physics: 'static',
 })
-app.add(floor)
+object.add(floor)
 
 // Create walls
 const walls = []
 
 // North wall
 walls.push(
-  app.create('prim', {
+  object.create('prim', {
     type: 'box',
     scale: [ARENA_SIZE, WALL_HEIGHT, WALL_THICKNESS],
     position: [0, WALL_HEIGHT / 2, -ARENA_SIZE / 2],
@@ -46,7 +46,7 @@ walls.push(
 
 // South wall
 walls.push(
-  app.create('prim', {
+  object.create('prim', {
     type: 'box',
     scale: [ARENA_SIZE, WALL_HEIGHT, WALL_THICKNESS],
     position: [0, WALL_HEIGHT / 2, ARENA_SIZE / 2],
@@ -57,7 +57,7 @@ walls.push(
 
 // East wall
 walls.push(
-  app.create('prim', {
+  object.create('prim', {
     type: 'box',
     scale: [WALL_THICKNESS, WALL_HEIGHT, ARENA_SIZE],
     position: [ARENA_SIZE / 2, WALL_HEIGHT / 2, 0],
@@ -68,7 +68,7 @@ walls.push(
 
 // West wall
 walls.push(
-  app.create('prim', {
+  object.create('prim', {
     type: 'box',
     scale: [WALL_THICKNESS, WALL_HEIGHT, ARENA_SIZE],
     position: [-ARENA_SIZE / 2, WALL_HEIGHT / 2, 0],
@@ -77,7 +77,7 @@ walls.push(
   })
 )
 
-walls.forEach(wall => app.add(wall))
+walls.forEach(wall => object.add(wall))
 
 // Create obstacles (cover)
 const obstacles = []
@@ -93,7 +93,7 @@ for (let i = 0; i < OBSTACLE_COUNT; i++) {
     z = (Math.random() - 0.5) * (ARENA_SIZE - 4)
   } while (Math.abs(x) < 5 && Math.abs(z) < 5) // Keep center clear
 
-  const obstacle = app.create('prim', {
+  const obstacle = object.create('prim', {
     type: Math.random() < 0.7 ? 'box' : 'cylinder',
     scale: [width, height, width],
     position: [x, height / 2, z],
@@ -104,7 +104,7 @@ for (let i = 0; i < OBSTACLE_COUNT; i++) {
   })
 
   obstacles.push(obstacle)
-  app.add(obstacle)
+  object.add(obstacle)
 }
 
 // Create collectible rings
@@ -114,7 +114,7 @@ function createRing(index) {
   const y = 0.5 + Math.random() * 3
   const z = (Math.random() - 0.5) * (ARENA_SIZE - 4)
 
-  const ring = app.create('prim', {
+  const ring = object.create('prim', {
     type: 'torus',
     scale: [0.8, 0.8, 0.8],
     position: [x, y, z],
@@ -145,7 +145,7 @@ function collectRing(ring, index, playerId) {
   if (!gameState.rings[index]) return // Already collected
 
   // Remove ring
-  app.remove(ring)
+  object.remove(ring)
   gameState.rings[index] = null
 
   // Update score
@@ -167,7 +167,7 @@ function collectRing(ring, index, playerId) {
   setTimeout(() => {
     if (gameState.ringsCollected < RING_COUNT) {
       const newRing = createRing(index)
-      app.add(newRing)
+      object.add(newRing)
     }
   }, 5000)
 }
@@ -176,7 +176,7 @@ function collectRing(ring, index, playerId) {
 function createCollectEffect(position) {
   const particles = []
   for (let i = 0; i < 8; i++) {
-    const particle = app.create('prim', {
+    const particle = object.create('prim', {
       type: 'box',
       scale: [0.1, 0.1, 0.1],
       position: [...position],
@@ -185,7 +185,7 @@ function createCollectEffect(position) {
       emissiveIntensity: 3,
     })
 
-    app.add(particle)
+    object.add(particle)
     particles.push({
       prim: particle,
       velocity: [(Math.random() - 0.5) * 10, 5 + Math.random() * 5, (Math.random() - 0.5) * 10],
@@ -212,22 +212,22 @@ function createCollectEffect(position) {
 
     if (elapsed >= 1) {
       // Remove particles
-      particles.forEach(p => app.remove(p.prim))
-      app.off('update', updateParticles)
+      particles.forEach(p => object.remove(p.prim))
+      object.off('update', updateParticles)
     }
   }
 
-  app.on('update', updateParticles)
+  object.on('update', updateParticles)
 }
 
 // Add initial rings
 for (let i = 0; i < RING_COUNT; i++) {
   const ring = createRing(i)
-  app.add(ring)
+  object.add(ring)
 }
 
 // Add spinning animation to rings
-app.on('update', dt => {
+object.on('update', dt => {
   gameState.rings.forEach(ring => {
     if (ring) {
       ring.rotation.y += 2 * dt
@@ -243,7 +243,7 @@ for (let i = 0; i < 4; i++) {
   const x = Math.cos(angle) * (ARENA_SIZE / 2 - 3)
   const z = Math.sin(angle) * (ARENA_SIZE / 2 - 3)
 
-  const crystal = app.create('prim', {
+  const crystal = object.create('prim', {
     type: 'cone',
     scale: [0.5, 2, 0.5],
     position: [x, 1, z],
@@ -257,11 +257,11 @@ for (let i = 0; i < 4; i++) {
   })
 
   crystals.push(crystal)
-  app.add(crystal)
+  object.add(crystal)
 }
 
 // Animate crystals
-app.on('update', dt => {
+object.on('update', dt => {
   crystals.forEach((crystal, i) => {
     crystal.position.y = 1 + Math.sin(Date.now() * 0.001 + i) * 0.3
     crystal.emissiveIntensity = 2 + Math.sin(Date.now() * 0.002 + i * 0.5) * 1
@@ -269,7 +269,7 @@ app.on('update', dt => {
 })
 
 // Create spawn point indicator
-const spawnIndicator = app.create('prim', {
+const spawnIndicator = object.create('prim', {
   type: 'cylinder',
   scale: [2, 0.1, 2],
   position: [0, 0.05, 0],
@@ -279,7 +279,7 @@ const spawnIndicator = app.create('prim', {
   transparent: true,
   opacity: 0.5,
 })
-app.add(spawnIndicator)
+object.add(spawnIndicator)
 
 // Position camera for overview
 if (typeof world !== 'undefined' && world.getAvatar) {

@@ -290,7 +290,7 @@ export function CoreUI({ world }) {
 //           )}
 //         </div>
 //         {menu?.type === 'main' && <MenuMain world={world} />}
-//         {menu?.type === 'app' && <MenuApp key={menu.app.data.id} world={world} app={menu.app} blur={menu.blur} />}
+//         {menu?.type === 'object' && <MenuApp key={menu.object.data.id} world={world} object={menu.object} blur={menu.blur} />}
 //         <div className='side-mid'>{!menu && !isTouch && actions && <Actions world={world} />}</div>
 //         {isTouch && !chat && <MiniMessages world={world} />}
 //         {(isTouch ? chat : true) && <Messages world={world} active={chat || menu} />}

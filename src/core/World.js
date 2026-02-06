@@ -3,7 +3,7 @@ import EventEmitter from 'eventemitter3'
 
 import { Settings } from './systems/Settings'
 import { Collections } from './systems/Collections'
-import { Apps } from './systems/Apps'
+import { Objects } from './systems/Objects'
 import { Anchors } from './systems/Anchors'
 import { Avatars } from './systems/Avatars'
 import { Animation } from './systems/Animation'
@@ -38,7 +38,7 @@ export class World extends EventEmitter {
 
     this.register('settings', Settings)
     this.register('collections', Collections)
-    this.register('apps', Apps)
+    this.register('apps', Objects)
     this.register('anchors', Anchors)
     this.register('avatars', Avatars)
     this.register('animation', Animation)

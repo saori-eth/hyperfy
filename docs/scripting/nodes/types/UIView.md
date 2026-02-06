@@ -3,7 +3,7 @@
 Represents a single view inside a UI, similar to a `div`.
 
 ```jsx
-const view = app.create('uiview')
+const view = object.create('uiview')
 view.backgroundColor = 'rgba(0, 0, 0, 0.5)'
 ```
 

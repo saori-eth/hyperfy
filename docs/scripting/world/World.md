@@ -1,6 +1,6 @@
 # World
 
-The global `world` variable is always available within the app scripting runtime.
+The global `world` variable is always available within the object scripting runtime.
 
 ### `.networkId`: String
 
@@ -28,7 +28,7 @@ Adds a node into world-space, maintaining its current world transform.
 
 ### `.on(event, callback)`
 
-Subscribes to both engine events (eg when players `enter` or `leave` the world) and custom events emitted by other apps (via `app.emit()`)
+Subscribes to both engine events (eg when players `enter` or `leave` the world) and custom events emitted by other apps (via `object.emit()`)
 
 ### `.off(event, callback)`
 

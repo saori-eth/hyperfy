@@ -5,7 +5,7 @@ import { System } from './System'
  * Blueprints System
  *
  * - Runs on both the server and client.
- * - A central registry for app blueprints
+ * - A central registry for object blueprints
  *
  */
 export class Blueprints extends System {
